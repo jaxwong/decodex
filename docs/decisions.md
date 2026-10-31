@@ -54,6 +54,7 @@ flowchart TD
 | D-16 | Accepted and implemented | Use one widget package, two host adapters and one root npm lock |
 | D-17 | Accepted and implemented | Refresh Live UI after confirmed events; never mutate from captions |
 | D-21 | Accepted and implemented | Separate buyer and seller UI; picking in Luna returns to the cart; Host A has no picker |
+| D-24 | Accepted and implemented | A Your pick bar puts checkout one explicit press from the comparison without making a pick a purchase |
 
 ## D-01 — Labelled synthetic marketplace provider
 
@@ -371,3 +372,27 @@ made judges distrust the parts that work.
 asked listing); nothing polls. Questions are in-memory demo state like sessions and reset on API
 restart. Host B still uses the picker because it has no cart. `make api-dev` reloads on API file
 edits and forgets sessions; the widget now recovers in place instead of showing a picker.
+
+## D-24 — Deciding and buying sit together on the comparison but stay two presses
+
+**Decision:** A successful **Pick this one** keeps the shopper on the comparison. The picked
+column gets a **Your pick** badge and a sticky **Your pick** bar shows the product and its
+delivered total with **Keep comparing** and, when the host supplies the optional
+`requestCheckout(selection)`, **Check out**. Host A answers `requestAddToCart` by ticking only
+that variant in its cart (adding it if absent) and `requestCheckout` by opening its checkout with
+that one line. Cart ticks move into `shop.jsx`, the one owner, so the pick is already ticked when
+the shopper returns to the cart, and re-ticking by hand clears the pick notice. Picking another
+column moves the pick. The widget expresses no "remove the other lines" action: it has no cart
+contract and should not grow one for a secondary action; the cart already shows the other lines
+unticked.
+
+**Why:** D-21 made picking non-committal by sending the shopper to the cart, which turned a
+decision into a detour: two screens between deciding and paying. The compare table is the
+asset (normalised fields, every value opens its source), so the hand-off should keep the shopper
+on it and make buying one explicit press away rather than implicit in the pick.
+
+**Consequences:** Nothing is bought without a press labelled **Check out**. The host still owns
+navigation, cart and payment; the widget never charges, removes lines or guesses quantities
+(Host A uses the cart line's quantity). A lost session or a rebuilt comparison without the
+picked column drops the pick. Host B has no cart or checkout, so it shows neither Pick nor the
+bar.

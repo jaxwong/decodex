@@ -4,6 +4,17 @@ This file records implemented Luna milestones. The implementation spec remains t
 
 ## 31 October 2026
 
+### Implemented on `fix/compare-button-border`
+
+- The cart's **Compare now (N)** renders as a real outlined button beside **Check Out**; on
+  phones the two sit on one row with the hint beneath.
+- A **Your pick** bar on the comparison (D-24, I-62): a successful **Pick this one** badges the
+  column and shows the product with its delivered total, **Keep comparing** and, when the host
+  supplies the new optional `requestCheckout`, **Check out**. Host A ticks only the picked
+  variant in its cart without leaving the comparison and opens checkout with that one line only
+  on **Check out**. Cart ticks now live in `shop.jsx`, so they survive navigation and the pick is
+  already ticked in the cart.
+
 ### Implemented on `feat/buyer-seller-separation`
 
 - Seller Centre is its own product: a `SellerNav` layout (Seller Centre wordmark, "Demo seller ·
