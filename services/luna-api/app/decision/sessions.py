@@ -1,3 +1,4 @@
+import asyncio
 import secrets
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -24,12 +25,21 @@ class ConversationState:
 
 
 @dataclass(slots=True)
+class LiveSessionState:
+    """One comparison-bound server sideband relay task."""
+
+    comparison_id: str
+    relay_task: asyncio.Task[None]
+
+
+@dataclass(slots=True)
 class DemoSessionState:
     """Private process-local state owned by one opaque demo session token."""
 
     expires_at: datetime
     comparisons: dict[str, ComparisonResponse] = field(default_factory=dict)
     conversations: dict[str, ConversationState] = field(default_factory=dict)
+    live_sessions: dict[str, LiveSessionState] = field(default_factory=dict)
 
 
 type DemoSessionStore = dict[str, DemoSessionState]
