@@ -172,3 +172,85 @@ exit 1
 ```
 
 The initial full pytest collection error for root `eval` imports was B-owned configuration, not an A defect. Adding the repository root to pytest's configured Python path made the unchanged evaluation tests pass (`7 passed`) and restored full-suite collection.
+
+## B3: bounded Responses text agent — 31 October 2026
+
+**Outcome:** Added authenticated comparison chat over `gpt-6-luna`. One session owner retains bounded successful text history; the Responses loop exposes only B2's four strict tools, validates all arguments and citations, and returns only server-computed recommendation/UI state. The route never exposes provider IDs, reasoning, tool internals, or credentials.
+
+**Limits and failure behavior:**
+
+- One turn executes at most three tool rounds and four provider calls. The SDK uses `max_retries=0`; a failed call never selects another model or strategy.
+- `parallel_tool_calls=false` structurally permits zero or one function call per round. `apply_preferences` may execute only once per turn.
+- The generated tool schema fixes both `comparison_id` and `expected_revision` to authorized values. Python validates them again before executing B2 functions.
+- Unsupported citation IDs are replaced with a conservative answer. A late concurrent revision is rejected rather than returned to C.
+- A timeout after mutation preserves the saved comparison and returns `LUNA_TIMEOUT_AFTER_UPDATE`, `retryable=false`, and the new revision. Repeating the stale request is rejected before a provider call.
+
+**Files changed:**
+
+- `services/luna-api/app/openai/text_agent.py`
+- `services/luna-api/app/contracts/session.py`
+- `services/luna-api/app/decision/sessions.py`
+- `services/luna-api/app/routes/comparisons.py`
+- `services/luna-api/app/errors.py`
+- `services/luna-api/app/main.py`
+- `services/luna-api/tests/openai/test_text_agent.py`
+- `services/luna-api/tests/routes/test_comparisons.py`
+- `services/luna-api/README.md`
+- `CHANGELOG.md`
+
+**OpenAI contract verification:** Official OpenAI documentation and installed SDK `3.42.0` confirmed Responses function-call outputs, `previous_response_id`, strict tool schemas, `parallel_tool_calls=false`, structured `text.format`, and `gpt-6-luna` Responses tool support. Tests construct the installed SDK's concrete `Response` types rather than a competing client abstraction.
+
+**Verification:**
+
+```text
+uv --cache-dir /tmp/decodex-uv-cache run --frozen ruff format --check <B3 paths>
+8 files already formatted
+exit 0
+
+uv --cache-dir /tmp/decodex-uv-cache run --frozen ruff check <B3 paths>
+All checks passed!
+exit 0
+
+uv --cache-dir /tmp/decodex-uv-cache run --frozen pytest -q tests/openai/test_text_agent.py tests/routes/test_comparisons.py
+................                                                         [100%]
+16 passed in 0.38s
+exit 0
+
+uv --cache-dir /tmp/decodex-uv-cache run --frozen pytest -q
+........................................................................ [ 56%]
+........................................................                 [100%]
+128 passed in 0.66s
+exit 0
+
+uv --cache-dir /tmp/decodex-uv-cache run --frozen mypy <B3 paths>
+MYPY_RAW_EXIT=1
+MYPY_ALL_ERRORS=39
+MYPY_B3_ERRORS=0
+All 39 errors are in 9 imported A-owned evidence/provider files.
+exit 1
+```
+
+**Paid local verification:**
+
+```text
+make api-dev
+Uvicorn running on http://127.0.0.1:8000
+
+GET /api/health
+HTTP 200, health_ok=true
+
+POST /api/demo-sessions
+HTTP 201
+
+GET /api/catalog
+HTTP 200, catalog_listings=3
+
+POST /api/comparisons
+HTTP 201, comparison_items=3, initial_revision=0
+
+POST /api/comparisons/{comparison_id}/ask
+HTTP 200, conversation=live-smoke, new_revision=1, cited_ids=4,
+recommendation=listingB:65w
+```
+
+The local server required the host namespace because the sandbox blocks Uvicorn's reload watcher. The first host-side client command reached comparison creation but the shell expanded `$80` under `set -u` before sending `/ask`; building the request body with `jq` corrected the invocation. No application retry or fallback was added.
