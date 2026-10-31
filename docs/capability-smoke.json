@@ -1,0 +1,19 @@
+{
+  "checked_at": "2026-10-31T03:49:12.315227Z",
+  "overall_status": "passed",
+  "max_external_calls": 2,
+  "capabilities": [
+    {
+      "capability": "responses_function_call",
+      "status": "passed",
+      "model": "gpt-6-luna",
+      "detail": "Forced strict function call returned validated arguments."
+    },
+    {
+      "capability": "gpt_live_session",
+      "status": "passed",
+      "model": "gpt-live-1",
+      "detail": "Live create-session returned a session and WebRTC SDP answer."
+    }
+  ]
+}
