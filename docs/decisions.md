@@ -49,7 +49,7 @@ flowchart TD
 | D-11 | Accepted | Separate deterministic tests from explicitly paid evaluation artifacts |
 | D-12 | Accepted | Keep evidence and agent paid request budgets separate |
 | D-13 | Planned, not implemented | Serve both hosts and API from one Docker image and origin |
-| D-14 | Rejected/superseded | Browser-owned OpenAI keys and independent browser ranking |
+| D-14 | Rejected and removed | Browser-owned OpenAI keys and independent browser ranking |
 | D-15 | Accepted for demo | Project seller listing gaps from current authorized session state |
 | D-16 | Accepted and implemented | Use one widget package, two host adapters and one root npm lock |
 | D-17 | Accepted and implemented | Refresh Live UI after confirmed events; never mutate from captions |
@@ -214,8 +214,11 @@ browser ranking are superseded by the server API architecture.
 **Why:** They expose credentials, duplicate evidence/ranking authority and prevent consistent
 text/voice behavior.
 
-**Consequences:** They remain present only as known incomplete starter code and must be deleted,
-not retained as a fallback, when C completes Host A API integration.
+**Consequences:** The former `shopee-compare-app/src/compare` implementation is deleted rather
+than retained as a fallback. Host A mounts the shared widget directly, and Playwright asserts
+that the old directory, browser model-key UI and direct OpenAI request do not return. The cart
+does not invent a mapping from clone product IDs to trusted catalog IDs; exact variants are
+selected inside Luna until an authorized marketplace adapter can provide canonical identity.
 
 ## D-15 — Seller insights are a read-only session projection
 

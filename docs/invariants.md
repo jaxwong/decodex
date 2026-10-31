@@ -106,6 +106,7 @@ stateDiagram-v2
 | I-52 | Provisional transcript fragments never mutate comparison state. The browser refreshes server-owned state only after confirmed Live lifecycle/backend completion events. | Live event handler and deterministic WebRTC browser test |
 | I-53 | Live is not marked connected before `session.started`, and Stop does not release the transport as successfully finalized before `session.closed`. | `LiveVoiceControls.jsx`, graceful-close Playwright test |
 | I-54 | The seller browser view renders the report response without recounting or reinterpreting decision reasons. It uses the current widget bearer token and the existing evidence panel; neither host owns a second seller implementation. | `SellerGapReport.jsx`, `LunaWidget.jsx`, dual-host Playwright journey |
+| I-55 | Host A has one comparison owner: `@luna/widget`. Its cart state is storefront-only, `src/compare` is absent, and the browser contains no model key field, direct OpenAI request or independent ranking path. | Thin `Compare.jsx` route and Playwright source-boundary assertion |
 
 ## Ownership invariants
 
@@ -122,20 +123,17 @@ stateDiagram-v2
 | Browser rendering and media | C frontend |
 | Measured evaluation artifacts | Explicit paid evaluator CLIs |
 
-## Known system-wide violations and incomplete gates
+## Incomplete gates and declared demo boundaries
 
-These are current repository facts, not accepted exceptions:
+These are current repository facts, not accepted implementation shortcuts:
 
-1. `shopee-compare-app/src/compare/engine.js` can call OpenAI directly with a browser-entered
-   key. This violates I-24 and I-38 and must be deleted when Host A is wired to the API.
-2. Host A computes comparison facts and ranking independently of B's canonical state, violating
-   the intended single state/decision owner across the full application.
-3. The backend-connected Luna panel executes an API journey, but it has not replaced the
-   parallel legacy comparison path or unified the storefront and API catalog identities.
-4. One real spoken provider turn produced captions and a visible revision 0→1, but no audible
+1. One real spoken provider turn produced captions and a visible revision 0→1, but no audible
    output. G4 failed and voice is excluded from the main demo; generation versus browser
    playback was not isolated and must not be guessed.
-5. The single-origin Docker/deployment shape is planned, not implemented.
+2. The single-origin Docker/deployment shape and public smoke proof are not implemented.
+3. Host A's clone cart IDs have no verified mapping to the trusted backend catalog. The cart is
+   therefore presentation-only and exact variants are chosen inside Luna. A future authorized
+   marketplace integration must supply canonical identities rather than infer or hardcode them.
 
-Until these are fixed, backend correctness must not be presented as end-to-end product
-correctness.
+The canonical local text flow is end-to-end tested. These remaining boundaries must still be
+stated in the pitch and deployment report.

@@ -56,6 +56,24 @@ This file records implemented Luna milestones. The implementation spec remains t
 - `npm install` restored missing locked local packages and again reported the known 15 audit
   findings (4 moderate, 11 high). No automatic or breaking audit fix was applied.
 
+### Implemented on `feat/host-a-canonical-luna`
+
+- Made `@luna/widget` Host A's sole comparison implementation. `#/Compare` is now a thin host
+  route and renders the canonical API catalog immediately; there is no hidden **Ask Luna** gate.
+- Removed `CompareProvider` and deleted the complete legacy `src/compare` path: independent
+  browser ranking, sample evidence, panels, browser API-key settings and the direct
+  `api.openai.com` request. No fallback implementation remains.
+- Kept cart quantity, selection, removal and checkout presentation local to the storefront.
+  The cart links to Luna but never promotes unverified clone product IDs into trusted evidence;
+  buyers choose 2–4 exact backend variants on the comparison page.
+- Added a Playwright source-boundary assertion that Host A has no legacy compare directory,
+  provider, direct OpenAI request or browser key UI.
+- Verification made zero provider calls: focused frontend ESLint passed, both production hosts
+  built (Host A 66 modules, Host B 46), all **194 API tests passed**, and Playwright reported
+  **7 passed / 1 intentional Host B transport skip**.
+- `npm install` reported the known 15 audit findings (4 moderate, 11 high). No automatic or
+  breaking audit fix was applied.
+
 ### Implemented on `b8-a4-c-unblock`
 
 - Executed the one explicitly authorized current-agent benchmark with no retry: 28/44 provider
@@ -127,8 +145,8 @@ This file records implemented Luna milestones. The implementation spec remains t
 
 ### Remaining integration
 
-- Complete C3 by deleting the browser API-key field, direct OpenAI call and independent browser
-  ranking path; the shared Luna widget currently exists beside that legacy path.
 - Keep voice out of the main demo. The one authorized G4 run proved speech/captions/mutation but
   failed audible output; its generation-versus-playback root cause is unverified.
 - Add the single Docker image, Render deployment and public smoke proof.
+- Do not preselect Luna from clone cart IDs. A future real storefront integration must supply an
+  authorized canonical listing/variant mapping rather than an inferred or hardcoded one.

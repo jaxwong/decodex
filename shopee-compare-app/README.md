@@ -1,23 +1,15 @@
 # Shopee Compare — Luna Host A
 
 This Vite app is the Shopee-style Host A for the shared `@luna/widget` workspace package.
-The supported Luna flow is: open `#/Cart` → Compare → **Ask Luna** → set a constraint that
-excludes a listing → **Seller view**. Luna then uses only relative `/api` calls; model keys,
-ranking and seller counts remain on `services/luna-api`.
+The supported flow is: open `#/Cart` → **Compare now** → choose 2–4 exact backend variants →
+compare → set a constraint that excludes a listing → **Seller view**. Luna uses only relative
+`/api` calls; model keys, evidence, ranking and seller counts remain on `services/luna-api`.
 
-The older `src/compare` implementation still renders the surrounding legacy comparison and
-contains browser API-key settings. It is superseded, must not be used for the Luna demo, and
-must be deleted when the shared widget becomes Host A's sole compare owner.
-
-Evidence-grounded product comparison inside a Shopee-style cart. Buyers tick **Compare** on 2–4 cart items, pick the exact variation, and get a side-by-side table where every value traces back to the seller's own listing text.
-
-**Rules first, AI only where rules can't settle a field.** A deterministic rules dictionary (regex + Vietnamese/English keywords) extracts hard facts. A field is sent to the LLM only when:
-
-1. it is stated by meaning, not a number (e.g. "is a cable in the box?"),
-2. the listing text mixes several variations (e.g. "Bản 100W: 420g. Bản 130W: 498g."), or
-3. no rule matched, so AI double-checks before the table says "Not stated".
-
-All AI output then passes the same code checks: the quote must exist in the listing, the value is parsed by code, conflicts are found by code, and confidence decides only whether to withhold a value.
+Host A has one comparison owner. `src/components/Section/Compare.jsx` is a thin route that
+mounts `LunaWidget`; the former `src/compare` provider, browser ranking, sample data, panels and
+direct OpenAI call have been deleted. Cart rows remain local storefront presentation and are
+never submitted as evidence. This prevents the clone's product IDs from masquerading as
+canonical backend variants.
 
 ## Run it
 
@@ -29,27 +21,23 @@ make frontend-build
 npm run dev --workspace shopee-compare  # http://localhost:5173/#/Cart
 ```
 
-Open `#/Cart`, tick **Compare** on 2–4 power banks, then press **Compare now**.
+Open `#/Cart`, press **Compare now**, choose 2–4 exact variants in Luna, then press the compare
+button for the selected count.
 
 ## Where the feature lives
 
 ```
-src/compare/
-  data.js            sample listings (illustrative specs), cached sample AI output, reviews
-  engine.js          rules dictionary, router, unit parsing, validation, conflicts, live LLM call
-  CompareContext.jsx cart + compare state, runComparison()
-  Panels.jsx         evidence / trace / routing / reviews / editor / settings drawers
-  ProductThumb.jsx   illustrated thumbnails (no real product photos)
-src/components/Section/
-  cart.jsx           cart with Compare toggles, variation picker, compare bucket
-  Compare.jsx        comparison page (#/Compare)
+src/components/Section/cart.jsx     storefront-local cart and Compare entry point
+src/components/Section/Compare.jsx  thin #/Compare route that mounts @luna/widget
+src/lunaHostAdapter.js              Host A navigation bridge only
+packages/luna-widget/               canonical browser comparison UI
+services/luna-api/                  canonical evidence, ranking and model boundary
 ```
 
-## Legacy browser AI — do not use
+## Server-owned AI
 
-The **⚙ Live AI settings** control belongs to the superseded `src/compare` path. Never paste an
-API key into it. Current Luna text and GPT-Live requests are server-owned and read only the root
-`.env` through FastAPI.
+The browser has no API-key field and makes no direct OpenAI request. Luna text and GPT-Live
+requests are server-owned and read only the root `.env` through FastAPI.
 
 GPT-Live browser controls exist inside `@luna/widget`. One authorized real microphone turn
 produced captions and incremented the canonical comparison from revision 0 to 1, but no audible
@@ -57,6 +45,6 @@ response was heard. G4 failed, was not retried, and voice is not a demo claim.
 
 ## Credits / declarations
 
-The Shopee-style UI shell (nav, footer, cart layout, landing pages, images) comes from the open-source clone [neoB23/Shopee_E-commerce-Clone](https://github.com/neoB23/Shopee_E-commerce-Clone) (React + Vite + Tailwind). Everything under `src/compare/`, `Compare.jsx`, and the compare additions to `cart.jsx` are new.
+The Shopee-style UI shell (nav, footer, cart layout, landing pages, images) comes from the open-source clone [neoB23/Shopee_E-commerce-Clone](https://github.com/neoB23/Shopee_E-commerce-Clone) (React + Vite + Tailwind). The Luna comparison route, adapter and shared widget integration are new.
 
 Sample listings and reviews are illustrative and are not real product data.
