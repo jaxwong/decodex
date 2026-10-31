@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import LunaWidget from '../../luna/LunaWidget';
+import { useEffect, useMemo, useState } from 'react';
+import { LunaWidget } from '@luna/widget';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCompare } from '../../compare/CompareContext';
 import ProductThumb from '../../compare/ProductThumb';
 import { TOPICS, GENERIC } from '../../compare/data';
 import { FIELDS, PRICE, bestValue, cellOf, fieldDef, rowIsSame } from '../../compare/engine';
 import { Drawer, ByBadge, CellPanel, GenericPanel, RejectedPanel, ReviewsPanel, RoutingPanel, ListingPanel, EditorPanel, SettingsPanel } from '../../compare/Panels';
+import { createShopeeLunaAdapter } from '../../lunaHostAdapter';
 
 const SRC = { cached: ['AI: cached', 'bg-slate-100 text-slate-600'], live: ['AI: live', 'bg-green-50 text-green-700'], stale: ['AI: cached · listing edited', 'bg-amber-50 text-amber-700'], none: ['AI: no output', 'bg-red-50 text-red-600'], error: ['AI error', 'bg-red-50 text-red-600'], notneeded: ['no AI call needed', 'bg-green-50 text-green-700'] };
 const PRIO_KEYS = ['price', 'max_output_w', 'weight_g', 'capacity_mah', 'warranty_months', 'cable_included'];
@@ -20,6 +21,7 @@ function Compare() {
     const [drawer, setDrawer] = useState(null); // {type, i, k}
     const [added, setAdded] = useState(null);
     const [lunaOpen, setLunaOpen] = useState(false);
+    const lunaAdapter = useMemo(() => createShopeeLunaAdapter(navigate), [navigate]);
 
     useEffect(() => {
         if (!run && !running) { compareItems().length >= 2 ? compareNow() : navigate('/Cart'); }
@@ -128,7 +130,7 @@ function Compare() {
                     </div>
                 </div>
 
-                {lunaOpen && <LunaWidget products={R.map(r => ({ id: `${r.lid}:${r.vid}`, name: r.L.short }))} onClose={() => setLunaOpen(false)} />}
+                {lunaOpen && <LunaWidget adapter={lunaAdapter} apiBaseUrl="/api" onClose={() => setLunaOpen(false)} />}
                 {/* Run log */}
                 <div className="bg-white rounded-sm shadow-sm mb-3 px-3 sm:px-4 py-2.5 flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500">
                     <span>Run #{run.n}</span>

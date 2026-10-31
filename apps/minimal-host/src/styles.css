@@ -1,0 +1,67 @@
+:root {
+  color: #17202a;
+  background: #eef2f3;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+main {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+
+.host-header {
+  border-left: 8px solid #244f66;
+  padding: 12px 20px;
+  background: white;
+}
+
+.eyebrow {
+  margin: 0;
+  color: #527386;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.catalog {
+  margin: 24px 0;
+}
+
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.catalog article {
+  padding: 16px;
+  border: 1px solid #b7c6ce;
+  background: white;
+}
+
+.catalog button {
+  margin: 4px 6px 0 0;
+  padding: 8px 10px;
+  border: 1px solid #244f66;
+  background: transparent;
+  color: #244f66;
+  cursor: pointer;
+}
+
+/* The package uses utility class names supplied by Host A's Tailwind build. */
+.catalog + section {
+  padding: 20px;
+  border: 1px solid #b7c6ce;
+  background: white;
+}

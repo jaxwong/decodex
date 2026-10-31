@@ -1,0 +1,17 @@
+{
+  "name": "luna-hackathon-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "shopee-compare-app",
+    "packages/luna-widget",
+    "apps/minimal-host"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace shopee-compare && npm run build --workspace minimal-host",
+    "test:e2e": "playwright test --config shopee-compare-app/playwright.config.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
+  }
+}

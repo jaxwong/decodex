@@ -24,7 +24,7 @@ export function PreferenceChips({ preferences, onSuggestion }) {
 }
 PreferenceChips.propTypes = { preferences: PropTypes.object, onSuggestion: PropTypes.func.isRequired };
 
-export function RecommendationCards({ recommendation, evidence, selectedItems }) {
+export function RecommendationCards({ recommendation, evidence, selectedItems, onNavigateToListing }) {
   const known = new Map(selectedItems.map(item => [`${item.listing_id}:${item.variant_id}`, item]));
   for (const item of evidence?.items || []) {
     known.set(item.item_key, { ...known.get(item.item_key), ...item });
@@ -51,6 +51,8 @@ export function RecommendationCards({ recommendation, evidence, selectedItems })
           {money(item.price_minor, item.currency) && <p className="text-sm font-medium mt-2">{money(item.price_minor, item.currency)}</p>}
           {excluded.has(key) && <p className="text-xs text-red-700 mt-2">Excluded by constraints</p>}
           {uncertain.has(key) && <p className="text-xs text-amber-700 mt-2">Evidence incomplete</p>}
+          {item.listing_id && <button type="button" onClick={() => onNavigateToListing(item.listing_id)}
+            className="text-xs text-orange-700 underline mt-3">View in host</button>}
         </article>;
       })}
     </div>
@@ -63,16 +65,19 @@ export function RecommendationCards({ recommendation, evidence, selectedItems })
 RecommendationCards.propTypes = {
   recommendation: PropTypes.object, evidence: PropTypes.object,
   selectedItems: PropTypes.arrayOf(PropTypes.object).isRequired,
+  onNavigateToListing: PropTypes.func.isRequired,
 };
 
 function sourceText(source) {
   if (!source) return 'Source details unavailable';
   if (typeof source === 'string') return source;
-  return source.source_text || source.quote || source.text || source.url || 'Source details unavailable';
+  return source.source_text || source.excerpt || source.quote || source.text || source.url || 'Source details unavailable';
 }
 
 export function EvidenceViewer({ evidence, citedIds }) {
   const index = evidence?.evidence || {};
+  const citationSource = citationId => index[citationId]
+    || evidence?.review_mentions?.[citationId];
   return <section aria-label="Evidence and sources" className="border border-t-0 rounded-b-lg p-3 space-y-4">
     {(evidence?.items || []).map(item => <div key={item.item_key}>
       <h4 className="font-semibold text-sm mb-1">{item.title || item.item_key}</h4>
@@ -89,7 +94,7 @@ export function EvidenceViewer({ evidence, citedIds }) {
     </div>)}
     {citedIds.length > 0 && <div className="bg-gray-50 rounded p-3">
       <h4 className="font-semibold text-xs mb-2">Cited in Luna&apos;s latest answer</h4>
-      {citedIds.map(id => <p key={id} className="text-xs my-1"><strong>{id}:</strong> {sourceText(index[id])}</p>)}
+      {citedIds.map(id => <p key={id} className="text-xs my-1"><strong>{id}:</strong> {sourceText(citationSource(id))}</p>)}
     </div>}
     {!evidence?.items?.length && <p className="text-xs text-gray-500">No structured evidence available yet.</p>}
   </section>;
