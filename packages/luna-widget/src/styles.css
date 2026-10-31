@@ -531,6 +531,13 @@
   color: var(--luna-muted);
 }
 
+.luna-widget .luna-badge-pick {
+  margin-top: 8px;
+  margin-bottom: 0;
+  background: var(--luna-ok-bg);
+  color: var(--luna-ok-ink);
+}
+
 .luna-widget .luna-product-title {
   display: block;
   font-weight: 600;
@@ -1296,6 +1303,52 @@
   color: var(--luna-ok-ink);
   font-size: 13px;
   font-weight: 600;
+}
+
+/* The shopper's pick: deciding and committing sit together but stay two separate presses. */
+.luna-widget .luna-pick-bar {
+  position: sticky;
+  bottom: 12px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 12px 16px;
+  border: 1px solid var(--luna-accent-line);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.luna-widget .luna-pick-bar img {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.luna-widget .luna-pick-bar-copy {
+  display: flex;
+  flex: 1 1 200px;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 13.5px;
+}
+
+.luna-widget .luna-pick-bar-label {
+  color: var(--luna-accent);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.luna-widget .luna-pick-bar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
 }
 
 /* Buyer side: questions sent to the seller that have no answer yet. */

@@ -64,6 +64,10 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
   // Questions this buyer sent that the seller has not answered yet, as the server returned them.
   const [openQuestions, setOpenQuestions] = useState([]);
   const [sellerCheck, setSellerCheck] = useState('');
+  // The column the shopper picked. Deciding is not buying: the host records the pick, and
+  // checkout is one explicit press away only when the host offers it.
+  const [pickedItemKey, setPickedItemKey] = useState(null);
+  const [pickBarDismissed, setPickBarDismissed] = useState(false);
   const conversationId = useRef(newConversationId());
   const generation = useRef(0);
   const inputRef = useRef(null);
@@ -99,6 +103,7 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
         setSellerAsk(null);
         setOpenQuestions([]);
         setSellerCheck('');
+        setPickedItemKey(null);
         const hostKeys = selectionKeys(hostAdapter.getCurrentSelections());
         const availableKeys = new Set(listings.flatMap(listing => listing.variants
           .map(variant => `${listing.listing_id}:${variant.variant_id}`)));
@@ -189,6 +194,7 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
     setSellerAsk(null);
     setOpenQuestions([]);
     setSellerCheck('');
+    setPickedItemKey(null);
     setMessages([]);
     try {
       await renewSession();
@@ -366,7 +372,27 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
       if (typeof result?.ok !== 'boolean') {
         throw new TypeError(`Luna host adapter requestAddToCart() must resolve to { ok: boolean }, got ${JSON.stringify(result)}`);
       }
-      if (!result.ok) setError('The shop couldn’t take your pick. Please try again.');
+      if (!result.ok) {
+        setError('The shop couldn’t take your pick. Please try again.');
+        return;
+      }
+      setPickedItemKey(item.item_key);
+      setPickBarDismissed(false);
+    } catch (err) { showError(err); }
+  }
+
+  // Checkout is the host's: Luna only hands over the picked variant on an explicit press.
+  async function checkoutPick(item) {
+    setError('');
+    try {
+      const result = await hostAdapter.requestCheckout({
+        listingId: item.listing_id,
+        variantId: item.variant_id,
+      });
+      if (typeof result?.ok !== 'boolean') {
+        throw new TypeError(`Luna host adapter requestCheckout() must resolve to { ok: boolean }, got ${JSON.stringify(result)}`);
+      }
+      if (!result.ok) setError('The shop couldn’t open checkout for your pick. Please try again.');
     } catch (err) { showError(err); }
   }
 
@@ -379,6 +405,9 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
   const evidence = comparison?.evidence;
   const isDemoData = comparison ? evidence.items.some(item => item.synthetic)
     : catalog.some(listing => listing.synthetic);
+  // A pick belongs to a column; a comparison without that column has no pick to show.
+  const pickedItem = (comparison && pickedItemKey
+    && evidence.items.find(item => item.item_key === pickedItemKey)) || null;
 
   return <section aria-label="Luna shopping assistant" className="luna-widget"
     data-revision={comparison ? comparison.revision : undefined}>
@@ -472,7 +501,23 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
             imagesByListing={imagesByListing}
             onNavigateToListing={hostAdapter.navigateToListing} onAskSeller={askSeller}
             openQuestionKeys={new Set(openQuestions.map(questionKey))}
+            pickedItemKey={pickedItem?.item_key ?? null}
             onPick={hostAdapter.requestAddToCart ? pick : undefined}/>
+          {pickedItem && !pickBarDismissed && <section aria-label="Your pick" className="luna-pick-bar">
+            {imagesByListing.get(pickedItem.listing_id)
+              && <img src={imagesByListing.get(pickedItem.listing_id)} alt=""/>}
+            <div className="luna-pick-bar-copy">
+              <span className="luna-pick-bar-label">Your pick</span>
+              <strong>{itemName(pickedItem)}</strong>
+              <span>Delivered {money(pickedItem.landed_price_minor, pickedItem.currency)}</span>
+            </div>
+            <div className="luna-pick-bar-actions">
+              {hostAdapter.requestCheckout && <button type="button" className="luna-button"
+                onClick={() => checkoutPick(pickedItem)} disabled={busy}>Check out</button>}
+              <button type="button" className="luna-button luna-button-secondary"
+                onClick={() => setPickBarDismissed(true)}>Keep comparing</button>
+            </div>
+          </section>}
         </div>
         <aside aria-label="Ask Luna" className="luna-chat">
           <h3 className="luna-chat-title">Ask Luna</h3>
@@ -513,6 +558,7 @@ LunaWidget.propTypes = {
     onSelectionChange: PropTypes.func.isRequired,
     navigateToListing: PropTypes.func.isRequired,
     requestAddToCart: PropTypes.func,
+    requestCheckout: PropTypes.func,
   }).isRequired,
   apiBaseUrl: PropTypes.string,
   onClose: PropTypes.func,
