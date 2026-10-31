@@ -108,8 +108,10 @@ The API can verify session creation and sideband attachment on its own, but genu
 - `get_review_aspect` returns bounded aggregates and literal supporting mentions.
 - `apply_preferences` is the only mutation; it enforces optimistic revision checks.
 
-The simulated seller loop (`routes/seller_replies.py`) is a plain route, not a tool. It writes
-one parsable answer per variant field into the mock provider; comparison state is never edited.
+The seller question loop (`routes/seller_replies.py`) is plain routes, not a tool. A buyer opens
+one fixed-wording question per variant field (kept in `app.state.seller_questions`), the seller
+lists a listing's open questions and writes one parsable answer per field into the mock provider,
+which closes the question; comparison state is never edited.
 - `inspect_evidence` returns exact sources only for stored evidence IDs.
 
 Ranking applies budget and minimum-power constraints before lexicographic objective priorities.

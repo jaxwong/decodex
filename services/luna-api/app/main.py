@@ -91,6 +91,8 @@ def create_app(
 
     app = FastAPI(title="Luna API", version="0.1.0", lifespan=lifespan)
     app.state.demo_sessions = session_store if session_store is not None else {}
+    # Open buyer questions awaiting a seller answer, keyed by (listing, variant, field).
+    app.state.seller_questions = {}
     provider = catalog_provider if catalog_provider is not None else provider_factory()
     app.state.catalog_provider = provider
     app.state.build_comparison_evidence = (
