@@ -1,6 +1,6 @@
-# Luna API — Developer B phase B1
+# Luna API — Developer B phases B1–B2
 
-This phase owns only the API shell, demo-session state, and OpenAI capability smoke tests. It does not contain marketplace evidence, ranking, or frontend behavior.
+The service now owns the API shell, authenticated demo sessions, canonical comparison state, deterministic ranking, four decision tools, and OpenAI capability checks. A owns immutable marketplace evidence and C owns its frontend projection.
 
 ## Ownership boundary
 
@@ -26,15 +26,51 @@ From the repository root:
 
 ```bash
 make api-sync
+set -a
+. ./.env
+set +a
 make api-dev
 curl --fail http://127.0.0.1:8000/api/health
 curl --fail -X POST http://127.0.0.1:8000/api/demo-sessions
 ```
 
+Copy the issued token into a shell variable before calling protected routes:
+
+```bash
+export LUNA_DEMO_TOKEN='<token from POST /api/demo-sessions>'
+curl --fail -H "Authorization: Bearer $LUNA_DEMO_TOKEN" \
+  http://127.0.0.1:8000/api/catalog
+curl --fail -X POST \
+  -H "Authorization: Bearer $LUNA_DEMO_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"items":[{"listing_id":"listingA","variant_id":"100w"},{"listing_id":"listingB","variant_id":"65w"},{"listing_id":"listingC","variant_id":"87w"}]}' \
+  http://127.0.0.1:8000/api/comparisons
+```
+
+Comparison creation calls A's evidence builder exactly once. Runtime has no fixture fallback; the frozen fixture builder exists only under `tests/`.
+
+## Decision tools
+
+B2 exposes exactly four Python tool functions for B3 text and B4 Live delegation:
+
+- `get_comparison` returns compact normalized facts without raw source text.
+- `get_review_aspect` returns bounded aggregates and literal supporting mentions.
+- `apply_preferences` is the only mutation; it enforces optimistic revision checks.
+- `inspect_evidence` returns exact sources only for stored evidence IDs.
+
+Ranking applies budget and minimum-power constraints before lexicographic objective priorities. Missing facts remain uncertain, review reliability is not converted into a score, and absent criteria produce no invented winner.
+
 ## Verify
 
 ```bash
 make api-test
+```
+
+The B-owned B2 behavior subset is independently runnable without network or API credits:
+
+```bash
+cd services/luna-api
+uv run --frozen pytest -q tests/decision tests/routes tests/openai
 ```
 
 ## OpenAI capability smoke
