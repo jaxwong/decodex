@@ -67,8 +67,9 @@ Open Host A at `http://127.0.0.1:5173/#/Cart` and Host B at
   microphone speech produced captions and changed the comparison from revision 0 to 1, but no
   audible Luna response was heard. The run was not retried. Use text in the main demo and do
   not claim working voice audio.
-- Host A still contains the superseded legacy compare engine and browser API-key settings next
-  to the shared Luna panel. They must be deleted when Luna becomes Host A's sole compare path.
+- Host A now has one comparison implementation: `@luna/widget` on `#/Compare`. The storefront
+  cart is presentation-only; buyers choose 2–4 exact backend variants inside Luna, so cart IDs
+  are never treated as trusted evidence.
 - Docker/Render deployment and public smoke proof are not implemented.
 - `npm install` currently reports dependency audit findings; no automatic or breaking audit fix
   has been applied.

@@ -24,12 +24,17 @@ The repository contains three different levels of completion:
   Offline Playwright covers that wiring and microphone-denied text fallback. In one authorized
   real run, the session returned HTTP 201, speech produced captions and revision 0→1, but no
   audible Luna response was heard. The run was not retried and voice is cut from the main demo.
-- **Replacement/deployment incomplete:** the old compare engine still exists beside Luna and
-  `src/compare/engine.js` still contains a direct browser OpenAI request. The single-image
-  runtime, deployment files and public smoke proof remain missing.
+- **Host A replacement implemented:** `#/Compare` is a thin `LunaWidget` host, the cart has no
+  comparison state, and the former `src/compare` provider, ranking, sample data, browser key UI
+  and direct OpenAI request are deleted. Playwright asserts that the directory and forbidden
+  browser strings do not return.
+- **Deployment incomplete:** the single-image runtime, deployment files and public smoke proof
+  remain missing.
 
-The backend no longer blocks C. The next frontend root-cause fix is deleting the parallel
-legacy comparison/model path after the canonical widget becomes Host A's only compare owner.
+Host A, Host B and the API now share one canonical comparison path. The remaining storefront
+boundary is deliberate: the clone cart is presentation-only and buyers select exact trusted
+catalog variants inside Luna. Mapping real cart identities requires an authorized marketplace
+catalog and is not faked in this demo.
 
 ## System map
 
@@ -38,10 +43,9 @@ flowchart LR
     Buyer[Buyer]
 
     subgraph HostA["Host A: shopee-compare-app"]
-        Cart[Cart and variant selection]
-        CompareContext[CompareContext]
-        LegacyEngine[Legacy browser comparison engine]
-        BrowserSettings[Browser API-key settings]
+        Cart[Storefront-local cart]
+        HostARoute[Thin #/Compare route]
+        HostAAdapter[Host A navigation adapter]
     end
 
     subgraph HostB["Host B: apps/minimal-host"]
@@ -76,11 +80,9 @@ flowchart LR
         Live[GPT-Live]
     end
 
-    Buyer --> Cart --> CompareContext --> LegacyEngine
-    CompareContext --> LunaWidget
+    Buyer --> Cart --> HostARoute --> LunaWidget
+    HostAAdapter --> LunaWidget
     MinimalCatalog --> MinimalAdapter --> LunaWidget
-    BrowserSettings --> LegacyEngine
-    LegacyEngine -. "direct browser call — must be removed" .-> Responses
 
     LunaWidget --> LunaClient --> Routes
     LunaWidget --> SellerView
@@ -439,15 +441,14 @@ microphone/provider audio. `make test`, `make test-live`, `make demo`, `Dockerfi
 
 ## Required next integration
 
-The next system-level milestone is not another backend feature. G3 is automated and the G4
-browser path remains excluded from the demo after failing audible output. The remaining ordered
-work is:
+The next system-level milestone is deployment, not another comparison engine. G3 and the Host A
+replacement are automated. The G4 browser path remains excluded from the demo after failing
+audible output. The remaining ordered work is:
 
-1. make Host A's main compare journey use the canonical API selection instead of keeping a
-   separate synthetic Luna catalog beside the legacy comparison;
-2. delete the browser API-key settings, direct OpenAI call and independent ranking path;
-3. add the single-origin runtime and deployment only after the canonical Host A replacement.
+1. add the single-origin runtime and deployment;
+2. run the public Host A, Host B and `/api/health` smoke checks;
+3. map storefront cart identities only when an authorized marketplace catalog contract exists.
 
-Do not represent the legacy Host A replacement, real voice mutation, Docker or deployment as
-complete before their individual gates pass. The seller view is complete only for one
-authorized in-process demo session, not seller authentication or weekly analytics.
+Do not represent real voice audio, Docker or deployment as complete before their individual
+gates pass. The seller view is complete only for one authorized in-process demo session, not
+seller authentication or weekly analytics.

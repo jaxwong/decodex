@@ -820,3 +820,48 @@ allowed one provider session creation and one sideband attach. The controlled AP
 distinguish provider speech generation from browser playback, so no root cause is invented.
 Voice is cut from the main demo and text remains the explicit fallback. No code change was made
 to mask the failure or introduce a second voice architecture.
+
+## B13: coordinated Host A canonical comparison cutover — 31 October 2026
+
+This is C-owned frontend scope completed after the user confirmed coordination with C. B did
+not change API contracts, evidence, ranking or model behavior.
+
+**Root cause:** Host A mounted the canonical widget beside a second browser-owned comparison
+provider, ranking engine, fixture source and direct OpenAI path. Hiding or wrapping the old path
+would have preserved two state and decision owners.
+
+**Replacement:** `#/Compare` now mounts `@luna/widget` directly. The storefront cart keeps only
+local presentation/checkout state and links to Compare; exact trusted variants are selected
+inside Luna. The complete `src/compare` directory and `CompareProvider` were deleted. No alias,
+fallback, browser key field or parallel ranking path remains.
+
+**Failure-first proof:** Before the replacement, `make e2e` exited 1: Host A could not see the
+canonical widget without opening the legacy Luna panel, and the single-owner assertion found
+`src/compare`. Host B remained green.
+
+**Final deterministic verification:**
+
+```text
+focused ESLint
+exit 0
+
+make frontend-build
+Host A: 66 modules transformed
+Host B: 46 modules transformed
+exit 0
+
+UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+62 files already formatted
+All checks passed!
+Success: no issues found in 60 source files
+194 passed in 1.36s
+exit 0
+
+make e2e
+7 passed, 1 intentional Host B transport skip
+exit 0
+```
+
+These commands made zero provider calls. The clone cart has no verified marketplace-to-catalog
+identity mapping, so it is explicitly presentation-only instead of inventing IDs. Single-image
+deployment and public smoke proof remain separate work; G4 remains failed for audible output.

@@ -34,8 +34,11 @@ This document began as the developer handoff and remains the implementation sour
   session-scoped evidence gaps, supported competitors and decision-reason counts from
   `@luna/widget`. Clicking a conflict reuses the canonical evidence panel. The view makes zero
   model calls and exposes no buyer identity, conversation, budget or preferences.
-- **Still incomplete:** Host A retains the legacy direct-browser OpenAI comparison path beside
-  Luna; the single-image runtime, deployment and public smoke proof remain.
+- **Host A canonical replacement is implemented:** `#/Compare` mounts `@luna/widget` directly;
+  the old `src/compare` provider, browser ranking, sample data, panels, API-key UI and direct
+  OpenAI request are deleted. The storefront cart is presentation-only, and exact trusted
+  variants are chosen inside Luna rather than inferred from clone cart IDs.
+- **Still incomplete:** the single-image runtime, deployment and public smoke proof remain.
   Voice is cut from the main demo because the real G4 check did not pass audible output.
 
 1. Push `shopee-compare-app/` and this spec together. Do not push `node_modules/`, generated `dist/`, `.env`, API keys or unrelated local files.
@@ -46,15 +49,18 @@ This document began as the developer handoff and remains the implementation sour
 **Handoff is ready to push when:**
 
 ```bash
-cd shopee-compare-app
-npm ci
-npm run build
-cd ..
+npm install
+make api-test
+make frontend-build
+make e2e
 git diff --check
 git status --short
 ```
 
-Expected now: the frontend build exits `0`; only intended source/spec/config changes appear; no secret or dependency directory is tracked. The participant briefing PDF is currently a local untracked input—do not add it unless the organizers permit redistribution. The existing lint failure is documented in section 2.2.1 and is a C-owned implementation task, not hidden. Do not delay the handoff to redesign the current compare code—the spec explicitly replaces it.
+Expected now: all three deterministic gates exit `0`; only intended source/spec/config changes
+appear; no secret or dependency directory is tracked. The participant briefing PDF is a local
+input—do not add it unless the organizers permit redistribution. Section 2.2.1 records the
+original starter-code lint baseline; it is historical, not the current gate.
 
 **Completed product is ready for demo only when all four are true:**
 
@@ -73,13 +79,13 @@ Expected now: the frontend build exits `0`; only intended source/spec/config cha
 
 | Existing path | Keep / change | Target responsibility |
 |---|---|---|
-| `shopee-compare-app/src/App.jsx` | **Keep and minimally wire** the application entry, layouts and routes | Mount the new Luna provider/adapter without moving storefront ownership into the widget |
-| `shopee-compare-app/src/components/Section/cart.jsx` | **Keep its useful presentation; replace compare state calls** | Call public `@luna/widget` selection controls/callbacks; no duplicated comparison state |
-| `shopee-compare-app/src/components/Section/Compare.jsx` | **Replace with a thin route component** | Render exported Luna comparison/review/assistant components on `#/Compare` |
-| `shopee-compare-app/src/compare/CompareContext.jsx` | **Delete after the new provider is wired** | Widget owns comparison view state; backend owns canonical comparison/preferences/revision |
-| `shopee-compare-app/src/compare/engine.js` | **Delete; do not port or wrap it** | Server owns evidence validation, extraction and ranking; the direct browser OpenAI call is forbidden |
-| `shopee-compare-app/src/compare/Panels.jsx` | **Delete after replacement components render** | New evidence/review UI lives in the widget; no browser API-key settings |
-| `shopee-compare-app/src/compare/data.js` | **Replace; do not copy its runtime role** | Rewrite only useful synthetic cases into canonical root `data/` fixtures served by `MockCatalogProvider` |
+| `shopee-compare-app/src/App.jsx` | **Implemented: shell/routes retained; legacy provider removed** | Host A routes only; no duplicated comparison provider |
+| `shopee-compare-app/src/components/Section/cart.jsx` | **Implemented: storefront-local presentation** | Link to Compare; never submit unverified clone cart IDs as evidence |
+| `shopee-compare-app/src/components/Section/Compare.jsx` | **Implemented: thin route component** | Mount `LunaWidget` on `#/Compare` with Host A's navigation adapter |
+| `shopee-compare-app/src/compare/CompareContext.jsx` | **Deleted** | Widget owns browser view state; backend owns canonical comparison/preferences/revision |
+| `shopee-compare-app/src/compare/engine.js` | **Deleted** | Server owns evidence validation, extraction and ranking; no direct browser OpenAI call |
+| `shopee-compare-app/src/compare/Panels.jsx` | **Deleted** | Evidence/review UI lives in the widget; no browser API-key settings |
+| `shopee-compare-app/src/compare/data.js` | **Deleted** | Canonical root `data/` fixtures are served by `MockCatalogProvider` |
 
 **Replacement rule:** Do not spend time achieving behavioral parity with known-bad code. First record one baseline screenshot/build so accidental storefront regressions are visible; then build the thinnest new cart → compare → evidence path and delete the old compare implementation as soon as that path works. Every merged step must leave Host A runnable. There is one compare state owner, one fixture source and one OpenAI boundary. The old engine is never retained as a fallback and the frontend never receives `OPENAI_API_KEY`.
 
@@ -286,17 +292,19 @@ decodex/
 
 ### 2.2 Setup and commands
 
-#### 2.2.1 Test the existing frontend now, before Luna work
+#### 2.2.1 Original starter frontend baseline — historical record
 
 ```bash
-# Terminal 1 — current baseline only
+# Terminal 1 — original baseline only; do not use as the current Luna flow
 cd shopee-compare-app
 npm install
 npm run dev -- --host 127.0.0.1
 # Open http://127.0.0.1:5173/#/Cart
 ```
 
-Baseline manual check: the cart loads; select 2–4 supported power-bank rows; change one exact variant; click **Compare now**; confirm `#/Compare` renders; open one evidence drawer. This proves only that the starting frontend runs—it does **not** prove the new Luna architecture or AI behavior.
+Historical baseline check: the cart loaded; selecting 2–4 starter power-bank rows and clicking
+**Compare now** rendered the old comparison. This record explains what was replaced; it is not
+the current Luna architecture or a supported demo path.
 
 In a second shell:
 
@@ -918,7 +926,7 @@ Use held-out evaluation labels; never send labels to the extractor. All sample c
 - `test_old_turn_does_not_override_correction`
 
 **C (Playwright/browser):**
-- Host A cart → exact variants → comparison → evidence/reviews → ask → visible revision change.
+- Host A cart → Compare route → exact backend variants → comparison → evidence/reviews → ask → visible revision change.
 - The same flow in Host B with the same widget/API.
 - Import-boundary failure if the widget imports either host.
 - Expired session, stale patch, API failure and microphone-denied text fallback.

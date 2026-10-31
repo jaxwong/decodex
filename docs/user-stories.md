@@ -13,8 +13,9 @@ every product page.
 
 ## Status legend
 
-The same packaged Luna panel now calls the backend from Host A and Host B, but it has not
-replaced Host A's legacy comparison path. Each story therefore has an explicit status.
+The same packaged Luna panel is the only comparison path in Host A and Host B. Each story still
+has an explicit status because real voice audio, deployment and some presentation breadth are
+not complete.
 
 | Status | Meaning |
 |---|---|
@@ -34,8 +35,8 @@ the final demo only when both its backend and browser columns are complete.
 
 | User story | Backend/API | Host A browser | Remaining owner/work |
 |---|---|---|---|
-| Exact-variant comparison | **Complete** — validates 2–4 canonical variant IDs and builds one comparison | **Browser ready in widget** — both hosts select exact API variants; Host A's legacy cart IDs remain separate | C: remove parallel legacy selection/state |
-| Normalized seller evidence | **Complete** — supported, missing and conflicting facts retain provenance | **Browser ready in widget** — facts and original seller sources render in both hosts | C: replace legacy table with this canonical view |
+| Exact-variant comparison | **Complete** — validates 2–4 canonical variant IDs and builds one comparison | **Browser ready** — both hosts select exact API variants through the sole shared widget | Authorized storefront-to-catalog identity mapping is future integration, not a demo blocker |
+| Normalized seller evidence | **Complete** — supported, missing and conflicting facts retain provenance | **Browser ready** — facts and original seller sources render in the sole comparison view in both hosts | No demo blocker |
 | Review intelligence | **Complete** — exact-SKU aspects, mentions and excerpts are validated | **Partial** — cited review mentions resolve to excerpts; full cross-product aspect view remains | C: add the required review-aspect presentation |
 | Text decision agent | **Complete, current evaluation partial** — bounded tools, citations and deterministic ranking; 10/12 paid scenarios passed | **Browser ready in widget** — ask, citations and canonical refresh pass in both hosts with an injected test model | C: final tool-activity/focused-row presentation |
 | Revision-safe correction | **Complete** — optimistic revision and one mutation owner | **Browser ready** — dual-host E2E observes revisions 0→1→2→3 and changed priority/budget | C: add explicit stale-error browser case |
@@ -74,18 +75,19 @@ flowchart LR
 **User story:** As Mai, I want to add the exact variants I am considering so that Luna never
 compares the wrong capacity, colour or power configuration.
 
-1. Mai opens the existing Shopee-style storefront.
-2. She selects a specific variant from each of three power-bank listings.
-3. She adds those variants to a comparison bucket with a maximum of four items.
-4. She opens Compare and sees the exact selected variant names.
+1. Mai opens the existing Shopee-style storefront and chooses **Compare now**.
+2. Luna loads the trusted backend catalog on the comparison page.
+3. She selects a specific variant from each of three power-bank listings.
+4. She compares a bucket of at most four items and sees the exact selected variant names.
 
 **Value:** Mai no longer keeps three product tabs and a mental shortlist.
 
 **Success looks like:** Changing a variant changes its variant ID. A missing variant is
 rejected rather than silently replaced by a default or sibling variant.
 
-**Status:** **Host A partial.** The panel selects exact variants from the API catalog, but the
-storefront's existing selected items use different IDs and are not yet the canonical input.
+**Status:** **Browser ready.** The sole comparison view selects exact variants from the API
+catalog in both hosts. Host A's clone cart is presentation-only; a real marketplace adapter
+must provide authorized canonical identities before cart-to-Luna preselection is added.
 
 ### 2. Turn incompatible listings into one table
 
@@ -104,8 +106,8 @@ zero.
 **Success looks like:** Every supported value opens the original seller snippet. Luna never
 guesses through a missing or conflicting value.
 
-**Status:** **Browser ready in the shared widget.** Evidence and seller sources render in both
-hosts. Replacing Host A's parallel legacy table remains C work.
+**Status:** **Browser ready in the shared widget.** Evidence and seller sources render in the
+sole comparison view in both hosts.
 
 ### 3. Understand what buyers experienced
 
@@ -236,7 +238,7 @@ was heard. G4 therefore failed. It was not retried and must not be demoed as wor
 **User story:** As a marketplace team, we want to embed the same Luna decision experience in
 a different storefront without rebuilding its evidence, ranking or model integration.
 
-1. Host A supplies its selected listing and variant IDs through a small host adapter.
+1. Host A supplies a small navigation adapter; the widget owns trusted catalog selection.
 2. The shared Luna widget calls the same Luna API with relative `/api` URLs.
 3. Host B supplies the same adapter from a visually unrelated minimal storefront.
 4. Both hosts render the same evidence and decision state; only their shells and navigation
@@ -293,8 +295,8 @@ ownership, persistence and cross-session aggregation are not implemented.
 
 ## What the judge should see
 
-This is the intended 75–90 second text product flow. Use the shared widget in Host A until the
-legacy path is deleted; do not present both comparison engines as one architecture.
+This is the intended 75–90 second text product flow. Host A's `#/Compare` route mounts the
+shared widget directly; there is no second comparison engine.
 
 | Time | Visible action | What to say |
 |---|---|---|
@@ -328,6 +330,6 @@ operations loop without another model pipeline.
 
 **Honest current claim:** The backend intelligence is implemented and evaluated, and one shared
 widget completes the same cited buyer decision, correction and demo-session seller-report
-journey in two independent hosts. Host A's legacy browser comparison path still needs deletion,
-deployment is incomplete, and voice stays out of the main demo because the real run had no
+journey in two independent hosts. Host A's superseded browser comparison path is deleted.
+Deployment is incomplete, and voice stays out of the main demo because the real run had no
 audible output even though captions and mutation worked.

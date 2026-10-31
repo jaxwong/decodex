@@ -9,8 +9,9 @@
   OpenAI calls. API keys never enter browser code.
 - Root `package.json` and `package-lock.json` are the only npm workspace/lock owners.
 
-Host A imports `LunaWidget` from `@luna/widget`; the deleted `src/luna` path has no wrapper.
-The host supplies only selection/navigation behavior. The widget uses relative `/api` routes.
+Host A imports `LunaWidget` from `@luna/widget`; neither `src/luna` nor `src/compare` exists.
+The host supplies navigation behavior. The widget owns canonical catalog selection and uses
+relative `/api` routes.
 
 ## Implemented
 
@@ -34,13 +35,14 @@ make e2e
 ```
 
 `make e2e` makes no provider call. It uses frozen evidence, an injected SDK-shaped text
-response and a labelled browser WebRTC test double. Current result on this branch: five passed,
-one intentional Host B skip for the single shared-package transport lifecycle test.
+response and a labelled browser WebRTC test double. Current result on this branch: seven
+passed, one intentional Host B skip for the single shared-package transport lifecycle test.
 
 ## Remaining and explicitly unverified
 
-- Host A's legacy `src/compare` path still owns a parallel comparison and browser OpenAI-key
-  route. It is superseded but not yet deleted.
+- Host A cart IDs are not mapped to an authorized marketplace catalog. The demo therefore asks
+  buyers to choose exact backend variants in Luna instead of treating clone cart data as
+  evidence.
 - One real paid microphone run produced captions and a visible revision 0→1 but no audible Luna
   response. It was not retried; G4 failed and voice is excluded from the main demo.
 - The full cross-product review-aspect view, Docker/Render deployment and public smoke proof
