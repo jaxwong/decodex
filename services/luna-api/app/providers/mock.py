@@ -113,7 +113,7 @@ class MockCatalogProvider:
                 listing_id=listing["listing_id"],
                 title=listing["title"],
                 synthetic=listing["synthetic"],
-                image_url=None,
+                image_url=listing.get("image_url"),
                 preview="Fabricated demo listing; exact variant selection required.",
                 variants=[
                     CatalogVariant(

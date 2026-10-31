@@ -2,6 +2,7 @@
 
 No marketplace access. Labels are never included in extraction request payloads.
 """
+import base64
 import hashlib
 import json
 from pathlib import Path
@@ -24,6 +25,14 @@ LANDED_PRICE_COMPONENTS = {
 
 # Reviewers on Breeze's 65W demo SKU report experienced capacity that contradicts the
 # seller's consistent 20 Ah claim. Two distinct reviews meet DISPUTE_MIN_REVIEWS.
+# Storefront titles and product images. Images are drawn renders of fictional products, inlined
+# as data URIs so every host, including the single-file build, shows them without a file server.
+PRODUCTS = {
+    'Atlas': ('Atlas Portable Power Bank', 'atlas.svg'),
+    'Breeze': ('Breeze Slim Power Bank', 'breeze.svg'),
+    'Comet': ('Comet Travel Power Bank', 'comet.svg'),
+}
+
 DISPUTING_REVIEWS = {
     'listingB': ('65w', 'capacity_mah', [
         ('Charges my phone twice, nowhere near 20000mAh.',
@@ -36,6 +45,22 @@ DISPUTING_REVIEWS = {
 
 def write(name, value):
     (ROOT / name).write_text(json.dumps(value, indent=2) + '\n')
+
+
+def image_data_uri(file_name):
+    encoded = base64.b64encode((ROOT / 'images' / file_name).read_bytes()).decode()
+    return f'data:image/svg+xml;base64,{encoded}'
+
+
+# Star ratings follow each review's labelled sentiment so the storefront average reads like a
+# real listing. Nothing in comparison evidence or ranking reads the rating.
+def review_rating(mentions):
+    sentiments = {sentiment for _, sentiment, _ in mentions} - {'neutral'}
+    if sentiments == {'positive'}:
+        return 5
+    if sentiments == {'negative'}:
+        return 2
+    return 3 if sentiments else 4
 
 
 def source_id(item_key, location, text):
@@ -65,7 +90,7 @@ def generate():
                 attributes = [(k, t) for k, t in attributes if k != 'weight_g']
             variant = {
                 'variant_id': vid,
-                'label': f'{power}W synthetic SKU',
+                'label': f'{power}W',
                 'price_minor': 5900 + index * 1000 + power,
                 **LANDED_PRICE_COMPONENTS[lid],
                 'currency': 'SGD',
@@ -88,11 +113,13 @@ def generate():
                     'conflicting_values': ['12', '24'] if index == 2 and k == 'warranty_months' else []}
                 for k, val in zip(FIELDS, values)
             }
-        descriptions = [{'text': 'Fabricated family marketing: the 130W sibling offers Max output: 130 W.', 'variant_id': '130w'},
-                        {'text': 'Synthetic family overview. Model weights depend on the selected SKU.', 'variant_id': None}]
+        descriptions = [{'text': 'Need more power? The 130W model offers Max output: 130 W.', 'variant_id': '130w'},
+                        {'text': 'Pick the model that matches your devices. Weight depends on the model you choose.', 'variant_id': None}]
         if index == 2:
             descriptions.extend({'text': 'Warranty: 24 months', 'variant_id': v['variant_id']} for v in variants)
-        listings.append({'listing_id': lid, 'title': f'SYNTHETIC {name} power bank family', 'synthetic': True,
+        title, image_file = PRODUCTS[name]
+        listings.append({'listing_id': lid, 'title': title, 'synthetic': True,
+                         'image_url': image_data_uri(image_file),
                          'attributes': [], 'description': descriptions, 'variants': variants})
         phrases = [
             ('It gets hot during charging.', [('heat', 'negative', 'gets hot')]),
@@ -120,7 +147,7 @@ def generate():
             rid = f'{lid}-r{n + 1:02}'
             if n >= 18:
                 labels['disputes'].setdefault(f'{lid}:{vid}', {}).setdefault(disputed_field, []).append(rid)
-            reviews.append({'review_id': rid, 'listing_id': lid, 'variant_id': vid, 'rating': 3,
+            reviews.append({'review_id': rid, 'listing_id': lid, 'variant_id': vid, 'rating': review_rating(mentions),
                             'text': text, 'created_at': None, 'source': 'fixture'})
             labels['reviews'].append({'review_id': rid, 'listing_id': lid, 'variant_id': vid,
                                      'mentions': [{'aspect': a, 'sentiment': s, 'excerpt': q} for a, s, q in mentions]})

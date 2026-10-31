@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+  <defs>
+    <linearGradient id="atlas-face" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5b616b"/>
+      <stop offset="0.55" stop-color="#33373e"/>
+      <stop offset="1" stop-color="#1f2227"/>
+    </linearGradient>
+    <linearGradient id="atlas-side" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#16181c"/>
+      <stop offset="1" stop-color="#2b2f35"/>
+    </linearGradient>
+    <linearGradient id="atlas-shine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="atlas-shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="600" fill="#f6f6f6"/>
+  <ellipse cx="310" cy="512" rx="190" ry="26" fill="url(#atlas-shadow)"/>
+  <rect x="206" y="104" width="226" height="396" rx="46" fill="url(#atlas-side)"/>
+  <rect x="172" y="88" width="226" height="396" rx="46" fill="url(#atlas-face)"/>
+  <rect x="186" y="102" width="70" height="368" rx="34" fill="url(#atlas-shine)"/>
+  <rect x="236" y="96" width="38" height="12" rx="6" fill="#0d0e10"/>
+  <rect x="296" y="96" width="38" height="12" rx="6" fill="#0d0e10"/>
+  <rect x="172" y="300" width="226" height="10" fill="#f59e0b"/>
+  <text x="285" y="236" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="40" font-weight="700" letter-spacing="8" fill="#f3f4f6">ATLAS</text>
+  <text x="285" y="268" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" letter-spacing="4" fill="#9ca3af">POWER BANK</text>
+  <circle cx="246" cy="412" r="7" fill="#f59e0b"/>
+  <circle cx="272" cy="412" r="7" fill="#f59e0b"/>
+  <circle cx="298" cy="412" r="7" fill="#f59e0b"/>
+  <circle cx="324" cy="412" r="7" fill="#4b5058"/>
+</svg>

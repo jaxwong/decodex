@@ -55,6 +55,56 @@ def test_catalog_requires_active_session_and_returns_provider_projection() -> No
     first_variant = response.json()["listings"][0]["variants"][0]
     assert first_variant["shipping_minor"] == 1500
     assert first_variant["shop_voucher_minor"] == 0
+    assert all(
+        listing["image_url"].startswith("data:image/svg+xml;base64,")
+        for listing in response.json()["listings"]
+    )
+
+
+def test_catalog_search_matches_titles_and_bounds_the_query() -> None:
+    client, headers = create_authorized_client()
+
+    all_matches = client.get("/api/catalog", params={"q": "power bank"}, headers=headers)
+    one_match = client.get("/api/catalog", params={"q": "SLIM"}, headers=headers)
+    no_match = client.get("/api/catalog", params={"q": "iPhone"}, headers=headers)
+    oversized = client.get("/api/catalog", params={"q": "x" * 101}, headers=headers)
+
+    assert [listing["listing_id"] for listing in all_matches.json()["listings"]] == [
+        "listingA",
+        "listingB",
+        "listingC",
+    ]
+    assert [listing["title"] for listing in one_match.json()["listings"]] == [
+        "Breeze Slim Power Bank"
+    ]
+    assert no_match.json() == {"listings": []}
+    assert oversized.status_code == 422
+
+
+def test_storefront_listing_returns_seller_text_and_every_review() -> None:
+    client, headers = create_authorized_client()
+
+    unauthorized = client.get("/api/catalog/listingC")
+    unknown = client.get("/api/catalog/listingZ", headers=headers)
+    response = client.get("/api/catalog/listingC", headers=headers)
+
+    assert unauthorized.status_code == 401
+    assert unknown.status_code == 400
+    assert unknown.json()["error"]["code"] == "UNKNOWN_LISTING"
+    assert response.status_code == 200
+    page = response.json()
+    assert page["title"] == "Comet Travel Power Bank"
+    assert page["synthetic"] is True
+    assert page["image_url"].startswith("data:image/svg+xml;base64,")
+    # Comet's seller lists 12 months in the spec table and 24 months in the description.
+    first_variant = page["variants"][0]
+    assert first_variant["variant_id"] == "87w"
+    assert first_variant["label"] == "87W"
+    assert "Warranty: 1 year" in first_variant["specifications"]
+    assert not any(line.startswith("Weight") for line in first_variant["specifications"])
+    assert {"text": "Warranty: 24 months", "variant_id": "87w"} in page["description"]
+    assert len(page["reviews"]) == 18
+    assert {review["rating"] for review in page["reviews"]} <= {1, 2, 3, 4, 5}
 
 
 def test_create_and_get_comparison_returns_canonical_session_state() -> None:

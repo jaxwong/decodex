@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+  <defs>
+    <linearGradient id="comet-face" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3b5bc4"/>
+      <stop offset="0.6" stop-color="#1e3a8a"/>
+      <stop offset="1" stop-color="#132559"/>
+    </linearGradient>
+    <linearGradient id="comet-side" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0c1838"/>
+      <stop offset="1" stop-color="#18307a"/>
+    </linearGradient>
+    <linearGradient id="comet-tail" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#fbbf24" stop-opacity="0"/>
+      <stop offset="1" stop-color="#fbbf24"/>
+    </linearGradient>
+    <radialGradient id="comet-shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="600" fill="#f6f6f6"/>
+  <ellipse cx="312" cy="494" rx="170" ry="24" fill="url(#comet-shadow)"/>
+  <circle cx="200" cy="150" r="34" fill="none" stroke="#9ca3af" stroke-width="10"/>
+  <rect x="210" y="166" width="236" height="316" rx="58" fill="url(#comet-side)"/>
+  <rect x="186" y="150" width="236" height="316" rx="58" fill="url(#comet-face)"/>
+  <rect x="254" y="144" width="34" height="11" rx="5.5" fill="#0a1430"/>
+  <rect x="306" y="144" width="34" height="11" rx="5.5" fill="#0a1430"/>
+  <path d="M236 330 L 318 262" stroke="url(#comet-tail)" stroke-width="14" stroke-linecap="round"/>
+  <path d="M250 352 L 312 300" stroke="url(#comet-tail)" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="324" cy="258" r="20" fill="#fbbf24"/>
+  <text x="304" y="408" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="38" font-weight="700" letter-spacing="7" fill="#f8fafc">COMET</text>
+  <text x="304" y="436" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" letter-spacing="2.5" fill="#a5b4fc">TRAVEL POWER BANK</text>
+</svg>
