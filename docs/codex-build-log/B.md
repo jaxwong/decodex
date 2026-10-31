@@ -7,6 +7,7 @@
 **Files changed:**
 
 - `services/luna-api/app/main.py`
+- `services/luna-api/pyproject.toml`
 - `services/luna-api/app/contracts/session.py`
 - `services/luna-api/app/decision/sessions.py`
 - `services/luna-api/app/routes/health.py`
@@ -97,3 +98,77 @@ exit 0
 make --dry-run api-capability-smoke
 exit 0
 ```
+
+## B2: deterministic sessions and four decision tools — 31 October 2026
+
+**Outcome:** Added session-owned comparison state over A's frozen `ComparisonEvidence`, authenticated catalog/create/get routes, deterministic hard filtering and lexicographic ranking, exactly four decision tools, stable HTTP errors and optimistic revision conflicts. B2 tests make zero model calls and use A's frozen fixture only from the test tree.
+
+**Ownership and limits:**
+
+- One `DemoSessionState` owns its comparison responses; another session receives the same not-found response as an unknown ID.
+- `apply_preferences` is the only mutation and commits one revision after validating `expected_revision`.
+- Comparison creation calls the injected A evidence builder exactly once; runtime has no fixture or alternate fallback.
+- Ranking never scores missing facts or review reliability, never retries and does not force a winner without an objective priority.
+- B did not modify A-owned evidence/provider files after the merged baseline exposed their formatting, lint, typing and test-collection failures.
+
+**Files changed:**
+
+- `CHANGELOG.md`
+- `services/luna-api/app/contracts/session.py`
+- `services/luna-api/app/decision/{sessions,comparisons,ranking,tools}.py`
+- `services/luna-api/app/errors.py`
+- `services/luna-api/app/routes/{session_auth,catalog,comparisons}.py`
+- `services/luna-api/app/main.py`
+- `services/luna-api/tests/decision/**`
+- `services/luna-api/tests/routes/test_comparisons.py`
+- `services/luna-api/README.md`
+- `docs/codex-build-log/B.md`
+
+**B-owned verification:**
+
+```text
+uv --cache-dir /tmp/decodex-uv-cache run --frozen ruff format --check <B2 paths>
+18 files already formatted
+exit 0
+
+uv --cache-dir /tmp/decodex-uv-cache run --frozen ruff check <B2 paths>
+All checks passed!
+exit 0
+
+uv --cache-dir /tmp/decodex-uv-cache run --frozen pytest -q tests/decision tests/routes tests/openai
+................................                                         [100%]
+32 passed in 0.46s
+exit 0
+
+uv --cache-dir /tmp/decodex-uv-cache run --frozen pytest -q
+........................................................................ [ 60%]
+...............................................                          [100%]
+119 passed in 0.63s
+exit 0
+
+POST /api/demo-sessions
+HTTP 201, token length 43, one-hour UTC expiry
+
+GET /api/catalog without token
+HTTP 401 SESSION_REQUIRED
+
+GET /api/catalog with bearer token
+HTTP 200, 3 listings, 12 exact variants
+```
+
+**Merged baseline defects outside B ownership:**
+
+```text
+make
+20 A-owned files would be reformatted
+exit 2
+
+uv run --frozen mypy <B2 paths>
+MYPY_RAW_EXIT=1
+MYPY_ALL_ERRORS=39
+MYPY_B2_ERRORS=0
+All 39 errors are in 9 imported A-owned evidence/provider files.
+exit 1
+```
+
+The initial full pytest collection error for root `eval` imports was B-owned configuration, not an A defect. Adding the repository root to pytest's configured Python path made the unchanged evaluation tests pass (`7 passed`) and restored full-suite collection.
