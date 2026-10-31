@@ -26,7 +26,8 @@ No fingerprint is retrofitted into the old paid artifact.
 
 B's separate 28-request artifact passes its existing evidence/scenario/text-agent
 hash checks and retains `status: partial`, including both failed scenarios. Server
-state outcomes are not browser UI verification. The final scorecard explicitly
+state outcomes are not browser UI verification. That binding does not fingerprint
+every API/decision dependency. The final scorecard explicitly
 marks matched browser friction, a prose-only agent baseline and cost unavailable
 until their actual measurements or verified pricing exist. A4's measured report
 is ready to consume; passing every agent scenario and completing G2/G3 remain
