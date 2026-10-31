@@ -32,3 +32,4 @@ select = ["B", "E", "F", "I", "RUF", "SIM", "UP"]
 python_version = "3.12"
 strict = true
 files = ["app", "tests"]
+mypy_path = ["$MYPY_CONFIG_FILE_DIR/../.."]
