@@ -5,6 +5,7 @@ import logging
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
+from dataclasses import dataclass
 from typing import Any
 
 from pydantic import ValidationError
@@ -13,6 +14,8 @@ from app.contracts.evidence import (
     AnalyzedComparisonItem,
     ComparisonEvidence,
     ComparisonSelection,
+    Evidence,
+    Fact,
     ReviewMention,
 )
 from app.providers import CatalogError, CatalogProvider
@@ -30,6 +33,19 @@ from .schema import SCHEMA_FIELDS
 from .validate import unresolved_facts, validate_facts
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class ReviewAnalysis:
+    """One item's paged reviews and the validated mentions extracted from its exact SKU."""
+
+    reviews: list[dict[str, Any]]
+    exact_reviews: list[dict[str, Any]]
+    mentions: dict[str, ReviewMention]
+    disputes: dict[str, set[str]]
+    analyzed_ids: set[str]
+    status: str
+    rejected_count: int
 
 
 class EvidenceBuilder:
@@ -95,9 +111,50 @@ class EvidenceBuilder:
             "snapshot_version": version,
             "synthetic": listing.get("synthetic", False),
         }
+        # The two model calls are independent, so they overlap; disputes join them afterwards.
+        # Spec validation sees seller evidence only: a review clause is never a spec source.
+        (facts, analysis_error), reviews = await asyncio.gather(
+            self._extract_facts(key, variant["variant_id"], evidence),
+            self._extract_reviews(key, listing["listing_id"], variant["variant_id"], version),
+        )
+        item["analysis_status"] = "unresolved" if analysis_error else "completed"
+        if analysis_error:
+            item["analysis_error"] = analysis_error
+        evidence.update(review_evidence(key, reviews.reviews))
+        facts = attach_disputes(facts, reviews.disputes, reviews.mentions)
+        if any(fact.disputing_mention_ids for fact in facts):
+            logger.info(
+                "Review disputes attached for %s fields=%s",
+                key,
+                sorted(f.field_key for f in facts if f.disputing_mention_ids),
+            )
+        item["review_status"] = reviews.status
+        item["review_coverage"] = {
+            "exact_reviews_analyzed": len(reviews.analyzed_ids),
+            "exact_reviews_available": len(reviews.exact_reviews),
+            "unknown_variant_reviews_excluded": sum(
+                r["variant_id"] is None for r in reviews.reviews
+            ),
+            "sibling_variant_reviews_excluded": sum(
+                r["variant_id"] not in (None, variant["variant_id"]) for r in reviews.reviews
+            ),
+            "rejected_mentions": reviews.rejected_count,
+        }
+        return {
+            "item": AnalyzedComparisonItem.model_validate(item),
+            "facts": facts,
+            "evidence": evidence,
+            "mentions": reviews.mentions,
+            "summaries": aggregate_reviews(key, reviews.mentions, reviews.analyzed_ids),
+        }
+
+    async def _extract_facts(
+        self, key: str, variant_id: str, evidence: dict[str, Evidence]
+    ) -> tuple[list[Fact], str | None]:
+        """Return validated facts and None, or unresolved facts and the failure class name."""
         request = {
             "item_key": key,
-            "variant_id": variant["variant_id"],
+            "variant_id": variant_id,
             "schema_fields": [field.model_dump(mode="json") for field in SCHEMA_FIELDS],
             "seller_evidence": [source.model_dump() for source in evidence.values()],
         }
@@ -105,28 +162,26 @@ class EvidenceBuilder:
             response = await asyncio.wait_for(
                 self.model_client.extract_specs(request), self.timeout_seconds
             )
-            facts = validate_facts(
-                SpecCandidates.model_validate(response), evidence, key, variant["variant_id"]
-            )
-            item["analysis_status"] = "completed"
+            candidates = SpecCandidates.model_validate(response)
         except (ExtractionError, TimeoutError, ValidationError) as failure:
             logger.warning(
                 "Specification extraction unavailable for %s (%s)", key, type(failure).__name__
             )
-            facts = unresolved_facts()
-            item["analysis_status"] = "unresolved"
-            item["analysis_error"] = type(failure).__name__
+            return unresolved_facts(), type(failure).__name__
+        return validate_facts(candidates, evidence, key, variant_id), None
+
+    async def _extract_reviews(
+        self, key: str, listing_id: str, variant_id: str, version: str
+    ) -> ReviewAnalysis:
         reviews: list[dict[str, Any]] = []
         mentions: dict[str, ReviewMention] = {}
         disputes: dict[str, set[str]] = {}
         analyzed_ids: set[str] = set()
-        review_status, rejected_count = "completed", 0
+        status, rejected_count = "completed", 0
         try:
             cursor, seen = None, set()
             while True:
-                page = await self.provider.get_reviews(
-                    listing["listing_id"], None, cursor=cursor, limit=50
-                )
+                page = await self.provider.get_reviews(listing_id, None, cursor=cursor, limit=50)
                 if page["snapshot_version"] != version:
                     raise CatalogError("snapshot_changed")
                 reviews.extend(page["reviews"])
@@ -138,22 +193,18 @@ class EvidenceBuilder:
                 seen.add(cursor)
         except (CatalogError, OSError, TimeoutError) as failure:
             logger.warning("Review provider unavailable for %s (%s)", key, type(failure).__name__)
-            reviews, review_status = [], "unresolved"
-        evidence.update(review_evidence(key, reviews))
-        exact_reviews = [r for r in reviews if r["variant_id"] == variant["variant_id"]]
+            reviews, status = [], "unresolved"
+        exact_reviews = [r for r in reviews if r["variant_id"] == variant_id]
         for batch in review_batches(exact_reviews):
             try:
                 review_response = await asyncio.wait_for(
                     self.model_client.extract_reviews(
-                        {"item_key": key, "variant_id": variant["variant_id"], "reviews": batch}
+                        {"item_key": key, "variant_id": variant_id, "reviews": batch}
                     ),
                     self.timeout_seconds,
                 )
                 validated = validate_review_mentions(
-                    ReviewCandidates.model_validate(review_response),
-                    batch,
-                    key,
-                    variant["variant_id"],
+                    ReviewCandidates.model_validate(review_response), batch, key, variant_id
                 )
                 mentions.update(validated.mentions)
                 for field_key, mention_ids in validated.disputes.items():
@@ -162,31 +213,10 @@ class EvidenceBuilder:
                 analyzed_ids.update(r["review_id"] for r in batch)
             except (ExtractionError, TimeoutError, ValidationError) as failure:
                 logger.warning("Review batch unavailable for %s (%s)", key, type(failure).__name__)
-                review_status = "unresolved"
-        facts = attach_disputes(facts, disputes, mentions)
-        if any(fact.disputing_mention_ids for fact in facts):
-            logger.info(
-                "Review disputes attached for %s fields=%s",
-                key,
-                sorted(f.field_key for f in facts if f.disputing_mention_ids),
-            )
-        item["review_status"] = review_status
-        item["review_coverage"] = {
-            "exact_reviews_analyzed": len(analyzed_ids),
-            "exact_reviews_available": len(exact_reviews),
-            "unknown_variant_reviews_excluded": sum(r["variant_id"] is None for r in reviews),
-            "sibling_variant_reviews_excluded": sum(
-                r["variant_id"] not in (None, variant["variant_id"]) for r in reviews
-            ),
-            "rejected_mentions": rejected_count,
-        }
-        return {
-            "item": AnalyzedComparisonItem.model_validate(item),
-            "facts": facts,
-            "evidence": evidence,
-            "mentions": mentions,
-            "summaries": aggregate_reviews(key, mentions, analyzed_ids),
-        }
+                status = "unresolved"
+        return ReviewAnalysis(
+            reviews, exact_reviews, mentions, disputes, analyzed_ids, status, rejected_count
+        )
 
 
 _builder: ContextVar[EvidenceBuilder | None] = ContextVar("evidence_builder", default=None)
