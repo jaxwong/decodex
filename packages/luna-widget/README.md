@@ -25,9 +25,15 @@ The adapter supplies:
   breakdown and every normalized specification. Each listed price component and each supported
   or conflicting specification carries its exact evidence source text/location; and
 - optional `requestAddToCart(selection)`: when supplied, each comparison column shows **Pick
-  this one**; the widget calls it only on that press and requires `{ ok: boolean }` back. The host
-  decides what follows (Host A returns to its cart with only that variant ticked; picking is not
-  buying).
+  this one**; the widget calls it only on that press and requires `{ ok: boolean }` back. On
+  `ok` the column gets a **Your pick** badge and a sticky **Your pick** bar (product, delivered
+  total) appears under the table with **Keep comparing**. The host decides what a pick means
+  (Host A ticks only that variant in its cart; picking is not buying). Picking another column
+  calls it again and moves the pick; and
+- optional `requestCheckout(selection)`: only with `requestAddToCart`. When supplied, the bar
+  also shows **Check out**, pressed explicitly by the shopper for the picked variant; the widget
+  requires `{ ok: boolean }` back and never navigates or charges anything itself (Host A opens its
+  checkout with that one line). A rebuilt comparison without the picked column drops the pick.
 
 When `getCurrentSelections()` hands over 2–4 available variants, the host owns picking: the
 widget builds the comparison at start-up and never shows its own picker. If that build fails or

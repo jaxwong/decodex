@@ -213,7 +213,8 @@ function productSnapshot(evidence, item) {
 }
 
 export function ComparisonTable({
-  comparison, onOpenCell, imagesByListing, onNavigateToListing, onAskSeller, openQuestionKeys, onPick,
+  comparison, onOpenCell, imagesByListing, onNavigateToListing, onAskSeller, openQuestionKeys,
+  pickedItemKey, onPick,
 }) {
   const [differencesOnly, setDifferencesOnly] = useState(true);
   const { evidence, recommendation, preferences } = comparison;
@@ -288,10 +289,12 @@ export function ComparisonTable({
                     View product
                   </button>
                 </span>
-                {onPick && <button type="button" className="luna-button luna-button-small"
-                  aria-label={`Pick ${itemName(item)}`} onClick={() => onPick(item)}>
-                  Pick this one
-                </button>}
+                {onPick && (item.item_key === pickedItemKey
+                  ? <span className="luna-badge luna-badge-pick">Your pick</span>
+                  : <button type="button" className="luna-button luna-button-small"
+                    aria-label={`Pick ${itemName(item)}`} onClick={() => onPick(item)}>
+                    Pick this one
+                  </button>)}
               </th>;
             })}
           </tr>
@@ -353,6 +356,7 @@ ComparisonTable.propTypes = {
   onNavigateToListing: PropTypes.func.isRequired,
   onAskSeller: PropTypes.func.isRequired,
   openQuestionKeys: PropTypes.instanceOf(Set).isRequired,
+  pickedItemKey: PropTypes.string,
   onPick: PropTypes.func,
 };
 

@@ -13,8 +13,13 @@ export function assertHostAdapter(adapter) {
       throw new TypeError(`Luna host adapter requires ${functionName}()`);
     }
   }
-  if (adapter.requestAddToCart !== undefined && typeof adapter.requestAddToCart !== 'function') {
-    throw new TypeError('Luna host adapter requestAddToCart must be a function when provided');
+  for (const optionalName of ['requestAddToCart', 'requestCheckout']) {
+    if (adapter[optionalName] !== undefined && typeof adapter[optionalName] !== 'function') {
+      throw new TypeError(`Luna host adapter ${optionalName} must be a function when provided`);
+    }
+  }
+  if (adapter.requestCheckout !== undefined && adapter.requestAddToCart === undefined) {
+    throw new TypeError('Luna host adapter requestCheckout needs requestAddToCart: a pick comes before checkout');
   }
   return adapter;
 }
