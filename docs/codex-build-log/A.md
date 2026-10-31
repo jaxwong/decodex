@@ -110,3 +110,47 @@ access, human user study, production evaluation or deployed integration is claim
   composition and agent outputs; C must render the wrapper and verify both hosts.
   Whole-app tests, browser E2E and deployment were not run on this A-only branch.
 - Human corrections: none provided. Human review and B/C integration remain pending.
+
+## A2 review against the shared API gate — 31 October 2026
+
+- Human correction: the user relayed a colleague's formatting/Makefile concern.
+  Review found that A's original pytest-only verification did not include B's
+  formatting, lint and strict typing gates. Continued on local branch
+  `fix/luna-a2-quality-gate` from merged commit `3ba5777`.
+- Installed the existing locked dependencies with
+  `UV_CACHE_DIR=/tmp/decodex-uv-cache make api-sync` (exit 0). The first sandboxed
+  attempt failed on package-host DNS; the approved network retry succeeded.
+  Dependency versions and lockfiles were not changed.
+- Initial actual results: `make api-test` stopped at formatting (20 files needed
+  formatting); `make api-lint` reported 113 errors; `make api-typecheck` reported
+  219 errors in 14 files; `make api-unit` failed collection because the root
+  `eval` package was outside the service's import path. Each Make invocation
+  exited 2. Existing focused A1/A2 behavior passed: 61 tests, exit 0.
+- Codex applied the project's existing Ruff conventions to A-owned code and
+  examples, removed unused imports, added function/collection annotations, made
+  optional provider results explicit in tests, and used the actual SDK client
+  type. Deliberately malformed test responses remain explicit boundary tests.
+  No assertions or checks were disabled. JSON-shaped dictionaries remain flexible
+  at the documented provider/model boundary.
+- Validation semantics, field names/defaults and the public evidence-builder
+  behavior are preserved. A1's generated Pydantic JSON schema was captured before
+  edits and compared afterward: identical. The frozen JSON fixture is unchanged.
+- Actual combined verification from the repository root:
+
+  ```text
+  PYTHONPATH="$PWD" MYPYPATH="$PWD" UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+  35 files already formatted
+  All checks passed!
+  Success: no issues found in 33 source files
+  101 passed in 0.79s
+  exit 0
+  ```
+
+- The environment overrides above are temporary diagnostics, not proof that
+  plain `make api-test` passes. Proposed B-owned configuration changes: pytest
+  `pythonpath = [".", "../.."]`; mypy
+  `mypy_path = ["$MYPY_CONFIG_FILE_DIR/../.."]`. User approval was requested because
+  the specification assigns that configuration to Developer B.
+- Additional A-owned eval formatting and lint checks passed with the service's
+  Ruff configuration. No evaluation artifact was regenerated, live model request
+  made, teammate message sent, deployment performed, or PR opened in this review.

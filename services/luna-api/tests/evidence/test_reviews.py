@@ -1,111 +1,160 @@
-import asyncio
-from copy import deepcopy
+from typing import Any
 
 import pytest
+from fakes import FakeModelClient
 from pydantic import ValidationError
+from test_pipeline import SELECTIONS, comparison, fact
 
 from app.contracts.evidence import ComparisonEvidence
-from app.evidence import EvidenceBuilder
 from app.evidence.model import ReviewCandidates
-from app.evidence.reviews import aggregate_reviews, review_batches, validate_review_mentions
+from app.evidence.reviews import (
+    ReviewValidation,
+    aggregate_reviews,
+    review_batches,
+    validate_review_mentions,
+)
 from app.providers import CatalogError, MockCatalogProvider
-from fakes import FakeModelClient
-from test_pipeline import SELECTIONS, comparison, fact, run
 
 
-def validate(review_id='r1', excerpt='gets hot', variant_id='100w'):
-    reviews = [{'review_id': 'r1', 'variant_id': variant_id, 'text': 'It gets hot but charges fast.'}]
-    candidates = ReviewCandidates(mentions=[{'review_id': review_id, 'aspect': 'heat', 'sentiment': 'negative', 'excerpt': excerpt}])
-    return validate_review_mentions(candidates, reviews, 'listingA:100w', '100w')
+def validate(
+    review_id: str = "r1", excerpt: str = "gets hot", variant_id: str | None = "100w"
+) -> ReviewValidation:
+    reviews = [
+        {"review_id": "r1", "variant_id": variant_id, "text": "It gets hot but charges fast."}
+    ]
+    candidates = ReviewCandidates.model_validate(
+        {
+            "mentions": [
+                {
+                    "review_id": review_id,
+                    "aspect": "heat",
+                    "sentiment": "negative",
+                    "excerpt": excerpt,
+                }
+            ]
+        }
+    )
+    return validate_review_mentions(candidates, reviews, "listingA:100w", "100w")
 
 
-def test_review_quote_must_be_substring():
-    assert validate(excerpt='dangerously overheats').mentions == {}
+def test_review_quote_must_be_substring() -> None:
+    assert validate(excerpt="dangerously overheats").mentions == {}
     assert validate().rejected_count == 0
     assert validate().mentions
 
 
-@pytest.mark.parametrize('excerpt', ['', ' ', 'Gets hot', 'gets HOT'])
-def test_empty_or_case_changed_review_quotes_rejected(excerpt):
+@pytest.mark.parametrize("excerpt", ["", " ", "Gets hot", "gets HOT"])
+def test_empty_or_case_changed_review_quotes_rejected(excerpt: str) -> None:
     assert validate(excerpt=excerpt).rejected_count == 1
 
 
-def test_review_unknown_variant_not_exact_sku():
+def test_review_unknown_variant_not_exact_sku() -> None:
     assert validate(variant_id=None).mentions == {}
     result = comparison()
-    assert all(item['review_coverage']['unknown_variant_reviews_excluded'] == 2 for item in result.items)
+    assert all(
+        item["review_coverage"]["unknown_variant_reviews_excluded"] == 2 for item in result.items
+    )
     for mention in result.review_mentions.values():
-        sources = [s for s in result.evidence.values() if s.item_key == mention.item_key and s.review_id == mention.review_id]
-        assert sources and all(s.variant_id == mention.item_key.split(':')[-1] for s in sources)
+        sources = [
+            s
+            for s in result.evidence.values()
+            if s.item_key == mention.item_key and s.review_id == mention.review_id
+        ]
+        assert sources and all(s.variant_id == mention.item_key.split(":")[-1] for s in sources)
 
 
-def test_sibling_review_not_exact_sku():
-    assert validate(variant_id='130w').rejected_count == 1
+def test_sibling_review_not_exact_sku() -> None:
+    assert validate(variant_id="130w").rejected_count == 1
 
 
-def test_unknown_review_id_rejected():
-    assert validate(review_id='invented').rejected_count == 1
+def test_unknown_review_id_rejected() -> None:
+    assert validate(review_id="invented").rejected_count == 1
 
 
-def test_multi_aspect_review_extraction():
+def test_multi_aspect_review_extraction() -> None:
     result = comparison()
-    mentions = [m for m in result.review_mentions.values() if m.item_key == 'listingA:100w' and m.review_id == 'listingA-r11']
-    assert {(m.aspect, m.sentiment) for m in mentions} == {('heat', 'negative'), ('charging', 'positive')}
+    mentions = [
+        m
+        for m in result.review_mentions.values()
+        if m.item_key == "listingA:100w" and m.review_id == "listingA-r11"
+    ]
+    assert {(m.aspect, m.sentiment) for m in mentions} == {
+        ("heat", "negative"),
+        ("charging", "positive"),
+    }
 
 
-def test_mixed_sentiment_unique_review_aggregation():
+def test_mixed_sentiment_unique_review_aggregation() -> None:
     result = comparison()
     mentions = result.review_mentions
-    summary = next(s for s in result.review_summaries if s.item_key == 'listingA:100w' and s.aspect == 'heat')
+    summary = next(
+        s for s in result.review_summaries if s.item_key == "listingA:100w" and s.aspect == "heat"
+    )
     assert (summary.positive_count, summary.negative_count, summary.analyzed_reviews) == (2, 3, 14)
-    mixed = [m for m in mentions.values() if m.review_id == 'listingA-r12']
-    assert {m.sentiment for m in mixed} == {'positive', 'negative'}
-    duplicate = next(m for m in mixed if m.sentiment == 'negative')
-    repeated = dict(mentions, extra=duplicate.model_copy(update={'id': 'extra', 'excerpt': 'hot'}))
-    recomputed = aggregate_reviews('listingA:100w', repeated, {f'listingA-r{n:02}' for n in range(1, 15)})
-    assert next(s for s in recomputed if s.aspect == 'heat').negative_count == 3
+    mixed = [m for m in mentions.values() if m.review_id == "listingA-r12"]
+    assert {m.sentiment for m in mixed} == {"positive", "negative"}
+    duplicate = next(m for m in mixed if m.sentiment == "negative")
+    repeated = dict(mentions, extra=duplicate.model_copy(update={"id": "extra", "excerpt": "hot"}))
+    recomputed = aggregate_reviews(
+        "listingA:100w", repeated, {f"listingA-r{n:02}" for n in range(1, 15)}
+    )
+    assert next(s for s in recomputed if s.aspect == "heat").negative_count == 3
 
 
-def test_failed_review_batch_not_counted_as_analyzed():
+def test_failed_review_batch_not_counted_as_analyzed() -> None:
     model = FakeModelClient()
     model.review_failure = True
     result = comparison(model)
     assert not result.review_mentions
     assert all(s.analyzed_reviews == 0 for s in result.review_summaries)
-    assert all(item['review_status'] == 'unresolved' for item in result.items)
-    assert fact(result, 'listingA:100w', 'weight_g').value == 420
+    assert all(item["review_status"] == "unresolved" for item in result.items)
+    assert fact(result, "listingA:100w", "weight_g").value == 420
 
 
-def test_review_provider_failure_preserves_specs():
+def test_review_provider_failure_preserves_specs() -> None:
     class UnavailableReviewProvider(MockCatalogProvider):
-        async def get_reviews(self, *args, **kwargs):
-            raise CatalogError('provider_unavailable')
+        async def get_reviews(
+            self,
+            listing_id: str,
+            variant_id: str | None,
+            cursor: str | None = None,
+            limit: int = 50,
+        ) -> dict[str, Any]:
+            raise CatalogError("provider_unavailable")
+
     result = comparison(provider=UnavailableReviewProvider())
-    assert fact(result, 'listingA:100w', 'max_output_w').value == 100
-    assert all(item['review_status'] == 'unresolved' for item in result.items)
+    assert fact(result, "listingA:100w", "max_output_w").value == 100
+    assert all(item["review_status"] == "unresolved" for item in result.items)
 
 
-def test_changed_snapshot_excludes_review_batch():
+def test_changed_snapshot_excludes_review_batch() -> None:
     class ChangedProvider(MockCatalogProvider):
-        async def get_reviews(self, *args, **kwargs):
-            page = await super().get_reviews(*args, **kwargs)
-            page['snapshot_version'] = 'changed'
+        async def get_reviews(
+            self,
+            listing_id: str,
+            variant_id: str | None,
+            cursor: str | None = None,
+            limit: int = 50,
+        ) -> dict[str, Any]:
+            page = await super().get_reviews(listing_id, variant_id, cursor=cursor, limit=limit)
+            page["snapshot_version"] = "changed"
             return page
+
     result = comparison(provider=ChangedProvider())
     assert not result.review_mentions
-    assert all(item['review_status'] == 'unresolved' for item in result.items)
+    assert all(item["review_status"] == "unresolved" for item in result.items)
 
 
-def test_unknown_review_variant_classification_before_model():
+def test_unknown_review_variant_classification_before_model() -> None:
     model = FakeModelClient()
     comparison(model)
     assert len(model.review_requests) == 3
     for request in model.review_requests:
-        assert len(request['reviews']) == 14
-        assert all(r['variant_id'] == request['variant_id'] for r in request['reviews'])
+        assert len(request["reviews"]) == 14
+        assert all(r["variant_id"] == request["variant_id"] for r in request["reviews"])
 
 
-def test_review_bounded_batch_sizes():
+def test_review_bounded_batch_sizes() -> None:
     assert [len(batch) for batch in review_batches([{}] * 21)] == [11, 10]
     assert [len(batch) for batch in review_batches([{}] * 54)] == [18, 18, 18]
     assert review_batches([]) == []
@@ -114,45 +163,63 @@ def test_review_bounded_batch_sizes():
         assert sum(map(len, batches)) == count and all(10 <= len(batch) <= 20 for batch in batches)
 
 
-def test_contract_rejects_hallucinated_review_quote():
+def test_contract_rejects_hallucinated_review_quote() -> None:
     result = comparison().model_dump()
-    next(iter(result['review_mentions'].values()))['excerpt'] = 'fabricated dangerous defect'
+    next(iter(result["review_mentions"].values()))["excerpt"] = "fabricated dangerous defect"
     with pytest.raises(ValidationError):
         ComparisonEvidence.model_validate(result)
 
 
-def test_contract_rejects_wrong_review_summary_counts():
+def test_contract_rejects_wrong_review_summary_counts() -> None:
     result = comparison().model_dump()
-    result['review_summaries'][0]['negative_count'] = 999
+    result["review_summaries"][0]["negative_count"] = 999
     with pytest.raises(ValidationError):
         ComparisonEvidence.model_validate(result)
 
 
-def test_malformed_review_output_abstains():
+def test_malformed_review_output_abstains() -> None:
     class InvalidReviewClient(FakeModelClient):
-        async def extract_reviews(self, request):
-            return {'mentions': [{'aspect': 'explosion', 'excerpt': 'invented'}]}
+        async def extract_reviews(self, request: dict[str, Any]) -> Any:
+            # This test deliberately supplies a malformed external response.
+            return {"mentions": [{"aspect": "explosion", "excerpt": "invented"}]}
+
     result = comparison(InvalidReviewClient())
     assert not result.review_mentions
-    assert all(item['review_status'] == 'unresolved' for item in result.items)
+    assert all(item["review_status"] == "unresolved" for item in result.items)
 
 
-def test_partially_failed_review_batches_keep_successful_denominator():
+def test_partially_failed_review_batches_keep_successful_denominator() -> None:
     class ManyReviewsProvider(MockCatalogProvider):
-        async def get_reviews(self, listing_id, variant_id, cursor=None, limit=50):
+        async def get_reviews(
+            self,
+            listing_id: str,
+            variant_id: str | None,
+            cursor: str | None = None,
+            limit: int = 50,
+        ) -> dict[str, Any]:
             page = await super().get_reviews(listing_id, variant_id, cursor=cursor, limit=limit)
             if cursor is None:
-                review = next(r for r in page['reviews'] if r['variant_id'] == SELECTIONS[0]['variant_id']) if listing_id == 'listingA' else None
+                review = (
+                    next(
+                        r for r in page["reviews"] if r["variant_id"] == SELECTIONS[0]["variant_id"]
+                    )
+                    if listing_id == "listingA"
+                    else None
+                )
                 if review:
-                    page['reviews'].extend(dict(review, review_id=f'extra-{i}') for i in range(10))
+                    page["reviews"].extend(dict(review, review_id=f"extra-{i}") for i in range(10))
             return page
+
     class PartialReviewClient(FakeModelClient):
-        async def extract_reviews(self, request):
-            if any(r['review_id'] == 'extra-9' for r in request['reviews']):
-                raise TimeoutError('Injected second-batch failure')
+        async def extract_reviews(self, request: dict[str, Any]) -> ReviewCandidates:
+            if any(r["review_id"] == "extra-9" for r in request["reviews"]):
+                raise TimeoutError("Injected second-batch failure")
             return await super().extract_reviews(request)
+
     result = comparison(PartialReviewClient(), provider=ManyReviewsProvider())
-    summary = next(s for s in result.review_summaries if s.item_key == 'listingA:100w' and s.aspect == 'heat')
+    summary = next(
+        s for s in result.review_summaries if s.item_key == "listingA:100w" and s.aspect == "heat"
+    )
     assert summary.analyzed_reviews == 12
-    assert result.items[0]['review_status'] == 'unresolved'
-    assert result.items[0]['review_coverage']['exact_reviews_available'] == 24
+    assert result.items[0]["review_status"] == "unresolved"
+    assert result.items[0]["review_coverage"]["exact_reviews_available"] == 24
