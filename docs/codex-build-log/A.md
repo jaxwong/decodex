@@ -284,3 +284,70 @@ access, human user study, production evaluation or deployed integration is claim
 - Final source/artifact audit: changed paths are A-owned; the fixture, canonical
   evidence contract and data sources are unchanged; both live canonical graphs
   validate; source hashes match; no secret value is present in candidate files.
+
+## A4 final scorecard after B8 handoff — 31 October 2026
+
+- Human request: A4 is unblocked; continue and complete the evaluation work.
+  Started `feat/luna-a4-final-scorecard` from handoff main `e206816` with a clean
+  worktree. Read specification sections 1.2, 10.1–10.3 and B's B8 handoff.
+- B's current artifact passes its existing evidence/scenario/text-agent hashes:
+  28/44 requests, partial status, 10/12 scenarios, tool behavior 10/11, server-state
+  outcome 11/12, citations 4/5, correction 1/1 and stale-turn protection 1/1.
+  `review_query` and `no_comparable_winner` remain failed. No B runtime/tool code
+  was changed, and no paid rerun was made.
+- Reproduced the reporting gap before editing: a focused test failed with
+  `KeyError: recorded_evidence_evaluation`. Plain `make eval` projected the agent
+  artifact but marked the already executed evidence benchmarks unavailable.
+- Codex added `eval/scorecard.py` and integrated it into `eval/run.py`. The free
+  command now re-scores stored actual predictions and generates canonical
+  `eval/results.json` plus the readable `eval/SCORECARD.md` from the same result.
+  Source/label hashes, exact catalog selections, original provider-indexed seller
+  and review strings, evidence relationships, request accounting, retained
+  free-form facts and stored-versus-recomputed ratios are validated.
+- The older 36-request evidence artifact has no recorded implementation digest.
+  Its source-valid measurements are explicitly historical and
+  `current_implementation_verified: false`; they are not a new live verification
+  of B's subsequent typed-contract/runtime refactor. Future explicitly authorized
+  live runs record extraction/provider/contract/runtime code, SDK and Pydantic
+  fingerprints. The old artifact was not retrofitted or rewritten.
+- Thirteen new offline cases cover aggregation, immutable paid artifacts, changed
+  source hashes/text, unknown citations, altered metrics/request counts, missing
+  selections, free-form output/scored-fact mismatch, code freshness, legacy
+  freshness, partial results, unavailable artifacts and absence of model clients.
+  Partial-agent consumer tests use a test-only handoff so legitimate future agent
+  changes or paid results do not turn a historical 10/12 score into a required
+  program invariant. No test-generated benchmark artifact is published.
+- Verification before the latest-main integration:
+
+  ```text
+  UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+  57 files already formatted
+  All checks passed!
+  Success: no issues found in 55 source files
+  183 passed in 1.12s
+  exit 0
+
+  UV_CACHE_DIR=/tmp/decodex-uv-cache make eval
+  live=false
+  recorded_evidence=true
+  agent=true
+  exit 0
+  ```
+
+- Explicitly unavailable: matched browser friction counts, the prose-only agent
+  comparison, and cost without verified pricing. Server-state outcomes are not
+  browser verification. G2/G3, microphone acceptance and deployment are outside
+  this report. All samples and labels remain synthetic and not independently
+  human-adjudicated. No remaining metric was filled with a guessed zero.
+- The original paid artifacts, frozen fixture, catalog/review/label files,
+  production code and B/C configuration were left unchanged. New model requests
+  in this work: **zero**. Final changes stay in A-owned evaluation, tests and log.
+
+- Merged latest main `b17dbba` before publishing, preserving B9's ranking-reason
+  and seller-report work without modifying it. The producer's B8 artifact still
+  passes its evidence/scenario/text-agent binding; the scorecard explicitly says
+  this is not a fingerprint of every downstream application dependency.
+  Final plain API gate: **61 files formatted, lint passed, 59 sources strictly
+  typed, 194 tests passed in 1.29s, exit 0**. Final `make eval` again exited 0 with
+  `live=false`, `recorded_evidence=true`, `agent=true`. The original paid artifacts
+  remain byte-for-byte unchanged. No additional model request was made.

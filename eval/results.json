@@ -67,7 +67,7 @@
         "denominator": 51
       }
     },
-    "observed_corpus_latency_ms": 2.6844580424949527,
+    "observed_corpus_latency_ms": 3.139541018754244,
     "tokens": {
       "available": false,
       "reason": "No model called for deterministic baseline"
@@ -79,11 +79,232 @@
   },
   "grounded_structured_outputs": {
     "available": false,
-    "reason": "Not executed; requires explicit --live and API credentials"
+    "reason": "No new extraction in this invocation; see recorded_evidence_evaluation"
   },
   "ungrounded_free_form": {
     "available": false,
-    "reason": "No live free-form baseline executed"
+    "reason": "No new extraction in this invocation; see recorded_evidence_evaluation"
+  },
+  "recorded_evidence_evaluation": {
+    "available": true,
+    "basis": "actual_live_predictions_rescored_offline",
+    "status": "completed",
+    "executed_at_utc": "2026-10-31T04:30:39.041647+00:00",
+    "model": "gpt-6-luna",
+    "artifact": "eval/live-results.json",
+    "artifact_sha256": "5a09832e9337018ec64aea90de140afacb53b3f87d64aa113243cfb50cf42fb5",
+    "source_snapshot_verified": true,
+    "smoke_revalidated": true,
+    "implementation_status": "not_recorded",
+    "current_implementation_verified": false,
+    "attempted_requests": 36,
+    "requests_by_stage": {
+      "smoke": 6,
+      "grounded": 18,
+      "free_form": 12
+    },
+    "smoke_tokens": {
+      "observed_totals": {
+        "input_tokens": 8037,
+        "output_tokens": 3398,
+        "total_tokens": 11435
+      },
+      "responses_with_usage": 6,
+      "attempted_requests": 6,
+      "complete": true
+    },
+    "grounded_structured_outputs": {
+      "available": true,
+      "model": "gpt-6-luna",
+      "response_models": [
+        "gpt-6-luna"
+      ],
+      "status": "completed",
+      "analysis_statuses": [
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed"
+      ],
+      "review_statuses": [
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed",
+        "completed"
+      ],
+      "comparison_latency_ms": {
+        "samples": [
+          10051.480333000654,
+          8481.054375006352,
+          9817.197750002379
+        ],
+        "p50": 9817.197750002379,
+        "p95_nearest_rank": 10051.480333000654,
+        "sample_count": 3
+      },
+      "tokens": {
+        "observed_totals": {
+          "input_tokens": 23867,
+          "output_tokens": 8960,
+          "total_tokens": 32827
+        },
+        "responses_with_usage": 18,
+        "attempted_requests": 18,
+        "complete": true
+      },
+      "cost": {
+        "available": false,
+        "reason": "No verified pricing configured; usage is reported without guessed cost"
+      },
+      "metrics": {
+        "exact_variant_accuracy": {
+          "value": 1.0,
+          "numerator": 12,
+          "denominator": 12
+        },
+        "supported_field_accuracy": {
+          "value": 1.0,
+          "numerator": 88,
+          "denominator": 88
+        },
+        "evidence_precision": {
+          "value": 1.0,
+          "numerator": 96,
+          "denominator": 96
+        },
+        "unsupported_claim_rate": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 88
+        },
+        "missing_field_recall": {
+          "value": 1.0,
+          "numerator": 4,
+          "denominator": 4
+        },
+        "contradiction_recall": {
+          "value": 1.0,
+          "numerator": 4,
+          "denominator": 4
+        },
+        "variant_leakage_rate": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 12
+        },
+        "review_mention_precision": {
+          "value": 1.0,
+          "numerator": 49,
+          "denominator": 49
+        },
+        "review_mention_recall": {
+          "value": 0.9607843137254902,
+          "numerator": 49,
+          "denominator": 51
+        }
+      }
+    },
+    "ungrounded_free_form": {
+      "available": true,
+      "model": "gpt-6-luna",
+      "response_models": [
+        "gpt-6-luna"
+      ],
+      "task": "specifications_only",
+      "latency_per_item_ms": [
+        4186.721541016595,
+        4510.2573330223095,
+        4641.424292000011,
+        4960.938790987711,
+        5196.296125010122,
+        4316.99620798463,
+        4454.252583003836,
+        4470.045874972129,
+        5122.859708004398,
+        5230.837500013877,
+        5004.678249999415,
+        5530.670582986204
+      ],
+      "tokens": {
+        "observed_totals": {
+          "input_tokens": 16634,
+          "output_tokens": 6144,
+          "total_tokens": 22778
+        },
+        "responses_with_usage": 12,
+        "attempted_requests": 12,
+        "complete": true
+      },
+      "cost": {
+        "available": false,
+        "reason": "No verified pricing configured"
+      },
+      "review_metrics": {
+        "available": false,
+        "reason": "Free-form baseline extracts specifications only"
+      },
+      "metrics": {
+        "exact_variant_accuracy": {
+          "value": 1.0,
+          "numerator": 12,
+          "denominator": 12
+        },
+        "supported_field_accuracy": {
+          "value": 1.0,
+          "numerator": 88,
+          "denominator": 88
+        },
+        "evidence_precision": {
+          "value": 0.9583333333333334,
+          "numerator": 92,
+          "denominator": 96
+        },
+        "unsupported_claim_rate": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 88
+        },
+        "missing_field_recall": {
+          "value": 1.0,
+          "numerator": 4,
+          "denominator": 4
+        },
+        "contradiction_recall": {
+          "value": 0.5,
+          "numerator": 2,
+          "denominator": 4
+        },
+        "variant_leakage_rate": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 12
+        }
+      }
+    }
+  },
+  "friction_proxy": {
+    "available": false,
+    "reason": "Matched manual and agent browser interaction counts have not been measured"
+  },
+  "prose_only_agent_baseline": {
+    "available": false,
+    "reason": "No prose-only assistant run on the same twelve scenarios was supplied"
   },
   "agent_output_evaluation": {
     "schema_version": 1,
