@@ -1,0 +1,1605 @@
+{
+  "synthetic": true,
+  "items": {
+    "listingA:100w": {
+      "capacity_mah": {
+        "status": "supported",
+        "value": 20000,
+        "conflicting_values": []
+      },
+      "max_output_w": {
+        "status": "supported",
+        "value": 100,
+        "conflicting_values": []
+      },
+      "usb_c_ports": {
+        "status": "supported",
+        "value": 2,
+        "conflicting_values": []
+      },
+      "weight_g": {
+        "status": "supported",
+        "value": 420,
+        "conflicting_values": []
+      },
+      "max_input_w": {
+        "status": "supported",
+        "value": 65,
+        "conflicting_values": []
+      },
+      "pd_supported": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "included_cable": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "warranty_months": {
+        "status": "supported",
+        "value": 12,
+        "conflicting_values": []
+      }
+    },
+    "listingA:130w": {
+      "capacity_mah": {
+        "status": "supported",
+        "value": 20000,
+        "conflicting_values": []
+      },
+      "max_output_w": {
+        "status": "supported",
+        "value": 130,
+        "conflicting_values": []
+      },
+      "usb_c_ports": {
+        "status": "supported",
+        "value": 2,
+        "conflicting_values": []
+      },
+      "weight_g": {
+        "status": "supported",
+        "value": 420,
+        "conflicting_values": []
+      },
+      "max_input_w": {
+        "status": "supported",
+        "value": 65,
+        "conflicting_values": []
+      },
+      "pd_supported": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "included_cable": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "warranty_months": {
+        "status": "supported",
+        "value": 12,
+        "conflicting_values": []
+      }
+    },
+    "listingA:65w": {
+      "capacity_mah": {
+        "status": "supported",
+        "value": 20000,
+        "conflicting_values": []
+      },
+      "max_output_w": {
+        "status": "supported",
+        "value": 65,
+        "conflicting_values": []
+      },
+      "usb_c_ports": {
+        "status": "supported",
+        "value": 2,
+        "conflicting_values": []
+      },
+      "weight_g": {
+        "status": "supported",
+        "value": 420,
+        "conflicting_values": []
+      },
+      "max_input_w": {
+        "status": "supported",
+        "value": 65,
+        "conflicting_values": []
+      },
+      "pd_supported": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "included_cable": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "warranty_months": {
+        "status": "supported",
+        "value": 12,
+        "conflicting_values": []
+      }
+    },
+    "listingA:30w": {
+      "capacity_mah": {
+        "status": "supported",
+        "value": 20000,
+        "conflicting_values": []
+      },
+      "max_output_w": {
+        "status": "supported",
+        "value": 30,
+        "conflicting_values": []
+      },
+      "usb_c_ports": {
+        "status": "supported",
+        "value": 2,
+        "conflicting_values": []
+      },
+      "weight_g": {
+        "status": "supported",
+        "value": 420,
+        "conflicting_values": []
+      },
+      "max_input_w": {
+        "status": "supported",
+        "value": 65,
+        "conflicting_values": []
+      },
+      "pd_supported": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "included_cable": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "warranty_months": {
+        "status": "supported",
+        "value": 12,
+        "conflicting_values": []
+      }
+    },
+    "listingB:65w": {
+      "capacity_mah": {
+        "status": "supported",
+        "value": 20000,
+        "conflicting_values": []
+      },
+      "max_output_w": {
+        "status": "supported",
+        "value": 65,
+        "conflicting_values": []
+      },
+      "usb_c_ports": {
+        "status": "supported",
+        "value": 2,
+        "conflicting_values": []
+      },
+      "weight_g": {
+        "status": "supported",
+        "value": 310,
+        "conflicting_values": []
+      },
+      "max_input_w": {
+        "status": "supported",
+        "value": 65,
+        "conflicting_values": []
+      },
+      "pd_supported": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "included_cable": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "warranty_months": {
+        "status": "supported",
+        "value": 12,
+        "conflicting_values": []
+      }
+    },
+    "listingB:100w": {
+      "capacity_mah": {
+        "status": "supported",
+        "value": 20000,
+        "conflicting_values": []
+      },
+      "max_output_w": {
+        "status": "supported",
+        "value": 100,
+        "conflicting_values": []
+      },
+      "usb_c_ports": {
+        "status": "supported",
+        "value": 2,
+        "conflicting_values": []
+      },
+      "weight_g": {
+        "status": "supported",
+        "value": 310,
+        "conflicting_values": []
+      },
+      "max_input_w": {
+        "status": "supported",
+        "value": 65,
+        "conflicting_values": []
+      },
+      "pd_supported": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "included_cable": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "warranty_months": {
+        "status": "supported",
+        "value": 12,
+        "conflicting_values": []
+      }
+    },
+    "listingB:130w": {
+      "capacity_mah": {
+        "status": "supported",
+        "value": 20000,
+        "conflicting_values": []
+      },
+      "max_output_w": {
+        "status": "supported",
+        "value": 130,
+        "conflicting_values": []
+      },
+      "usb_c_ports": {
+        "status": "supported",
+        "value": 2,
+        "conflicting_values": []
+      },
+      "weight_g": {
+        "status": "supported",
+        "value": 310,
+        "conflicting_values": []
+      },
+      "max_input_w": {
+        "status": "supported",
+        "value": 65,
+        "conflicting_values": []
+      },
+      "pd_supported": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "included_cable": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "warranty_months": {
+        "status": "supported",
+        "value": 12,
+        "conflicting_values": []
+      }
+    },
+    "listingB:45w": {
+      "capacity_mah": {
+        "status": "supported",
+        "value": 20000,
+        "conflicting_values": []
+      },
+      "max_output_w": {
+        "status": "supported",
+        "value": 45,
+        "conflicting_values": []
+      },
+      "usb_c_ports": {
+        "status": "supported",
+        "value": 2,
+        "conflicting_values": []
+      },
+      "weight_g": {
+        "status": "supported",
+        "value": 310,
+        "conflicting_values": []
+      },
+      "max_input_w": {
+        "status": "supported",
+        "value": 65,
+        "conflicting_values": []
+      },
+      "pd_supported": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "included_cable": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "warranty_months": {
+        "status": "supported",
+        "value": 12,
+        "conflicting_values": []
+      }
+    },
+    "listingC:87w": {
+      "capacity_mah": {
+        "status": "supported",
+        "value": 20000,
+        "conflicting_values": []
+      },
+      "max_output_w": {
+        "status": "supported",
+        "value": 87,
+        "conflicting_values": []
+      },
+      "usb_c_ports": {
+        "status": "supported",
+        "value": 2,
+        "conflicting_values": []
+      },
+      "weight_g": {
+        "status": "missing",
+        "value": null,
+        "conflicting_values": []
+      },
+      "max_input_w": {
+        "status": "supported",
+        "value": 65,
+        "conflicting_values": []
+      },
+      "pd_supported": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "included_cable": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "warranty_months": {
+        "status": "conflicting",
+        "value": null,
+        "conflicting_values": [
+          "12",
+          "24"
+        ]
+      }
+    },
+    "listingC:100w": {
+      "capacity_mah": {
+        "status": "supported",
+        "value": 20000,
+        "conflicting_values": []
+      },
+      "max_output_w": {
+        "status": "supported",
+        "value": 100,
+        "conflicting_values": []
+      },
+      "usb_c_ports": {
+        "status": "supported",
+        "value": 2,
+        "conflicting_values": []
+      },
+      "weight_g": {
+        "status": "missing",
+        "value": null,
+        "conflicting_values": []
+      },
+      "max_input_w": {
+        "status": "supported",
+        "value": 65,
+        "conflicting_values": []
+      },
+      "pd_supported": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "included_cable": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "warranty_months": {
+        "status": "conflicting",
+        "value": null,
+        "conflicting_values": [
+          "12",
+          "24"
+        ]
+      }
+    },
+    "listingC:130w": {
+      "capacity_mah": {
+        "status": "supported",
+        "value": 20000,
+        "conflicting_values": []
+      },
+      "max_output_w": {
+        "status": "supported",
+        "value": 130,
+        "conflicting_values": []
+      },
+      "usb_c_ports": {
+        "status": "supported",
+        "value": 2,
+        "conflicting_values": []
+      },
+      "weight_g": {
+        "status": "missing",
+        "value": null,
+        "conflicting_values": []
+      },
+      "max_input_w": {
+        "status": "supported",
+        "value": 65,
+        "conflicting_values": []
+      },
+      "pd_supported": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "included_cable": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "warranty_months": {
+        "status": "conflicting",
+        "value": null,
+        "conflicting_values": [
+          "12",
+          "24"
+        ]
+      }
+    },
+    "listingC:65w": {
+      "capacity_mah": {
+        "status": "supported",
+        "value": 20000,
+        "conflicting_values": []
+      },
+      "max_output_w": {
+        "status": "supported",
+        "value": 65,
+        "conflicting_values": []
+      },
+      "usb_c_ports": {
+        "status": "supported",
+        "value": 2,
+        "conflicting_values": []
+      },
+      "weight_g": {
+        "status": "missing",
+        "value": null,
+        "conflicting_values": []
+      },
+      "max_input_w": {
+        "status": "supported",
+        "value": 65,
+        "conflicting_values": []
+      },
+      "pd_supported": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "included_cable": {
+        "status": "supported",
+        "value": true,
+        "conflicting_values": []
+      },
+      "warranty_months": {
+        "status": "conflicting",
+        "value": null,
+        "conflicting_values": [
+          "12",
+          "24"
+        ]
+      }
+    }
+  },
+  "reviews": [
+    {
+      "review_id": "listingA-r01",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "gets hot"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r02",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "positive",
+          "excerpt": "stays cool"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r03",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": [
+        {
+          "aspect": "portability",
+          "sentiment": "positive",
+          "excerpt": "feels light"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r04",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": [
+        {
+          "aspect": "portability",
+          "sentiment": "negative",
+          "excerpt": "feels heavy"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r05",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": [
+        {
+          "aspect": "charging",
+          "sentiment": "positive",
+          "excerpt": "charges fast"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r06",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": [
+        {
+          "aspect": "charging",
+          "sentiment": "negative",
+          "excerpt": "charges slowly"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r07",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": [
+        {
+          "aspect": "reliability",
+          "sentiment": "negative",
+          "excerpt": "stopped working"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r08",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": [
+        {
+          "aspect": "reliability",
+          "sentiment": "positive",
+          "excerpt": "works reliably"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r09",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": [
+        {
+          "aspect": "value",
+          "sentiment": "positive",
+          "excerpt": "good value"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r10",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": [
+        {
+          "aspect": "value",
+          "sentiment": "negative",
+          "excerpt": "poor value"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r11",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": [
+        {
+          "aspect": "charging",
+          "sentiment": "positive",
+          "excerpt": "charges fast"
+        },
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "gets hot"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r12",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "positive",
+          "excerpt": "stays cool"
+        },
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "gets hot"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r13",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": [
+        {
+          "aspect": "other",
+          "sentiment": "neutral",
+          "excerpt": "case is blue"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r14",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": []
+    },
+    {
+      "review_id": "listingA-r15",
+      "listing_id": "listingA",
+      "variant_id": "130w",
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "gets hot"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r16",
+      "listing_id": "listingA",
+      "variant_id": "130w",
+      "mentions": [
+        {
+          "aspect": "portability",
+          "sentiment": "negative",
+          "excerpt": "feels heavy"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r17",
+      "listing_id": "listingA",
+      "variant_id": null,
+      "mentions": [
+        {
+          "aspect": "charging",
+          "sentiment": "positive",
+          "excerpt": "charges fast"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r18",
+      "listing_id": "listingA",
+      "variant_id": null,
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "gets hot"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r01",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "gets hot"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r02",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "positive",
+          "excerpt": "stays cool"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r03",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "mentions": [
+        {
+          "aspect": "portability",
+          "sentiment": "positive",
+          "excerpt": "feels light"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r04",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "mentions": [
+        {
+          "aspect": "portability",
+          "sentiment": "negative",
+          "excerpt": "feels heavy"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r05",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "mentions": [
+        {
+          "aspect": "charging",
+          "sentiment": "positive",
+          "excerpt": "charges fast"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r06",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "mentions": [
+        {
+          "aspect": "charging",
+          "sentiment": "negative",
+          "excerpt": "charges slowly"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r07",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "mentions": [
+        {
+          "aspect": "reliability",
+          "sentiment": "negative",
+          "excerpt": "stopped working"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r08",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "mentions": [
+        {
+          "aspect": "reliability",
+          "sentiment": "positive",
+          "excerpt": "works reliably"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r09",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "mentions": [
+        {
+          "aspect": "value",
+          "sentiment": "positive",
+          "excerpt": "good value"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r10",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "mentions": [
+        {
+          "aspect": "value",
+          "sentiment": "negative",
+          "excerpt": "poor value"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r11",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "mentions": [
+        {
+          "aspect": "charging",
+          "sentiment": "positive",
+          "excerpt": "charges fast"
+        },
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "gets hot"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r12",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "positive",
+          "excerpt": "stays cool"
+        },
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "gets hot"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r13",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "mentions": [
+        {
+          "aspect": "other",
+          "sentiment": "neutral",
+          "excerpt": "case is blue"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r14",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "mentions": []
+    },
+    {
+      "review_id": "listingB-r15",
+      "listing_id": "listingB",
+      "variant_id": "130w",
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "gets hot"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r16",
+      "listing_id": "listingB",
+      "variant_id": "130w",
+      "mentions": [
+        {
+          "aspect": "portability",
+          "sentiment": "negative",
+          "excerpt": "feels heavy"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r17",
+      "listing_id": "listingB",
+      "variant_id": null,
+      "mentions": [
+        {
+          "aspect": "charging",
+          "sentiment": "positive",
+          "excerpt": "charges fast"
+        }
+      ]
+    },
+    {
+      "review_id": "listingB-r18",
+      "listing_id": "listingB",
+      "variant_id": null,
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "gets hot"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r01",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "gets hot"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r02",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "positive",
+          "excerpt": "stays cool"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r03",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": [
+        {
+          "aspect": "portability",
+          "sentiment": "positive",
+          "excerpt": "feels light"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r04",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": [
+        {
+          "aspect": "portability",
+          "sentiment": "negative",
+          "excerpt": "feels heavy"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r05",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": [
+        {
+          "aspect": "charging",
+          "sentiment": "positive",
+          "excerpt": "charges fast"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r06",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": [
+        {
+          "aspect": "charging",
+          "sentiment": "negative",
+          "excerpt": "charges slowly"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r07",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": [
+        {
+          "aspect": "reliability",
+          "sentiment": "negative",
+          "excerpt": "stopped working"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r08",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": [
+        {
+          "aspect": "reliability",
+          "sentiment": "positive",
+          "excerpt": "works reliably"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r09",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": [
+        {
+          "aspect": "value",
+          "sentiment": "positive",
+          "excerpt": "good value"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r10",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": [
+        {
+          "aspect": "value",
+          "sentiment": "negative",
+          "excerpt": "poor value"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r11",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": [
+        {
+          "aspect": "charging",
+          "sentiment": "positive",
+          "excerpt": "charges fast"
+        },
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "gets hot"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r12",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "positive",
+          "excerpt": "stays cool"
+        },
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "gets hot"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r13",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": [
+        {
+          "aspect": "other",
+          "sentiment": "neutral",
+          "excerpt": "case is blue"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r14",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": []
+    },
+    {
+      "review_id": "listingC-r15",
+      "listing_id": "listingC",
+      "variant_id": "130w",
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "gets hot"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r16",
+      "listing_id": "listingC",
+      "variant_id": "130w",
+      "mentions": [
+        {
+          "aspect": "portability",
+          "sentiment": "negative",
+          "excerpt": "feels heavy"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r17",
+      "listing_id": "listingC",
+      "variant_id": null,
+      "mentions": [
+        {
+          "aspect": "charging",
+          "sentiment": "positive",
+          "excerpt": "charges fast"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r18",
+      "listing_id": "listingC",
+      "variant_id": null,
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "gets hot"
+        }
+      ]
+    }
+  ],
+  "source_claims": {
+    "listingA:100w": {
+      "variants/100w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/100w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 100
+      },
+      "variants/100w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/100w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 420
+      },
+      "variants/100w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/100w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/100w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/100w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      }
+    },
+    "listingA:130w": {
+      "variants/130w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/130w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 130
+      },
+      "variants/130w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/130w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 420
+      },
+      "variants/130w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/130w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/130w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/130w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      },
+      "description/0": {
+        "field_key": "max_output_w",
+        "value": 130
+      }
+    },
+    "listingA:65w": {
+      "variants/65w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/65w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 65
+      },
+      "variants/65w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/65w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 420
+      },
+      "variants/65w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/65w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/65w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/65w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      }
+    },
+    "listingA:30w": {
+      "variants/30w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/30w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 30
+      },
+      "variants/30w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/30w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 420
+      },
+      "variants/30w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/30w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/30w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/30w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      }
+    },
+    "listingB:65w": {
+      "variants/65w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/65w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 65
+      },
+      "variants/65w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/65w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 310
+      },
+      "variants/65w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/65w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/65w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/65w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      }
+    },
+    "listingB:100w": {
+      "variants/100w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/100w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 100
+      },
+      "variants/100w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/100w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 310
+      },
+      "variants/100w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/100w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/100w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/100w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      }
+    },
+    "listingB:130w": {
+      "variants/130w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/130w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 130
+      },
+      "variants/130w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/130w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 310
+      },
+      "variants/130w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/130w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/130w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/130w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      },
+      "description/0": {
+        "field_key": "max_output_w",
+        "value": 130
+      }
+    },
+    "listingB:45w": {
+      "variants/45w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/45w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 45
+      },
+      "variants/45w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/45w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 310
+      },
+      "variants/45w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/45w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/45w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/45w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      }
+    },
+    "listingC:87w": {
+      "variants/87w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/87w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 87
+      },
+      "variants/87w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/87w/attributes/3": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/87w/attributes/4": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/87w/attributes/5": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/87w/attributes/6": {
+        "field_key": "warranty_months",
+        "value": 12
+      },
+      "description/2": {
+        "field_key": "warranty_months",
+        "value": 24
+      }
+    },
+    "listingC:100w": {
+      "variants/100w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/100w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 100
+      },
+      "variants/100w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/100w/attributes/3": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/100w/attributes/4": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/100w/attributes/5": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/100w/attributes/6": {
+        "field_key": "warranty_months",
+        "value": 12
+      },
+      "description/3": {
+        "field_key": "warranty_months",
+        "value": 24
+      }
+    },
+    "listingC:130w": {
+      "variants/130w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/130w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 130
+      },
+      "variants/130w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/130w/attributes/3": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/130w/attributes/4": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/130w/attributes/5": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/130w/attributes/6": {
+        "field_key": "warranty_months",
+        "value": 12
+      },
+      "description/0": {
+        "field_key": "max_output_w",
+        "value": 130
+      },
+      "description/4": {
+        "field_key": "warranty_months",
+        "value": 24
+      }
+    },
+    "listingC:65w": {
+      "variants/65w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/65w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 65
+      },
+      "variants/65w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/65w/attributes/3": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/65w/attributes/4": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/65w/attributes/5": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/65w/attributes/6": {
+        "field_key": "warranty_months",
+        "value": 12
+      },
+      "description/5": {
+        "field_key": "warranty_months",
+        "value": 24
+      }
+    }
+  }
+}

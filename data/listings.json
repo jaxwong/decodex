@@ -1,0 +1,539 @@
+{
+  "synthetic": true,
+  "listings": [
+    {
+      "listing_id": "listingA",
+      "title": "SYNTHETIC Atlas power bank family",
+      "synthetic": true,
+      "attributes": [],
+      "description": [
+        {
+          "text": "Fabricated family marketing: the 130W sibling offers Max output: 130 W.",
+          "variant_id": "130w"
+        },
+        {
+          "text": "Synthetic family overview. Model weights depend on the selected SKU.",
+          "variant_id": null
+        }
+      ],
+      "variants": [
+        {
+          "variant_id": "100w",
+          "label": "100W synthetic SKU",
+          "price_minor": 6000,
+          "currency": "SGD",
+          "attributes": [
+            {
+              "field_key": "capacity_mah",
+              "text": "Capacity: 20 Ah"
+            },
+            {
+              "field_key": "max_output_w",
+              "text": "Max output: 100 W"
+            },
+            {
+              "field_key": "usb_c_ports",
+              "text": "USB-C ports: 2"
+            },
+            {
+              "field_key": "weight_g",
+              "text": "Weight: 0.42 kg"
+            },
+            {
+              "field_key": "max_input_w",
+              "text": "Max input: 65 W"
+            },
+            {
+              "field_key": "pd_supported",
+              "text": "USB PD: yes"
+            },
+            {
+              "field_key": "included_cable",
+              "text": "Included cable: yes"
+            },
+            {
+              "field_key": "warranty_months",
+              "text": "Warranty: 1 year"
+            }
+          ]
+        },
+        {
+          "variant_id": "130w",
+          "label": "130W synthetic SKU",
+          "price_minor": 6030,
+          "currency": "SGD",
+          "attributes": [
+            {
+              "field_key": "capacity_mah",
+              "text": "Capacity: 20 Ah"
+            },
+            {
+              "field_key": "max_output_w",
+              "text": "Max output: 130 W"
+            },
+            {
+              "field_key": "usb_c_ports",
+              "text": "USB-C ports: 2"
+            },
+            {
+              "field_key": "weight_g",
+              "text": "Weight: 0.42 kg"
+            },
+            {
+              "field_key": "max_input_w",
+              "text": "Max input: 65 W"
+            },
+            {
+              "field_key": "pd_supported",
+              "text": "USB PD: yes"
+            },
+            {
+              "field_key": "included_cable",
+              "text": "Included cable: yes"
+            },
+            {
+              "field_key": "warranty_months",
+              "text": "Warranty: 1 year"
+            }
+          ]
+        },
+        {
+          "variant_id": "65w",
+          "label": "65W synthetic SKU",
+          "price_minor": 5965,
+          "currency": "SGD",
+          "attributes": [
+            {
+              "field_key": "capacity_mah",
+              "text": "Capacity: 20 Ah"
+            },
+            {
+              "field_key": "max_output_w",
+              "text": "Max output: 65 W"
+            },
+            {
+              "field_key": "usb_c_ports",
+              "text": "USB-C ports: 2"
+            },
+            {
+              "field_key": "weight_g",
+              "text": "Weight: 0.42 kg"
+            },
+            {
+              "field_key": "max_input_w",
+              "text": "Max input: 65 W"
+            },
+            {
+              "field_key": "pd_supported",
+              "text": "USB PD: yes"
+            },
+            {
+              "field_key": "included_cable",
+              "text": "Included cable: yes"
+            },
+            {
+              "field_key": "warranty_months",
+              "text": "Warranty: 1 year"
+            }
+          ]
+        },
+        {
+          "variant_id": "30w",
+          "label": "30W synthetic SKU",
+          "price_minor": 5930,
+          "currency": "SGD",
+          "attributes": [
+            {
+              "field_key": "capacity_mah",
+              "text": "Capacity: 20 Ah"
+            },
+            {
+              "field_key": "max_output_w",
+              "text": "Max output: 30 W"
+            },
+            {
+              "field_key": "usb_c_ports",
+              "text": "USB-C ports: 2"
+            },
+            {
+              "field_key": "weight_g",
+              "text": "Weight: 0.42 kg"
+            },
+            {
+              "field_key": "max_input_w",
+              "text": "Max input: 65 W"
+            },
+            {
+              "field_key": "pd_supported",
+              "text": "USB PD: yes"
+            },
+            {
+              "field_key": "included_cable",
+              "text": "Included cable: yes"
+            },
+            {
+              "field_key": "warranty_months",
+              "text": "Warranty: 1 year"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "listing_id": "listingB",
+      "title": "SYNTHETIC Breeze power bank family",
+      "synthetic": true,
+      "attributes": [],
+      "description": [
+        {
+          "text": "Fabricated family marketing: the 130W sibling offers Max output: 130 W.",
+          "variant_id": "130w"
+        },
+        {
+          "text": "Synthetic family overview. Model weights depend on the selected SKU.",
+          "variant_id": null
+        }
+      ],
+      "variants": [
+        {
+          "variant_id": "65w",
+          "label": "65W synthetic SKU",
+          "price_minor": 6965,
+          "currency": "SGD",
+          "attributes": [
+            {
+              "field_key": "capacity_mah",
+              "text": "Capacity: 20 Ah"
+            },
+            {
+              "field_key": "max_output_w",
+              "text": "Max output: 65 W"
+            },
+            {
+              "field_key": "usb_c_ports",
+              "text": "USB-C ports: 2"
+            },
+            {
+              "field_key": "weight_g",
+              "text": "Weight: 310 g"
+            },
+            {
+              "field_key": "max_input_w",
+              "text": "Max input: 65 W"
+            },
+            {
+              "field_key": "pd_supported",
+              "text": "USB PD: yes"
+            },
+            {
+              "field_key": "included_cable",
+              "text": "Included cable: yes"
+            },
+            {
+              "field_key": "warranty_months",
+              "text": "Warranty: 1 year"
+            }
+          ]
+        },
+        {
+          "variant_id": "100w",
+          "label": "100W synthetic SKU",
+          "price_minor": 7000,
+          "currency": "SGD",
+          "attributes": [
+            {
+              "field_key": "capacity_mah",
+              "text": "Capacity: 20 Ah"
+            },
+            {
+              "field_key": "max_output_w",
+              "text": "Max output: 100 W"
+            },
+            {
+              "field_key": "usb_c_ports",
+              "text": "USB-C ports: 2"
+            },
+            {
+              "field_key": "weight_g",
+              "text": "Weight: 310 g"
+            },
+            {
+              "field_key": "max_input_w",
+              "text": "Max input: 65 W"
+            },
+            {
+              "field_key": "pd_supported",
+              "text": "USB PD: yes"
+            },
+            {
+              "field_key": "included_cable",
+              "text": "Included cable: yes"
+            },
+            {
+              "field_key": "warranty_months",
+              "text": "Warranty: 1 year"
+            }
+          ]
+        },
+        {
+          "variant_id": "130w",
+          "label": "130W synthetic SKU",
+          "price_minor": 7030,
+          "currency": "SGD",
+          "attributes": [
+            {
+              "field_key": "capacity_mah",
+              "text": "Capacity: 20 Ah"
+            },
+            {
+              "field_key": "max_output_w",
+              "text": "Max output: 130 W"
+            },
+            {
+              "field_key": "usb_c_ports",
+              "text": "USB-C ports: 2"
+            },
+            {
+              "field_key": "weight_g",
+              "text": "Weight: 310 g"
+            },
+            {
+              "field_key": "max_input_w",
+              "text": "Max input: 65 W"
+            },
+            {
+              "field_key": "pd_supported",
+              "text": "USB PD: yes"
+            },
+            {
+              "field_key": "included_cable",
+              "text": "Included cable: yes"
+            },
+            {
+              "field_key": "warranty_months",
+              "text": "Warranty: 1 year"
+            }
+          ]
+        },
+        {
+          "variant_id": "45w",
+          "label": "45W synthetic SKU",
+          "price_minor": 6945,
+          "currency": "SGD",
+          "attributes": [
+            {
+              "field_key": "capacity_mah",
+              "text": "Capacity: 20 Ah"
+            },
+            {
+              "field_key": "max_output_w",
+              "text": "Max output: 45 W"
+            },
+            {
+              "field_key": "usb_c_ports",
+              "text": "USB-C ports: 2"
+            },
+            {
+              "field_key": "weight_g",
+              "text": "Weight: 310 g"
+            },
+            {
+              "field_key": "max_input_w",
+              "text": "Max input: 65 W"
+            },
+            {
+              "field_key": "pd_supported",
+              "text": "USB PD: yes"
+            },
+            {
+              "field_key": "included_cable",
+              "text": "Included cable: yes"
+            },
+            {
+              "field_key": "warranty_months",
+              "text": "Warranty: 1 year"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "listing_id": "listingC",
+      "title": "SYNTHETIC Comet power bank family",
+      "synthetic": true,
+      "attributes": [],
+      "description": [
+        {
+          "text": "Fabricated family marketing: the 130W sibling offers Max output: 130 W.",
+          "variant_id": "130w"
+        },
+        {
+          "text": "Synthetic family overview. Model weights depend on the selected SKU.",
+          "variant_id": null
+        },
+        {
+          "text": "Warranty: 24 months",
+          "variant_id": "87w"
+        },
+        {
+          "text": "Warranty: 24 months",
+          "variant_id": "100w"
+        },
+        {
+          "text": "Warranty: 24 months",
+          "variant_id": "130w"
+        },
+        {
+          "text": "Warranty: 24 months",
+          "variant_id": "65w"
+        }
+      ],
+      "variants": [
+        {
+          "variant_id": "87w",
+          "label": "87W synthetic SKU",
+          "price_minor": 7987,
+          "currency": "SGD",
+          "attributes": [
+            {
+              "field_key": "capacity_mah",
+              "text": "Capacity: 20 Ah"
+            },
+            {
+              "field_key": "max_output_w",
+              "text": "Max output: 87 W"
+            },
+            {
+              "field_key": "usb_c_ports",
+              "text": "USB-C ports: 2"
+            },
+            {
+              "field_key": "max_input_w",
+              "text": "Max input: 65 W"
+            },
+            {
+              "field_key": "pd_supported",
+              "text": "USB PD: yes"
+            },
+            {
+              "field_key": "included_cable",
+              "text": "Included cable: yes"
+            },
+            {
+              "field_key": "warranty_months",
+              "text": "Warranty: 1 year"
+            }
+          ]
+        },
+        {
+          "variant_id": "100w",
+          "label": "100W synthetic SKU",
+          "price_minor": 8000,
+          "currency": "SGD",
+          "attributes": [
+            {
+              "field_key": "capacity_mah",
+              "text": "Capacity: 20 Ah"
+            },
+            {
+              "field_key": "max_output_w",
+              "text": "Max output: 100 W"
+            },
+            {
+              "field_key": "usb_c_ports",
+              "text": "USB-C ports: 2"
+            },
+            {
+              "field_key": "max_input_w",
+              "text": "Max input: 65 W"
+            },
+            {
+              "field_key": "pd_supported",
+              "text": "USB PD: yes"
+            },
+            {
+              "field_key": "included_cable",
+              "text": "Included cable: yes"
+            },
+            {
+              "field_key": "warranty_months",
+              "text": "Warranty: 1 year"
+            }
+          ]
+        },
+        {
+          "variant_id": "130w",
+          "label": "130W synthetic SKU",
+          "price_minor": 8030,
+          "currency": "SGD",
+          "attributes": [
+            {
+              "field_key": "capacity_mah",
+              "text": "Capacity: 20 Ah"
+            },
+            {
+              "field_key": "max_output_w",
+              "text": "Max output: 130 W"
+            },
+            {
+              "field_key": "usb_c_ports",
+              "text": "USB-C ports: 2"
+            },
+            {
+              "field_key": "max_input_w",
+              "text": "Max input: 65 W"
+            },
+            {
+              "field_key": "pd_supported",
+              "text": "USB PD: yes"
+            },
+            {
+              "field_key": "included_cable",
+              "text": "Included cable: yes"
+            },
+            {
+              "field_key": "warranty_months",
+              "text": "Warranty: 1 year"
+            }
+          ]
+        },
+        {
+          "variant_id": "65w",
+          "label": "65W synthetic SKU",
+          "price_minor": 7965,
+          "currency": "SGD",
+          "attributes": [
+            {
+              "field_key": "capacity_mah",
+              "text": "Capacity: 20 Ah"
+            },
+            {
+              "field_key": "max_output_w",
+              "text": "Max output: 65 W"
+            },
+            {
+              "field_key": "usb_c_ports",
+              "text": "USB-C ports: 2"
+            },
+            {
+              "field_key": "max_input_w",
+              "text": "Max input: 65 W"
+            },
+            {
+              "field_key": "pd_supported",
+              "text": "USB PD: yes"
+            },
+            {
+              "field_key": "included_cable",
+              "text": "Included cable: yes"
+            },
+            {
+              "field_key": "warranty_months",
+              "text": "Warranty: 1 year"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

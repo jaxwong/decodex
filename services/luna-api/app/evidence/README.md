@@ -1,0 +1,143 @@
+# Evidence integration handoff
+
+All supplied catalog/review data is synthetic. This package has no Shopee access,
+HTTP routes, frontend, session state, recommendations or preferences.
+
+## Frozen contract
+
+`app.contracts.evidence` exports `Evidence`, `Fact`, `ReviewMention`,
+`ReviewAspectSummary`, `ComparisonEvidence`, `Status`, `SourceType`, with the exact
+v3.2 fields/defaults. The schema has not changed since A1 (`e946f4e`). Validators
+also check references and counts. Models prevent assignment; nested collections
+remain the prescribed lists/dicts and must be treated as immutable snapshots.
+
+B/C can load `data/sample_comparison_evidence.json` at the repository root:
+
+```python
+from pathlib import Path
+from app.contracts.evidence import ComparisonEvidence
+snapshot = ComparisonEvidence.model_validate_json(
+    Path('data/sample_comparison_evidence.json').read_text()
+)
+```
+
+Item identity is `listing_id + ':' + variant_id`. Demo selections are
+`listingA:100w`, `listingB:65w`, `listingC:87w`. All twelve SKUs are returned by the
+catalog. Items contain `listing_id`, `variant_id`, `item_key`, `title`,
+`variant_label`, integer `price_minor`, `currency='SGD'`, `snapshot_version`,
+`synthetic`. Schema rows contain `field_key`, `label`, `unit`. Do not derive
+frontend types independently; generate from B's eventual OpenAPI wrapper.
+
+## Public function and dependency injection
+
+Run Python with `services/luna-api` on the import path. The exact public interface:
+
+```python
+from app.evidence import build_comparison_evidence, evidence_dependencies
+from app.evidence import OpenAIModelClient
+from app.providers import provider_factory
+
+selections = [
+    {'listing_id': 'listingA', 'variant_id': '100w'},
+    {'listing_id': 'listingB', 'variant_id': '65w'},
+    {'listing_id': 'listingC', 'variant_id': '87w'},
+]
+
+# Inside B's asynchronous route/service:
+with evidence_dependencies(provider_factory({'provider': 'mock'}), OpenAIModelClient()):
+    evidence = await build_comparison_evidence(selections)
+```
+
+Alternatively construct `EvidenceBuilder(provider, model_client)` at startup and
+inject its bound `build(selections)` method. There are no process-global mutable
+provider settings; context-manager bindings are task-local. Test doubles implement
+`ModelClient.extract_specs(request)` and `extract_reviews(request)`; they live
+only under `tests/evidence` and cannot be enabled by runtime configuration.
+
+No injection uses `LUNA_CATALOG_PROVIDER=mock` and server-side `OPENAI_API_KEY`,
+with `OPENAI_TEXT_MODEL=gpt-6-luna` by default. There is no offline-answer fallback.
+Absent credentials or malformed/failed Responses output produce unresolved facts.
+Catalog errors raise `CatalogError` with stable `.code` values; B maps these to
+its HTTP envelope. Selection validation can raise Pydantic `ValidationError`.
+Only two to four unique exact variants are accepted, including different variants
+of one listing. Invalid identities fail before any model work.
+
+`CatalogProvider` defines five async methods in `app/providers/base.py`.
+`list_listings(query)` returns public cards with `id`/`listing_id`, `title`,
+`image_url=None` (no inherited assets), `preview`, `synthetic`, and variant metadata
+(`id`/`variant_id`, `label`, `price_minor`, `currency`); raw claims stay server-side.
+`get_listing`/`get_variant` return defensive copies or `None` on unknown IDs.
+Snapshot/review methods raise `CatalogError` for unknown IDs. Review pages contain
+`reviews`, `next_cursor`, `snapshot_version`. Requesting a variant returns exact
+plus explicitly null-tagged reviews; `variant_id=None` requests all listing
+reviews. Cursors are scoped to listing, variant and source-content hash. They are
+pagination tokens, not authorization tokens. Changing either source file changes
+the listing's snapshot. Only the `mock` factory is implemented.
+
+## Evidence and failure behavior
+
+- One specification request per item, at most four per comparison, with no
+  automatic retry. SDK `responses.parse(text_format=...)` validates typed raw
+  candidates; Python converts Ah/mAh, kg/g, years/months and boolean aliases.
+- Supported values require exact-SKU evidence and a recognized, fully labelled
+  source clause such as `Weight: 0.42 kg`. Unsupported dimensions, ambiguous prose,
+  unknown citations and sibling claims abstain. This deliberately limits natural
+  language coverage; expanding accepted grammar requires tests.
+- Complete original strings and locations are preserved. A truncated model quote
+  cannot remove qualifying context from the original clause. Applicable explicit
+  contradictory claims are reconciled even if the model cites only one side.
+- Failed item extraction leaves other items intact. `item['analysis_status']` is
+  `completed` or `unresolved`; error metadata contains only exception class names.
+  B saves the returned snapshot and does not re-extract for preference changes.
+- Seller/review strings are JSON-encoded user data under separate trusted system
+  instructions; no extraction tools or external product knowledge are provided.
+- The builder fetches reviews with pagination, excludes unknown/sibling variants
+  before model extraction, and checks snapshot consistency. Their original source
+  strings remain indexed with original variant tags for inspection.
+- Reviews use balanced batches of 10–20 where enough exact-SKU source reviews
+  exist; smaller populations use one smaller batch. Literal nonempty excerpts and
+  batch-local review IDs are checked. Invalid mentions are dropped and counted.
+- Aggregates count unique reviews per aspect/sentiment. A mixed review counts once
+  in each expressed sentiment; sentiment totals may exceed N. N includes all
+  successfully analyzed exact-SKU reviews, even those with no mentions. A failed
+  batch contributes no reviews to N. `review_status='unresolved'` signals partial
+  or failed extraction; `review_coverage` gives analyzed/available counts,
+  excluded variant counts and rejected mention count. Never show zero complaints
+  as successful analysis when the status is unresolved.
+- Counts describe the sampled reviews only; they are not defect rates or verified
+  safety conclusions. Unknown-variant listing-wide insights are excluded rather
+  than presented as exact-SKU summaries.
+
+## Verification and integration prerequisites
+
+No Python project/dependency configuration existed in the handoff. Those files,
+root Makefile, routes and deployment belong to B and were left untouched. Verified
+locally with Python 3.12.10, pydantic 2.14.2, pytest 9.2.0 and openai 3.42.0. The
+installed SDK's strict schema serialization and parser were exercised with a mock
+HTTP transport. B must add/pin shared dependencies and complete live capability
+smoke before claiming runtime readiness.
+
+Standalone reproduction from the repository root:
+
+```bash
+python3 -m venv /tmp/luna-evidence-venv
+/tmp/luna-evidence-venv/bin/pip install pydantic==2.14.2 pytest==9.2.0 openai==3.42.0
+PYTHONPATH=services/luna-api:. /tmp/luna-evidence-venv/bin/python -m pytest services/luna-api/tests/evidence -q
+PYTHONPATH=services/luna-api:. /tmp/luna-evidence-venv/bin/python -m eval.run
+```
+
+Separate real-API pathways, requiring a server-side key and available model access:
+
+```bash
+PYTHONPATH=services/luna-api /tmp/luna-evidence-venv/bin/python services/luna-api/tests/evidence/live_smoke.py --live
+PYTHONPATH=services/luna-api:. /tmp/luna-evidence-venv/bin/python -m eval.run --live --output eval/live-results.json
+```
+
+The live pathway is never run by ordinary pytest. Neither the API, B's agent,
+C's hosts, browser E2E nor deployment has been exercised on this feature branch.
+B still needs to wrap/store `ComparisonEvidence`; C needs to render that wrapper.
+Fixture access on the pushed branch is the A1 handoff; no direct messages to
+teammates or unverified B/C compatibility claims were made.
+
+Official Structured Outputs reference checked for this implementation:
+https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses

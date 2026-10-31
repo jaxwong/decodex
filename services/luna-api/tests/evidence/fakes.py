@@ -1,0 +1,44 @@
+"""Test-only extraction double. Never import this in the shipped runtime or eval."""
+from app.evidence.model import CandidateFact, CandidateMention, Claim, ReviewCandidates, SpecCandidates
+from app.evidence.normalize import extract_source_values
+from app.evidence.schema import SCHEMA_FIELDS
+
+
+class FakeModelClient:
+    def __init__(self):
+        self.spec_requests = []
+        self.review_requests = []
+        self.fail_items = set()
+        self.review_failure = False
+
+    async def extract_specs(self, request):
+        self.spec_requests.append(request)
+        if request['item_key'] in self.fail_items:
+            raise TimeoutError('Injected timeout')
+        facts = []
+        for field in SCHEMA_FIELDS:
+            claims = []
+            for source in request['seller_evidence']:
+                if source['variant_id'] != request['variant_id']:
+                    continue
+                for raw in extract_source_values(field['field_key'], source['source_text']):
+                    claims.append(Claim(raw_value=raw, quote=source['source_text'], evidence_id=source['id'], variant_id=source['variant_id']))
+            facts.append(CandidateFact(field_key=field['field_key'], status='supported' if claims else 'missing', claims=claims))
+        return SpecCandidates(facts=facts)
+
+    async def extract_reviews(self, request):
+        self.review_requests.append(request)
+        if self.review_failure:
+            raise TimeoutError('Injected review timeout')
+        mentions = []
+        phrases = [('gets hot', 'heat', 'negative'), ('stays cool', 'heat', 'positive'),
+                   ('charges fast', 'charging', 'positive'), ('charges slowly', 'charging', 'negative'),
+                   ('feels light', 'portability', 'positive'), ('feels heavy', 'portability', 'negative'),
+                   ('stopped working', 'reliability', 'negative'), ('works reliably', 'reliability', 'positive'),
+                   ('good value', 'value', 'positive'), ('poor value', 'value', 'negative'),
+                   ('case is blue', 'other', 'neutral')]
+        for review in request['reviews']:
+            for phrase, aspect, sentiment in phrases:
+                if phrase in review['text']:
+                    mentions.append(CandidateMention(review_id=review['review_id'], aspect=aspect, sentiment=sentiment, excerpt=phrase))
+        return ReviewCandidates(mentions=mentions)

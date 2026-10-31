@@ -1,0 +1,92 @@
+{
+  "conditions": {
+    "synthetic": true,
+    "sku_count": 12,
+    "field_count": 8,
+    "source_review_count": 54,
+    "label_provenance": "Fabricated fixture labels authored in a separate file; no human adjudication claimed.",
+    "labels_supplied_to_extractor": false,
+    "source_sha256": {
+      "listings.json": "66c1a2632423b6425eb6da5d5abf08930876ce4044933c273b277b3fb18db3ed",
+      "reviews.json": "171180727868865525e3ae44970381ec2aa47d2f659048109e90a4f15a1b38a6",
+      "ground_truth.json": "c46536526d8b1d102e976d44f12d78036a63c49d3d9a4050f1b5d1de4e8f198a"
+    },
+    "limitations": [
+      "Synthetic fixtures do not demonstrate production shopping performance.",
+      "Exact-variant accuracy measures ID preservation for explicit selections, not product recognition.",
+      "Review support uses exact aspect/sentiment and literal label-span containment.",
+      "One baseline corpus run; runtime is observed wall time, not model latency.",
+      "Fixture generation and parsing rules were developed together; no independent human-labelled test set."
+    ]
+  },
+  "regex_keyword_baseline": {
+    "metrics": {
+      "exact_variant_accuracy": {
+        "value": 1.0,
+        "numerator": 12,
+        "denominator": 12
+      },
+      "supported_field_accuracy": {
+        "value": 0.625,
+        "numerator": 55,
+        "denominator": 88
+      },
+      "evidence_precision": {
+        "value": 0.6086956521739131,
+        "numerator": 56,
+        "denominator": 92
+      },
+      "unsupported_claim_rate": {
+        "value": 0.391304347826087,
+        "numerator": 36,
+        "denominator": 92
+      },
+      "missing_field_recall": {
+        "value": 1.0,
+        "numerator": 4,
+        "denominator": 4
+      },
+      "contradiction_recall": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 4
+      },
+      "variant_leakage_rate": {
+        "value": 0.75,
+        "numerator": 9,
+        "denominator": 12
+      },
+      "review_mention_precision": {
+        "value": 0.9444444444444444,
+        "numerator": 51,
+        "denominator": 54
+      },
+      "review_mention_recall": {
+        "value": 1.0,
+        "numerator": 51,
+        "denominator": 51
+      }
+    },
+    "observed_corpus_latency_ms": 3.1068329990375787,
+    "tokens": {
+      "available": false,
+      "reason": "No model called for deterministic baseline"
+    },
+    "cost": {
+      "available": false,
+      "reason": "No billable model request"
+    }
+  },
+  "grounded_structured_outputs": {
+    "available": false,
+    "reason": "Not executed; requires explicit --live and API credentials"
+  },
+  "ungrounded_free_form": {
+    "available": false,
+    "reason": "No live free-form baseline executed"
+  },
+  "agent_output_evaluation": {
+    "available": false,
+    "reason": "Developer B supplies decision/agent outputs and tests"
+  }
+}
