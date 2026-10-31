@@ -87,6 +87,22 @@ This file records implemented Luna milestones. The implementation spec remains t
 - `npm install` reported the known 15 audit findings (4 moderate, 11 high). No automatic or
   breaking audit fix was applied.
 
+### Implemented on `fix/view-product-specs`
+
+- Extended the canonical product snapshot with all eight `schema_fields` specifications instead
+  of showing only title, variant and price.
+- Projected facts from the existing immutable comparison. Supported and conflicting values
+  retain every evidence ID plus exact source type, excerpt and location. Missing/unresolved
+  values explicitly say no verified seller source exists; no citation is invented.
+- Host A and Host B render the same snapshot through distinct views. Opening/closing the view
+  makes zero external calls and preserves comparison revision/conversation state.
+- Failure-first Playwright found zero spec rows in both hosts. Final verification made zero
+  provider calls: focused ESLint passed, Host A built 67 modules, Host B built 47 modules, all
+  **194 API tests passed**, and Playwright reported **7 passed / 1 intentional Host B transport
+  skip**.
+- `npm install` reported the known 15 audit findings (4 moderate, 11 high). No automatic or
+  breaking audit fix was applied.
+
 ### Implemented on `feat/seller-gap-view`
 
 - Added one `SellerGapReport` view to `@luna/widget`; neither host owns a parallel seller

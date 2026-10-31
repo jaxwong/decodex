@@ -251,7 +251,9 @@ versions of the supposedly same package.
 **Consequences:** Host-specific routing and selection stay outside the package. `make
 frontend-build` builds both hosts, and `make e2e` runs the same decision flow plus an
 import-boundary check. A real Shopee integration still needs authorized product identity,
-session, performance and security work.
+session, performance and security work. Product views receive one widget-projected canonical
+snapshot with all normalized facts and exact existing evidence excerpts; hosts render it but do
+not fetch, infer or recite specifications independently.
 
 ## D-17 — Confirmed-event Live refresh, not transcript mutation or endless polling
 

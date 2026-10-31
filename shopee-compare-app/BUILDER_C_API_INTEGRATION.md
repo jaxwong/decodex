@@ -22,6 +22,8 @@ relative `/api` routes.
 - Independent Host B with a different component tree, layout and adapter.
 - Exact product-snapshot handoff to separate Host A and Host B product previews; closing the
   preview preserves the comparison revision.
+- Every product preview lists all schema specifications from canonical comparison evidence.
+  Supported/conflicting facts retain exact source excerpts and locations; missing facts abstain.
 - GPT-Live browser WebRTC: mic, remote audio, `oai-events`, `session.started`, provisional
   captions, Mute, Stop/`session.closed`, canonical refresh and text fallback.
 - Deterministic same-flow Playwright in both hosts and widget import-boundary test.
