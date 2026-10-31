@@ -108,12 +108,18 @@ class SellerQuestionRequest(_SessionModel):
 
 
 class SellerQuestion(_SessionModel):
-    """The exact question Luna will show the seller; it is not stored server-side."""
+    """A buyer's open question to the seller, in Luna's fixed wording, awaiting one answer."""
 
     listing_id: str
     variant_id: str
     field_key: FieldKey
     question: str
+
+
+class SellerQuestionsResponse(_SessionModel):
+    """Every unanswered buyer question for one listing, oldest first."""
+
+    questions: list[SellerQuestion]
 
 
 class SellerReplyRequest(_SessionModel):

@@ -40,12 +40,65 @@ def weight_fact(comparison: dict[str, Any], item_key: str) -> dict[str, Any]:
     return next(fact for fact in facts if fact["field_key"] == "weight_g")
 
 
+INBOX = "/api/listings/listingC/questions"
+
+
 def test_seller_routes_require_active_session() -> None:
     client, _, _ = create_pipeline_client()
 
     assert client.post(QUESTIONS, json={"field_key": "weight_g"}).status_code == 401
+    assert client.get(INBOX).status_code == 401
     reply = client.post(REPLIES, json={"field_key": "weight_g", "answer": "198"})
     assert reply.status_code == 401
+
+
+def test_sent_question_waits_in_the_listing_inbox_until_answered() -> None:
+    client, headers, _ = create_pipeline_client()
+    assert client.get(INBOX, headers=headers).json() == {"questions": []}
+
+    first = client.post(QUESTIONS, headers=headers, json={"field_key": "weight_g"})
+    again = client.post(QUESTIONS, headers=headers, json={"field_key": "weight_g"})
+    other = client.post(
+        "/api/listings/listingA/variants/100w/questions",
+        headers=headers,
+        json={"field_key": "warranty_months"},
+    )
+
+    assert first.status_code == again.status_code == other.status_code == 200
+    assert again.json() == first.json()
+    assert client.get(INBOX, headers=headers).json() == {"questions": [first.json()]}
+    assert client.get("/api/listings/listingA/questions", headers=headers).json() == {
+        "questions": [other.json()]
+    }
+
+    reply = client.post(REPLIES, headers=headers, json={"field_key": "weight_g", "answer": "198"})
+
+    assert reply.status_code == 201
+    assert client.get(INBOX, headers=headers).json() == {"questions": []}
+    closed = client.post(QUESTIONS, headers=headers, json={"field_key": "weight_g"})
+    assert closed.status_code == 409
+    assert closed.json()["error"]["code"] == "SELLER_REPLY_EXISTS"
+
+
+def test_rejected_answer_keeps_the_question_open() -> None:
+    client, headers, _ = create_pipeline_client()
+    question = client.post(QUESTIONS, headers=headers, json={"field_key": "weight_g"}).json()
+
+    rejected = client.post(
+        REPLIES, headers=headers, json={"field_key": "weight_g", "answer": "heavy"}
+    )
+
+    assert rejected.status_code == 422
+    assert client.get(INBOX, headers=headers).json() == {"questions": [question]}
+
+
+def test_inbox_rejects_unknown_listing() -> None:
+    client, headers, _ = create_pipeline_client()
+
+    response = client.get("/api/listings/listingZ/questions", headers=headers)
+
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "UNKNOWN_LISTING"
 
 
 @pytest.mark.parametrize(
@@ -183,6 +236,8 @@ def test_openapi_exposes_seller_question_routes() -> None:
         REPLIES.replace("listingC", "{listing_id}").replace("87w", "{variant_id}")
         in schema["paths"]
     )
+    assert INBOX.replace("listingC", "{listing_id}") in schema["paths"]
+    assert "SellerQuestionsResponse" in schema["components"]["schemas"]
     assert "SELLER_REPLY_EXISTS" in schema["components"]["schemas"]["ErrorCode"]["enum"]
 
 
