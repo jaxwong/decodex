@@ -36,20 +36,19 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   const widget = page.getByRole('region', { name: 'Luna shopping assistant' });
   const needs = page.getByRole('region', { name: 'Your needs' });
   const sourcePanel = page.getByRole('dialog');
-  await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toBeVisible();
-  const firstVariant = page.getByRole('checkbox', {
-    name: /100W synthetic SKU.*List SGD 60\.00.*Shipping \+SGD 15\.00/,
-  });
+  // Host A's cart hands Luna these same three variants, so Host A opens straight on the table.
   if (testInfo.project.name === 'host-b-chromium') {
+    await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toBeVisible();
+    const firstVariant = page.getByRole('checkbox', {
+      name: /100W synthetic SKU.*List SGD 60\.00.*Shipping \+SGD 15\.00/,
+    });
     await expect(firstVariant).toBeVisible();
     await page.getByRole('button', { name: 'Select 100W synthetic SKU · SGD 60.00' }).click();
     await expect(firstVariant).toBeChecked();
-  } else {
-    await firstVariant.check();
+    await page.getByRole('checkbox', { name: /65W synthetic SKU.*Shipping \+SGD 17\.00/ }).check();
+    await page.getByRole('checkbox', { name: /87W synthetic SKU.*Shipping \+SGD 3\.00/ }).check();
+    await page.getByRole('button', { name: 'Compare 3 products' }).click();
   }
-  await page.getByRole('checkbox', { name: /65W synthetic SKU.*Shipping \+SGD 17\.00/ }).check();
-  await page.getByRole('checkbox', { name: /87W synthetic SKU.*Shipping \+SGD 3\.00/ }).check();
-  await page.getByRole('button', { name: 'Compare 3 products' }).click();
 
   await expect(widget).toHaveAttribute('data-revision', '0');
   await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
@@ -195,7 +194,7 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   expect(consoleErrors).toEqual([]);
 });
 
-test('Host A cart lists catalog variants and opens the ticked ones in Luna', async ({ page }, testInfo) => {
+test('Host A cart lists catalog variants and compares the ticked ones in Luna', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'host-a-chromium', 'The cart is a Host A storefront page');
   const consoleErrors = [];
   page.on('console', message => {
@@ -217,14 +216,54 @@ test('Host A cart lists catalog variants and opens the ticked ones in Luna', asy
   }
   await expect(page.getByText('Total (3 items):')).toContainText('SGD 209.52');
 
-  await cart.getByRole('checkbox', { name: 'Select SYNTHETIC Breeze power bank family 65W synthetic SKU' }).uncheck();
+  const tickBreeze = cart.getByRole('checkbox', { name: 'Select SYNTHETIC Breeze power bank family 65W synthetic SKU' });
+  const tickComet = cart.getByRole('checkbox', { name: 'Select SYNTHETIC Comet power bank family 87W synthetic SKU' });
+
+  // Two or more ticked products are a full comparison, so Luna opens straight on the table.
   await page.getByRole('button', { name: 'Compare now' }).click();
   await expect(page).toHaveURL(/#\/Compare$/);
+  await expect(page.getByRole('heading', { name: 'Comparing 3 products' })).toBeVisible();
+  await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toHaveCount(0);
+
+  // Luna asks for exactly the ticked products. The deterministic test API only has evidence for
+  // all three, so this request meets an outage instead: the picker stays open with the picks.
+  await page.getByRole('link', { name: '< Back to Cart' }).click();
+  await tickBreeze.uncheck();
+  let requestedItems = null;
+  await page.route('**/api/comparisons', route => {
+    requestedItems = route.request().postDataJSON().items;
+    return route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: { code: 'PROVIDER_UNAVAILABLE', message: 'Catalog provider is unavailable.' } }),
+    });
+  });
+  await page.getByRole('button', { name: 'Compare now' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Luna ran into a problem on our side. Please try again in a moment.');
+  expect(requestedItems).toEqual([
+    { listing_id: 'listingA', variant_id: '100w' },
+    { listing_id: 'listingC', variant_id: '87w' },
+  ]);
   await expect(atlas).toBeChecked();
   await expect(comet).toBeChecked();
   await expect(breeze).not.toBeChecked();
-  await expect(page.getByText('2 of 4 picked')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Compare 2 products' })).toBeEnabled();
+  await page.unroute('**/api/comparisons');
+  // The outage above logs its expected request errors; everything after it must stay clean.
+  consoleErrors.length = 0;
+
+  // One product cannot be compared alone, so Luna shows the picker with it already picked.
+  await page.getByRole('link', { name: '< Back to Cart' }).click();
+  await tickBreeze.uncheck();
+  await tickComet.uncheck();
+  await page.getByRole('button', { name: 'Compare now' }).click();
+  await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toBeVisible();
+  await expect(atlas).toBeChecked();
+  await expect(breeze).not.toBeChecked();
+  await expect(comet).not.toBeChecked();
+  await expect(page.getByText('1 of 4 picked')).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Compare 1 product/ })).toBeDisabled();
 
   await page.getByRole('link', { name: '< Back to Cart' }).click();
   await page.getByRole('checkbox', { name: /^Select All/ }).uncheck();
@@ -250,12 +289,9 @@ test('Seller Centre counts an excluded listing from another buyer session', asyn
   const comparisons = baseline.comparisons_count + 1;
   const overBudget = (baseline.exclusion_counts.over_budget ?? 0) + 1;
 
+  // The cart's three ticked products open straight on one comparison.
   await openLuna(page, testInfo.project.name);
   const widget = page.getByRole('region', { name: 'Luna shopping assistant' });
-  await page.getByRole('checkbox', { name: /100W synthetic SKU.*Shipping \+SGD 15\.00/ }).check();
-  await page.getByRole('checkbox', { name: /65W synthetic SKU.*Shipping \+SGD 17\.00/ }).check();
-  await page.getByRole('checkbox', { name: /87W synthetic SKU.*Shipping \+SGD 3\.00/ }).check();
-  await page.getByRole('button', { name: 'Compare 3 products' }).click();
   await expect(widget).toHaveAttribute('data-revision', '0');
   await page.getByLabel('Message Luna').fill('Set my budget to S$70.');
   await page.getByRole('button', { name: 'Send' }).click();
@@ -295,7 +331,8 @@ test('a session the API has forgotten never blocks the shopper', async ({ page }
     return route.fulfill(forgottenSession);
   });
 
-  await openLuna(page, testInfo.project.name);
+  // Open Luna without cart picks, so the shopper's own Compare press meets the forgotten session.
+  await page.goto('/#/Compare');
   await page.getByRole('checkbox', { name: /100W synthetic SKU.*Shipping \+SGD 15\.00/ }).check();
   await page.getByRole('checkbox', { name: /65W synthetic SKU.*Shipping \+SGD 17\.00/ }).check();
   await page.getByRole('checkbox', { name: /87W synthetic SKU.*Shipping \+SGD 3\.00/ }).check();
@@ -416,12 +453,8 @@ test('Live WebRTC UI waits for readiness, captions, mute, and graceful close', a
     window.RTCPeerConnection = FakePeerConnection;
   });
 
+  // The cart's three ticked products open straight on the comparison.
   await openLuna(page, testInfo.project.name);
-  await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toBeVisible();
-  await page.getByRole('checkbox', { name: /100W synthetic SKU.*Shipping \+SGD 15\.00/ }).check();
-  await page.getByRole('checkbox', { name: /65W synthetic SKU.*Shipping \+SGD 17\.00/ }).check();
-  await page.getByRole('checkbox', { name: /87W synthetic SKU.*Shipping \+SGD 3\.00/ }).check();
-  await page.getByRole('button', { name: 'Compare 3 products' }).click();
   await expect(page.getByRole('region', { name: 'Luna shopping assistant' })).toHaveAttribute('data-revision', '0');
 
   const voiceControls = page.locator('section[aria-label="Luna Live voice"]');

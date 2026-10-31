@@ -296,20 +296,25 @@ which carry no buyer identity, conversation, budget or preferences. The page is 
 seller view. Restarting the API clears all counts. Host B, the buyer portability proof, has no
 seller page.
 
-## D-19 — Host A's demo cart holds catalog variants and preselects Luna
+## D-19 — Host A's demo cart holds catalog variants and opens Luna on their comparison
 
 **Decision:** Host A's cart rows are exact backend catalog variants identified by `listingId` and
 `variantId`. The cart renders their titles and list prices from `/api/catalog`, and **Compare
 now** passes the ticked IDs to `#/Compare` in router state. The widget host contract replaces
 `getCurrentSelection()` (one selection or `null`) with `getCurrentSelections()` (an array of at
-most four), which the widget pre-ticks.
+most four). When the host hands over 2–4 available variants, the widget creates the comparison
+during start-up and opens on the table; with fewer it shows the picker with them picked.
 
 **Why:** The clone rows (Anker, UGREEN and Baseus in VND) had no counterpart in the catalog, so
 **Compare now** opened an unrelated product list. Mapping clone rows onto synthetic listings would
-be invented identity; making the cart hold canonical IDs removes the mapping altogether.
+be invented identity; making the cart hold canonical IDs removes the mapping altogether. The
+cart is where the shopper chooses, so asking them to pick the same products again in Luna is
+redundant.
 
 **Consequences:** No clone product ID or cart text reaches the API, and the widget still checks
-every handed-over ID against its own catalog and reports unavailable ones. The three cart rows
+every handed-over ID against its own catalog and reports unavailable ones without comparing.
+The automatic comparison uses the session issued in the same start-up, so it needs no renewal;
+if it fails, the picker stays open with the same picks for a manual Compare. The three cart rows
 are hardcoded demo contents; a real marketplace cart still needs an authorized catalog contract.
 Host B returns its single selection as a one-item array. Checkout and "You May Also Like" remain
 clone presentation.

@@ -20,7 +20,7 @@ function Compare() {
                     <div>
                         <h1 className="text-xl font-medium text-shopee">Shopee Compare</h1>
                         <p className="mt-1 text-sm text-gray-500">
-                            Choose 2–4 exact variants from Luna&apos;s backend catalog.
+                            Luna compares exact variants from its backend catalog.
                         </p>
                     </div>
                     <Link to="/Cart" className="ml-auto text-sm text-shopee hover:text-shopee2">

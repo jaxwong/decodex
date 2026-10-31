@@ -9,11 +9,16 @@ This file records implemented Luna milestones. The implementation spec remains t
 - Linked Host A's cart to the backend catalog. Cart rows are now exact catalog variants (Atlas
   100W, Breeze 65W, Comet 87W) whose titles and SGD prices come from `/api/catalog`; the clone
   Anker/UGREEN/Baseus rows, VND prices, strike-through prices and "Saved" line are deleted.
-- **Compare now** passes the ticked cart rows to `#/Compare`, and Luna opens with them already
-  picked. Opening `#/Compare` directly still starts with nothing picked.
+- **Compare now** passes the ticked cart rows to `#/Compare`. With 2–4 ticked, Luna creates the
+  comparison immediately and opens on the table, so the shopper never picks twice. With 0–1
+  ticked, Luna shows the picker with that product already picked. If the automatic comparison
+  fails, the picker stays open with the same picks. Opening `#/Compare` directly starts empty.
 - Replaced the widget host contract's `getCurrentSelection()` with `getCurrentSelections()` (an
   array of at most four) in the widget, both hosts, the package README and the spec.
-- Added a Host A Playwright test for the cart rows, total, partial and empty preselection.
+- Added a Host A Playwright test for the cart rows and total, the straight-to-table comparison,
+  the exact items requested for a partial selection with the outage fallback, and the one- and
+  zero-product pickers. The deterministic test API only has evidence for all three products, so
+  a successful two-product comparison is not exercised offline.
 
 ### Implemented on `feat/review-disputed-claims`
 

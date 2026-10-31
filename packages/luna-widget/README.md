@@ -17,8 +17,8 @@ The adapter supplies:
 
 - `hostId`: non-empty host identity;
 - `getCurrentSelections()`: an array of at most four `{ listingId, variantId }` the host has
-  already chosen, empty when none. The widget pre-ticks those it finds in the catalog and
-  reports any it does not;
+  already chosen, empty when none. When all are in the catalog and there are 2–4, the widget
+  compares them immediately; otherwise it picks those it finds and reports any it does not;
 - `onSelectionChange(callback)`: subscribe and return an unsubscribe function;
 - `navigateToListing(product)`: host-owned product view for the exact canonical snapshot. It
   includes identity, title, variant, synthetic status, the server-owned delivered-price
