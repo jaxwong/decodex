@@ -60,31 +60,6 @@ class Preferences(_SessionModel):
         return priorities
 
 
-class PreferencePatch(_SessionModel):
-    """Fields explicitly supplied by the buyer for one revision-safe update."""
-
-    max_price_minor: int | None = Field(default=None, ge=0)
-    min_output_w: int | None = Field(default=None, ge=0)
-    priorities: list[RankingPriority] | None = Field(default=None, max_length=4)
-
-    @field_validator("priorities")
-    @classmethod
-    def require_unique_priorities(
-        cls, priorities: list[RankingPriority] | None
-    ) -> list[RankingPriority] | None:
-        if priorities is not None and len(priorities) != len(set(priorities)):
-            raise ValueError("priorities must not contain duplicates")
-        return priorities
-
-    @model_validator(mode="after")
-    def require_at_least_one_change(self) -> "PreferencePatch":
-        if not self.model_fields_set:
-            raise ValueError("preference patch must contain at least one field")
-        if "priorities" in self.model_fields_set and self.priorities is None:
-            raise ValueError("priorities must be a list; use an empty list to clear them")
-        return self
-
-
 class Recommendation(_SessionModel):
     """Explainable ranking output without an invented winner for uncertain input."""
 

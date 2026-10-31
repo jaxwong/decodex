@@ -4,7 +4,7 @@ from collections.abc import Sequence
 import pytest
 
 from app.contracts.evidence import ComparisonEvidence
-from app.contracts.session import ComparisonSelection, PreferencePatch
+from app.contracts.session import ComparisonSelection, Preferences
 from app.decision.comparisons import ComparisonNotFound, create_comparison
 from app.decision.sessions import DemoSessionStore, create_demo_session, require_active_demo_session
 from app.decision.tools import (
@@ -58,7 +58,7 @@ def test_create_comparison_calls_evidence_builder_once() -> None:
     apply_preferences(
         session_state,
         comparison.comparison_id,
-        patch=PreferencePatch(priorities=["price_minor"]),
+        preferences=Preferences(priorities=["price_minor"]),
         expected_revision=0,
     )
     assert build_calls == [SELECTIONS]
@@ -135,7 +135,7 @@ def test_preferences_revision_conflict_preserves_newer_correction() -> None:
     first_update = apply_preferences(
         session_state,
         comparison_id,
-        patch=PreferencePatch(max_price_minor=8000, priorities=["weight_g", "price_minor"]),
+        preferences=Preferences(max_price_minor=8000, priorities=["weight_g", "price_minor"]),
         expected_revision=0,
     )
 
@@ -147,7 +147,7 @@ def test_preferences_revision_conflict_preserves_newer_correction() -> None:
     correction = apply_preferences(
         session_state,
         comparison_id,
-        patch=PreferencePatch(priorities=["price_minor"]),
+        preferences=Preferences(priorities=["price_minor"]),
         expected_revision=1,
     )
 
@@ -159,13 +159,14 @@ def test_preferences_revision_conflict_preserves_newer_correction() -> None:
         apply_preferences(
             session_state,
             comparison_id,
-            patch=PreferencePatch(priorities=["max_output_w"]),
+            preferences=Preferences(priorities=["max_output_w"]),
             expected_revision=1,
         )
 
     assert stale_failure.value.current_revision == 2
     current = get_comparison(session_state, comparison_id)
     assert current.revision == 2
+    assert current.preferences.max_price_minor is None
     assert current.preferences.priorities == ["price_minor"]
 
 

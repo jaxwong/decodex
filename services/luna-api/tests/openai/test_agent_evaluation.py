@@ -172,7 +172,7 @@ class ScriptedAgentResponses:
                 "apply_preferences",
                 {
                     "comparison_id": comparison_id,
-                    "patch": self._mutation_patch(scenario_id),
+                    "preferences": self._mutation_patch(scenario_id),
                     "expected_revision": _expected_revision(request),
                 },
             )

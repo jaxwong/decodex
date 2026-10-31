@@ -2,22 +2,27 @@ import asyncio
 import json
 import logging
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 import httpx2
 import pytest
 from openai import APITimeoutError
+from openai.lib._pydantic import to_strict_json_schema
 from openai.types.responses import Response
 
 from app.contracts.session import ComparisonSelection
 from app.decision.comparisons import create_comparison, require_comparison
 from app.decision.sessions import DemoSessionState
 from app.openai.text_agent import (
+    ANSWER_TEXT_CONFIG,
+    ApplyPreferencesArguments,
     ConversationComparisonMismatch,
     LunaAgentContractError,
     LunaAgentTimeout,
+    LunaAnswer,
     LunaToolCallRejected,
     LunaToolLimitReached,
+    build_luna_tools,
     run_luna,
 )
 from tests.decision.fixtures import SELECTIONS, build_fixture_evidence
@@ -96,6 +101,24 @@ async def create_comparison_state() -> tuple[DemoSessionState, str]:
     return session_state, comparison.comparison_id
 
 
+def test_generated_schemas_match_the_validation_models() -> None:
+    tools = build_luna_tools("cmp_test", 7)
+    apply_tool = next(tool for tool in tools if tool["name"] == "apply_preferences")
+    apply_parameters = cast(dict[str, Any], apply_tool["parameters"])
+    expected_apply_schema = to_strict_json_schema(ApplyPreferencesArguments)
+    expected_apply_schema["properties"]["comparison_id"]["enum"] = ["cmp_test"]
+    expected_apply_schema["properties"]["expected_revision"]["enum"] = [7]
+    answer_format = cast(dict[str, Any], ANSWER_TEXT_CONFIG["format"])
+
+    assert apply_parameters == expected_apply_schema
+    assert apply_parameters["$defs"]["Preferences"]["required"] == [
+        "max_price_minor",
+        "min_output_w",
+        "priorities",
+    ]
+    assert answer_format["schema"] == to_strict_json_schema(LunaAnswer)
+
+
 def test_agent_executes_one_mutation_and_returns_only_valid_citations(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -112,7 +135,7 @@ def test_agent_executes_one_mutation_and_returns_only_valid_citations(
                 "apply_preferences",
                 {
                     "comparison_id": comparison_id,
-                    "patch": {
+                    "preferences": {
                         "max_price_minor": 8000,
                         "min_output_w": 65,
                         "priorities": ["weight_g", "price_minor"],
@@ -195,7 +218,7 @@ def test_agent_rejects_provider_tool_call_after_terminal_mutation() -> None:
                 "apply_preferences",
                 {
                     "comparison_id": comparison_id,
-                    "patch": {
+                    "preferences": {
                         "max_price_minor": None,
                         "min_output_w": None,
                         "priorities": ["review_reliability"],
@@ -257,7 +280,7 @@ def test_correction_uses_bounded_history_and_changes_same_comparison() -> None:
                 "apply_preferences",
                 {
                     "comparison_id": comparison_id,
-                    "patch": {
+                    "preferences": {
                         "max_price_minor": None,
                         "min_output_w": None,
                         "priorities": ["price_minor"],
@@ -416,7 +439,7 @@ def test_timeout_after_mutation_preserves_state_and_marks_action_complete() -> N
                     "apply_preferences",
                     {
                         "comparison_id": comparison_id,
-                        "patch": {
+                        "preferences": {
                             "max_price_minor": 8000,
                             "min_output_w": None,
                             "priorities": ["price_minor"],

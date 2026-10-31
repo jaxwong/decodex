@@ -7,7 +7,6 @@ from app.contracts.session import (
     ComparisonSnapshot,
     ComparisonSnapshotItem,
     EvidenceInspection,
-    PreferencePatch,
     Preferences,
     PreferenceUpdate,
     ReviewAspectResult,
@@ -150,17 +149,14 @@ def apply_preferences(
     session_state: DemoSessionState,
     comparison_id: str,
     *,
-    patch: PreferencePatch,
+    preferences: Preferences,
     expected_revision: int,
 ) -> PreferenceUpdate:
-    """Merge explicit preferences exactly once when expected revision is current."""
+    """Replace preferences exactly once when expected revision is current."""
     comparison = require_comparison(session_state, comparison_id)
     if expected_revision != comparison.revision:
         raise RevisionConflict(comparison.revision)
 
-    preference_values = comparison.preferences.model_dump()
-    preference_values.update(patch.model_dump(exclude_unset=True))
-    preferences = Preferences.model_validate(preference_values)
     recommendation = rank_comparison(comparison.evidence, preferences)
     new_revision = comparison.revision + 1
     ui_patch = UiPatch(
