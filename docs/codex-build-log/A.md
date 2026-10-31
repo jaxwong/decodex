@@ -154,3 +154,39 @@ access, human user study, production evaluation or deployed integration is claim
 - Additional A-owned eval formatting and lint checks passed with the service's
   Ruff configuration. No evaluation artifact was regenerated, live model request
   made, teammate message sent, deployment performed, or PR opened in this review.
+
+## Follow-up PR and B2 integration verification — 31 October 2026
+
+- Human decision: leave B-owned configuration for the colleague. No A-authored
+  change was made to `pyproject.toml`, `uv.lock` or `Makefile`.
+- Human correction: local commit `2bacf6f` had not been pushed or opened as a PR.
+  The user requested the missing review handoff. Original evidence PR #3 was
+  already merged; this follow-up contains only quality/integration corrections.
+- Fetched origin and merged main at `18f0009`, preserving B2 and C's existing
+  commits. B had already added pytest's root import path. B2's new `tests` package
+  required explicit `tests.evidence` imports; added the A-owned package marker
+  and updated the three test consumers, preserving their assertions.
+- Actual latest-main verification:
+
+  ```text
+  MYPYPATH="$PWD" UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+  49 files already formatted
+  All checks passed!
+  Success: no issues found in 47 source files
+  119 passed in 0.76s
+  exit 0
+
+  UV_CACHE_DIR=/tmp/decodex-uv-cache make api-typecheck
+  Found 2 errors in 1 file (checked 47 source files)
+  make: *** [api-typecheck] Error 1
+  exit 2
+  ```
+
+- The two remaining diagnostics are `eval.metrics` and `eval.run` import lookup
+  in `tests/evidence/test_evaluation.py`. B's proposed remaining configuration is
+  `mypy_path = ["$MYPY_CONFIG_FILE_DIR/../.."]`; it was left untouched as requested.
+  The passing command uses an explicit temporary environment override, not a
+  disabled rule. Plain `make api-test` remains blocked at this mypy check.
+- No real model calls, new evaluation results, browser E2E or deployment were
+  performed. Existing fixture, dependency lock and evidence wire schema remain
+  unchanged. PR description must distinguish these limits from passing tests.
