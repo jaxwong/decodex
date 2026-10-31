@@ -42,7 +42,7 @@ the final demo only when both its backend and browser columns are complete.
 | Revision-safe correction | **Complete** — optimistic revision and one mutation owner | **Browser ready** — dual-host E2E observes revisions 0→1→2→3 and changed priority/budget | C: add explicit stale-error browser case |
 | Voice decision | **Complete server path** — Live session and sideband executor | **Failed demo gate** — real speech produced captions and revision 0→1, but no audible output | Voice cut from demo; generation versus playback cause remains unverified |
 | Portable second host | API is host-neutral | **Browser ready** — `@luna/widget` mounts through separate adapters and same-flow Playwright passes | No G3 blocker; real Shopee integration remains out of scope |
-| Seller listing gap report | **Complete** — session-scoped gaps, supported competitors, exclusion and uncertainty counts; zero model calls | **Browser ready in widget** — both hosts render one server response and reuse canonical evidence | Production seller auth, ownership, persistence and cross-session aggregation remain roadmap |
+| Seller listing gap report | **Complete** — gaps with listing text, supported competitors, exclusion and uncertainty counts across every active session; zero model calls | **Browser ready in Host A Seller Centre** — `SellerGapReport` from the widget package; buyers see no seller UI | Production seller auth, ownership and persistence remain roadmap |
 
 A4 is complete and `eval/results.json` contains the current hash-validated partial agent
 artifact. G3 is no longer a blocker. G4 received its one authorized paid run and failed audible
@@ -298,10 +298,10 @@ filters and discovery without manual listing audits.
 **Privacy rule:** Sellers see aggregate reason counts and public listing evidence, never a
 buyer's identity, conversation, budget or preferences.
 
-**Status:** **Demo flow ready.** `GET /api/listings/{listing_id}/gap-report` projects only the
-authorized demo session's current comparison states and makes zero model calls. Both hosts
-render it through the same widget and reuse the existing evidence panel. Seller login, listing
-ownership, persistence and cross-session aggregation are not implemented.
+**Status:** **Demo flow ready.** `GET /api/listings/{listing_id}/gap-report` projects current
+comparison states from every active demo session and makes zero model calls. Host A's top-bar
+**Seller Centre** opens the seller page; buyers never see seller UI. Seller login, listing
+ownership and persistence are not implemented, and restarting the API clears the counts.
 
 ## What the judge should see
 
@@ -314,7 +314,7 @@ shared widget directly; there is no second comparison engine.
 | 12–28 s | Show the normalized table; open one quote and one warranty conflict. | “Luna normalizes the evidence, but never guesses through missing or conflicting data.” |
 | 28–40 s | Open the heat aspect and an exact review excerpt. | “It turns the reviews we analysed into comparable concerns while keeping every claim inspectable.” |
 | 40–58 s | Type the budget, minimum power and portability request. | “The model does not invent a winner. It uses constrained tools, and the server applies the decision rules.” |
-| 58–70 s | Correct to price, set S$70, then open listing C's Seller view and warranty evidence. | “The buyer got a decision; the seller got a fix list from the same evidence, with no extra model call. These counts cover this demo session.” |
+| 58–70 s | Correct to price, set S$70, then click **Seller Centre** in the top bar and choose the Comet listing; point at the two warranty sentences. | “The buyer got a decision; the seller got a fix list from the same evidence, with no extra model call. These counts cover every buyer comparison on this demo server.” |
 | 70–82 s | Open the same flow in Host B. | “The intelligence is portable; the storefront only supplies an adapter.” |
 | 82–90 s | Show measured evaluation results. | “We test evidence, tool behavior and stale-update protection separately, and we keep failed scenarios visible.” |
 

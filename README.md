@@ -27,9 +27,10 @@ make eval
 ```
 
 `make e2e` starts a deterministic test-only API plus both hosts on isolated local ports. It
-makes no provider call. It proves the same cited comparison, correction and seller gap-report
-flow in both hosts, package import boundaries, Live browser event wiring through a labelled
-WebRTC test double, and microphone-denied text fallback.
+makes no provider call. It proves the same cited comparison and correction flow in both hosts,
+Host A's Seller Centre counting another buyer session's exclusion, automatic session renewal,
+package import boundaries, Live browser event wiring through a labelled WebRTC test double, and
+microphone-denied text fallback.
 
 ## Run the real local app
 

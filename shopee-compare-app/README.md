@@ -2,7 +2,8 @@
 
 This Vite app is the Shopee-style Host A for the shared `@luna/widget` workspace package.
 The supported flow is: open `#/Cart` → **Compare now** → choose 2–4 exact backend variants →
-compare → set a constraint that excludes a listing → **Seller view**. Luna uses only relative
+compare → set a constraint that excludes a listing → top-bar **Seller Centre** → choose the
+listing to see why buyers dropped it. Luna uses only relative
 `/api` calls; model keys, evidence, ranking and seller counts remain on `services/luna-api`.
 
 Host A has one comparison owner. `src/components/Section/Compare.jsx` is a thin route that
@@ -32,6 +33,8 @@ verified source. The view makes no new API/model call, and the demo does not inv
 ```
 src/components/Section/cart.jsx     storefront-local cart and Compare entry point
 src/components/Section/Compare.jsx  thin #/Compare route that mounts @luna/widget
+src/components/Section/SellerCentre.jsx  thin #/SellerCentre route that mounts SellerGapReport
+src/components/Navigation/Nav.jsx   top-bar Seller Centre link
 src/lunaHostAdapter.js              Host A navigation bridge only
 packages/luna-widget/               canonical browser comparison UI
 services/luna-api/                  canonical evidence, ranking and model boundary

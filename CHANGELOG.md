@@ -53,6 +53,24 @@ This file records implemented Luna milestones. The implementation spec remains t
 - Added root/package integration READMEs and updated architecture, invariants, decisions, user
   stories and the implementation spec to match the current tree.
 
+### Implemented on `feat/seller-centre` — Seller Centre and session renewal
+
+- Removed **Seller view** from the buyer comparison: buyers never see seller insights. Host A's
+  top-bar **Seller Centre** link now opens `#/SellerCentre`, which mounts the widget package's
+  standalone `SellerGapReport` page (listing picker, report, inline listing text).
+- `GET /api/listings/{listing_id}/gap-report` now counts current comparisons from every active
+  demo session (decision D-18). Each gap carries its `evidence` objects instead of
+  `evidence_ids`, and the report carries `schema_fields`. Disagreeing extractions from different
+  comparisons are both listed instead of raising `RuntimeError`.
+- Removed the "Your demo session expired / Restart session" banner. On HTTP 401 the widget starts
+  a new session: compare and seller-report reads are sent once more; a lost comparison returns
+  to the picker with the same products picked. Start-up that issues a new session now also drops
+  the previous session's comparison, fixing "The comparison was not found in this demo session"
+  after a live code reload.
+- Verification after rebasing onto `a9787f0`: **199 API tests passed** (two new gap-report
+  cases); both hosts built; Playwright reported **9 passed / 3 intentional Host A-only skips**. A throwaway probe reproduced the live-reload desync before the
+  fix and passed after it; it was deleted. These commands made zero provider calls.
+
 ### Implemented on `feat/luna-comparison-ui`
 
 - Replaced the widget's recommendation cards and collapsed evidence list with one side-by-side

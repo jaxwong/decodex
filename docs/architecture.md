@@ -11,8 +11,8 @@ The repository contains three different levels of completion:
 
 - **Implemented and tested:** the Python API, synthetic catalog provider, evidence pipeline,
   deterministic ranking, session state, four decision tools, Responses text agent, GPT-Live
-  server sideband, evaluation runners, and the session-scoped seller gap-report API and browser
-  view. The current paid agent artifact is projected by `make eval` and remains honestly
+  server sideband, evaluation runners, and the seller gap-report API (all active sessions) and
+  Host A Seller Centre page. The current paid agent artifact is projected by `make eval` and remains honestly
   partial at 10/12 scenarios.
 - **G3 implemented and deterministic E2E green:** `packages/luna-widget` owns the API client,
   comparison UI, evidence/citation rendering and Live controls. Host A and the independent
@@ -55,7 +55,7 @@ flowchart LR
 
     subgraph Widget["Shared package: packages/luna-widget"]
         LunaWidget[Comparison, evidence and chat UI]
-        SellerView[Session-scoped seller gap report]
+        SellerView[Seller gap report page, mounted by Host A Seller Centre]
         LunaClient[Relative /api client]
         LiveControls[WebRTC media and captions]
     end
@@ -461,5 +461,5 @@ audible output. The remaining ordered work is:
 3. map storefront cart identities only when an authorized marketplace catalog contract exists.
 
 Do not represent real voice audio, Docker or deployment as complete before their individual
-gates pass. The seller view is complete only for one authorized in-process demo session, not
-seller authentication or weekly analytics.
+gates pass. The seller view counts every active in-process demo session; it is not seller
+authentication, listing ownership or weekly analytics.

@@ -159,25 +159,99 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await page.getByRole('button', { name: 'Send' }).click();
   await expect(widget).toHaveAttribute('data-revision', '3');
   await expect(needs.getByText('Up to SGD 70.00')).toBeVisible();
-  await page.getByRole('columnheader').filter({ hasText: 'SYNTHETIC Comet' })
-    .getByRole('button', { name: 'Seller view' }).click();
-  const sellerView = page.getByRole('region', { name: 'Demo seller view' });
-  await expect(sellerView.getByRole('heading', { name: 'Demo seller view' })).toBeVisible();
-  await expect(sellerView.getByText('Counts cover comparisons in this demo session only.')).toBeVisible();
-  await expect(sellerView.getByRole('heading', { name: 'Evidence gaps' })).toBeVisible();
-  await expect(sellerView.getByText('Weight', { exact: true })).toBeVisible();
-  await expect(sellerView.getByText('Warranty', { exact: true })).toBeVisible();
-  await expect(sellerView.getByText('Over budget: 1')).toBeVisible();
-  await sellerView.getByRole('button', { name: 'Open evidence for Warranty' }).click();
-  await expect(sourcePanel.getByRole('heading', { name: /^Warranty · SYNTHETIC Comet/ })).toBeVisible();
-  await expect(sourcePanel.getByText('Warranty: 24 months')).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(sourcePanel).toHaveCount(0);
+  // Seller insights belong to Seller Centre; an excluded product shows buyers nothing seller-side.
+  await expect(page.getByRole('columnheader').filter({ hasText: 'SYNTHETIC Comet' })
+    .getByText('Doesn’t fit your needs')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Seller view' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Start', exact: true }).click();
   await expect(page.getByText('Microphone permission was denied. Text chat remains available.')).toBeVisible();
   await expect(page.getByLabel('Message Luna')).toBeEnabled();
   expect(consoleErrors).toEqual([]);
+});
+
+test('Seller Centre counts an excluded listing from another buyer session', async ({ page, request }, testInfo) => {
+  test.skip(testInfo.project.name !== 'host-a-chromium', 'Seller Centre is a Host A storefront page');
+  const consoleErrors = [];
+  page.on('console', message => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  // Every test shares one API process, so count from what is already there.
+  const { token } = await (await request.post('/api/demo-sessions')).json();
+  const baseline = await (await request.get('/api/listings/listingC/gap-report', {
+    headers: { Authorization: `Bearer ${token}` },
+  })).json();
+  const comparisons = baseline.comparisons_count + 1;
+  const overBudget = (baseline.exclusion_counts.over_budget ?? 0) + 1;
+
+  await openLuna(page, testInfo.project.name);
+  const widget = page.getByRole('region', { name: 'Luna shopping assistant' });
+  await page.getByRole('checkbox', { name: /100W synthetic SKU.*Shipping \+SGD 15\.00/ }).check();
+  await page.getByRole('checkbox', { name: /65W synthetic SKU.*Shipping \+SGD 17\.00/ }).check();
+  await page.getByRole('checkbox', { name: /87W synthetic SKU.*Shipping \+SGD 3\.00/ }).check();
+  await page.getByRole('button', { name: 'Compare 3 products' }).click();
+  await expect(widget).toHaveAttribute('data-revision', '0');
+  await page.getByLabel('Message Luna').fill('Set my budget to S$70.');
+  await page.getByRole('button', { name: 'Send' }).click();
+  await expect(widget).toHaveAttribute('data-revision', '1');
+
+  await page.getByRole('banner').getByRole('link', { name: 'Seller Centre' }).click();
+  await expect(page).toHaveURL(/#\/SellerCentre$/);
+  const seller = page.getByRole('region', { name: 'Luna seller insights' });
+  await expect(seller.getByText('Demo seller view. There is no seller login')).toBeVisible();
+  await seller.getByRole('button', { name: 'SYNTHETIC Comet power bank family' }).click();
+  const report = seller.getByRole('region', { name: 'Seller report' });
+  await expect(report.getByText(`In ${comparisons} buyer comparison${comparisons === 1 ? '' : 's'}`)).toBeVisible();
+  await expect(report.getByText(`Over budget: ${overBudget}`)).toBeVisible();
+  await expect(report.getByText('Weight', { exact: true })).toBeVisible();
+  const warrantyText = report.getByRole('list', { name: 'Your listing text for Warranty' });
+  await expect(warrantyText.getByText('Warranty: 1 year')).toBeVisible();
+  await expect(warrantyText.getByText('Warranty: 24 months')).toBeVisible();
+  await expect(report.getByText('Weight: SYNTHETIC Atlas')).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+});
+
+test('a session the API has forgotten never blocks the shopper', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'host-a-chromium', 'Shared package needs one session-renewal proof');
+  const forgottenSession = {
+    status: 401,
+    contentType: 'application/json',
+    body: JSON.stringify({ error: { code: 'SESSION_REQUIRED', message: 'A valid demo session bearer token is required.' } }),
+  };
+  let sessionsCreated = 0;
+  page.on('request', request => {
+    if (request.method() === 'POST' && request.url().endsWith('/api/demo-sessions')) sessionsCreated += 1;
+  });
+  let compareRejected = false;
+  await page.route('**/api/comparisons', async route => {
+    if (compareRejected || route.request().method() !== 'POST') return route.fallback();
+    compareRejected = true;
+    return route.fulfill(forgottenSession);
+  });
+
+  await openLuna(page, testInfo.project.name);
+  await page.getByRole('checkbox', { name: /100W synthetic SKU.*Shipping \+SGD 15\.00/ }).check();
+  await page.getByRole('checkbox', { name: /65W synthetic SKU.*Shipping \+SGD 17\.00/ }).check();
+  await page.getByRole('checkbox', { name: /87W synthetic SKU.*Shipping \+SGD 3\.00/ }).check();
+  // React development mode may run the widget's start-up twice, so count from here.
+  const sessionsAtStart = sessionsCreated;
+  await page.getByRole('button', { name: 'Compare 3 products' }).click();
+  await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  expect(compareRejected).toBe(true);
+  expect(sessionsCreated).toBe(sessionsAtStart + 1);
+
+  await page.route('**/api/comparisons/*/ask', route => route.fulfill(forgottenSession));
+  await page.getByLabel('Message Luna').fill('Cheapest first');
+  await page.getByRole('button', { name: 'Send' }).click();
+  await expect(page.getByRole('alert')).toHaveText(
+    'Luna restarted, so this comparison was cleared. Your products are still picked. Press Compare to build it again.',
+  );
+  await expect(page.getByRole('checkbox', { name: /100W synthetic SKU.*Shipping \+SGD 15\.00/ })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: /65W synthetic SKU.*Shipping \+SGD 17\.00/ })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: /87W synthetic SKU.*Shipping \+SGD 3\.00/ })).toBeChecked();
+  await expect(page.getByRole('button', { name: 'Compare 3 products' })).toBeEnabled();
+  expect(sessionsCreated).toBe(sessionsAtStart + 2);
 });
 
 test('Live WebRTC UI waits for readiness, captions, mute, and graceful close', async ({ page }, testInfo) => {

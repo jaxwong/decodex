@@ -17,8 +17,10 @@ relative `/api` routes.
 
 - Exact API-catalog variants, 2–4 item comparison and canonical revision display.
 - Server-ranked recommendation, preference chips, seller sources and review-mention citations.
-- Session-scoped seller gap report for excluded listings, including canonical conflict evidence.
-- Text turns with canonical refresh and explicit 401/409 failure text.
+- Host A Seller Centre page (`#/SellerCentre`) with the seller gap report across every active
+  buyer session, including the listing text behind each gap. Buyers see no seller UI.
+- Text turns with canonical refresh, explicit 409 failure text and automatic session renewal on
+  401.
 - Independent Host B with a different component tree, layout and adapter.
 - Exact product-snapshot handoff to separate Host A and Host B product previews; closing the
   preview preserves the comparison revision.

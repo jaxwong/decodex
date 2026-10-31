@@ -222,6 +222,9 @@ selected inside Luna until an authorized marketplace adapter can provide canonic
 
 ## D-15 — Seller insights are a read-only session projection
 
+**Superseded in part by D-18:** the report now reads every active session and lives on a
+separate seller page. The read-only, zero-model-call and no-buyer-data rules below still hold.
+
 **Decision:** The seller gap report is computed on request from current comparisons in the
 authorized demo session. Ranking records structured exclusion and uncertainty reasons once;
 those seller-only fields are excluded from existing comparison and agent serialization.
@@ -271,3 +274,24 @@ browser a bounded trigger without introducing a second push service or state own
 permission-denied text fallback. The one authorized real run produced captions and a newer
 canonical revision but no audible output. It was not retried. G4 therefore failed and voice is
 removed from the main demo rather than replaced by a second architecture.
+
+## D-18 — Seller insights live in Seller Centre and count every active buyer session
+
+**Decision:** The buyer widget shows no seller UI. Host A's top-bar **Seller Centre** link opens
+`#/SellerCentre`, which mounts the widget package's `SellerGapReport`. The gap-report route
+aggregates current comparisons from every active demo session, not only the caller's, and each
+gap carries its listing evidence and the response carries `schema_fields`, so the page renders
+without a buyer comparison in memory.
+
+**Why:** Seller insights are seller-side data that only sellers care about; placing them in the
+buyer comparison put them in front of the wrong person. A seller's report is only meaningful
+across buyers, and the session-scoped report could only ever show one shopper's activity.
+
+**Consequences:** One request performs one catalog lookup and reads at most
+`MAX_DEMO_SESSIONS * MAX_COMPARISONS_PER_SESSION` (1,000) comparisons after the expiry sweep.
+Because every comparison extracts a listing independently, two comparisons can disagree about
+the same field; both findings are listed instead of the former `RuntimeError`. There is still
+no seller login or listing ownership: any active demo session can read any listing's counts,
+which carry no buyer identity, conversation, budget or preferences. The page is labelled a demo
+seller view. Restarting the API clears all counts. Host B, the buyer portability proof, has no
+seller page.

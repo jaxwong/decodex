@@ -10,6 +10,7 @@ from app.contracts.evidence import (
     Fact,
     ReviewAspectSummary,
     ReviewMention,
+    SchemaField,
 )
 
 type RankingPriority = Literal["weight_g", "price_minor", "max_output_w", "review_reliability"]
@@ -70,13 +71,13 @@ class Recommendation(_SessionModel):
 
 
 class ListingGapField(_SessionModel):
-    """One unsupported listing field projected from canonical comparison evidence."""
+    """One unsupported listing field plus the listing text that produced it."""
 
     item_key: str
     field_key: str
     status: Literal["missing", "conflicting", "unresolved"]
     conflicting_values: list[str]
-    evidence_ids: list[str]
+    evidence: list[Evidence]
 
 
 class ListingBeatenBy(_SessionModel):
@@ -88,9 +89,10 @@ class ListingBeatenBy(_SessionModel):
 
 
 class ListingGapReport(_SessionModel):
-    """Read-only seller projection over current comparisons in one demo session."""
+    """Read-only seller projection over current buyer comparisons in every active session."""
 
     listing_id: str
+    schema_fields: list[SchemaField]
     comparisons_count: int = Field(ge=0)
     gaps: list[ListingGapField]
     beaten_by: list[ListingBeatenBy]

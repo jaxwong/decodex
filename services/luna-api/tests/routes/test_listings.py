@@ -5,6 +5,7 @@ from eval.fixtures import SELECTIONS, build_sample_evidence
 from fastapi.testclient import TestClient
 from openai.types.responses import Response
 
+from app.evidence.schema import SCHEMA_FIELDS
 from app.main import create_app
 from app.providers import MockCatalogProvider
 from tests.routes.test_comparisons import agent_response, create_authorized_client
@@ -28,13 +29,15 @@ def test_gap_report_rejects_unknown_listing() -> None:
     assert response.json()["error"]["code"] == "UNKNOWN_LISTING"
 
 
-def test_gap_report_returns_zero_before_session_comparison() -> None:
+def test_gap_report_returns_zero_before_any_buyer_comparison() -> None:
     client, headers = create_authorized_client()
 
     response = client.get("/api/listings/listingC/gap-report", headers=headers)
+    body = response.json()
 
     assert response.status_code == 200
-    assert response.json() == {
+    assert body.pop("schema_fields") == [field.model_dump(mode="json") for field in SCHEMA_FIELDS]
+    assert body == {
         "listing_id": "listingC",
         "comparisons_count": 0,
         "gaps": [],
@@ -53,7 +56,7 @@ def test_openapi_exposes_gap_report_contract() -> None:
     assert "ListingGapReport" in schema["components"]["schemas"]
 
 
-def test_gap_report_reflects_preference_update_through_public_routes() -> None:
+def test_seller_session_sees_another_buyer_sessions_exclusion() -> None:
     provider_calls = 0
 
     async def create_model_response(**request: Any) -> Response:
@@ -129,8 +132,13 @@ def test_gap_report_reflects_preference_update_through_public_routes() -> None:
             "expected_revision": 0,
         },
     )
-    report_response = client.get("/api/listings/listingC/gap-report", headers=headers)
+    seller_token = client.post("/api/demo-sessions").json()["token"]
+    report_response = client.get(
+        "/api/listings/listingC/gap-report",
+        headers={"Authorization": f"Bearer {seller_token}"},
+    )
 
+    assert seller_token != token
     assert ask_response.status_code == 200
     assert provider_calls == 2
     assert report_response.status_code == 200

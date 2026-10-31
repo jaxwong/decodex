@@ -2,8 +2,9 @@
 
 **Date:** 31 October 2026 (hackathon day)
 **Audience:** Developers A, B and C
-**Status:** Proposal 1's demo-session backend and shared dual-host UI are implemented. Seller
-authentication, ownership, persistence and week-over-week aggregation remain roadmap.
+**Status:** Proposal 1's backend and Host A Seller Centre page are implemented; counts cover
+every active demo session. Seller authentication, ownership, persistence and week-over-week
+history remain roadmap.
 Proposals 2–5 remain proposals. The spec's cut order and kill switches win over anything in
 this file.
 **Source of truth for existing scope:** `Shopee_Compare_Luna_V3_Implementation_Spec.md`
@@ -19,8 +20,11 @@ Each proposal below is written in the same order: what the user or business can 
 ## Proposal 1 — Seller Listing Gap Report
 
 **Implementation status:** Developer B steps B-1 through B-5 are complete and tested. The
-shared widget now renders the report in Host A and Host B, and the same Playwright journey
-proves the S$70 exclusion, weight/warranty gaps, over-budget count and reused evidence panel.
+report now lives on Host A's **Seller Centre** page (top-bar link, `#/SellerCentre`), not in
+the buyer comparison, and counts comparisons from every active buyer session (decision D-18).
+Playwright proves the buyer widget shows no seller UI and that Seller Centre counts another
+buyer session's S$70 exclusion with the weight/warranty gaps and the listing's two warranty
+sentences.
 
 ### Business value, in plain language
 
@@ -48,12 +52,12 @@ Persona: Linh runs a small electronics shop on Shopee VN and sells a 20,000 mAh 
 **Demo flow (what judges see today)**
 
 1. Buyer compares the three exact variants, then sets a S$70 maximum, 65W minimum and portability before price. Listing C is excluded on budget; its evidence still records missing weight and conflicting warranty.
-2. Presenter: "Same evidence, other side of the marketplace." Clicks "Seller view" for listing C. The page is labelled **demo seller view**.
-3. Page shows the three blocks computed from the current comparison: missing weight, warranty conflict, competitors A and B state weight, and one `over_budget` exclusion **in this session**.
-4. Presenter clicks the warranty conflict. The same evidence drawer the buyer saw opens with both snippets.
+2. Presenter: "Same evidence, other side of the marketplace." Clicks **Seller Centre** in the storefront top bar and chooses the Comet listing (listing C). The page is labelled **demo seller view**.
+3. Page shows the three blocks computed from every active buyer comparison on the demo server: missing weight, warranty conflict, competitors A and B state weight, and the `over_budget` exclusion count.
+4. Presenter points at the warranty conflict. The listing's own two sentences ("Warranty: 1 year" and "Warranty: 24 months") are shown under it.
 5. Close: "The buyer got a decision, the seller got the fix list. No second system, no extra model call."
 
-**Honest limitation to say aloud:** step 6 of the real-world flow, the week-over-week improvement, is the point of the feature and cannot be shown in one day. We show the mechanism once and state that the loop closes when the listing is re-read. Seller Centre placement, seller login, listing ownership and cross-buyer aggregation beyond the demo process are roadmap.
+**Honest limitation to say aloud:** step 6 of the real-world flow, the week-over-week improvement, is the point of the feature and cannot be shown in one day. We show the mechanism once and state that the loop closes when the listing is re-read. Seller login, listing ownership and counts that survive an API restart are roadmap; today the counts cover buyer sessions from the last hour in one server process.
 
 ### What it is
 
@@ -61,7 +65,7 @@ A read-only view per listing with three blocks:
 
 1. **Evidence gaps** — each comparison field whose status for this listing is `missing`, `conflicting` or `unresolved`, with the field name and, for conflicts, both source snippets (reuses `Fact.status`, `Fact.conflicting_values`, `Evidence`).
 2. **Beaten by** — fields where a competitor in the same comparison had a `supported` value and this listing did not.
-3. **Why buyers excluded you** — counts of current comparison outcomes: failed budget, failed minimum power, or marked uncertain because a field was missing. Counts come **only** from real comparisons in the authorized demo session. No revision history or seeded numbers.
+3. **Why buyers excluded you** — counts of current comparison outcomes: failed budget, failed minimum power, or marked uncertain because a field was missing. Counts come **only** from real comparisons in active demo sessions on this server. No revision history or seeded numbers.
 
 ### What already exists to build on
 
@@ -78,7 +82,7 @@ A read-only view per listing with three blocks:
   These are required in memory but excluded from comparison and agent serialization. C generates
   only the additive `ListingGapReport` types from OpenAPI; it does not receive a changed
   `Recommendation` contract.
-- Demo exclusions must be produced live during the demo or in the rehearsal session visible to judges. Say "in this session" on screen.
+- Demo exclusions must be produced live during the demo or in a rehearsal within the last hour on the same running server. The page says counts cover buyer comparisons from sessions started in the last hour.
 
 ### Exact implementation
 
@@ -99,9 +103,9 @@ B-1. `services/luna-api/app/contracts/session.py`
   OpenAPI `Recommendation`, text-agent input/tool output or Live context.
 - Keep `excluded_item_keys` and `uncertain_item_keys`. They are derived from the two dicts inside `rank_comparison` and nowhere else, so there is one owner.
 - Add three response models:
-  `ListingGapField`: `item_key: str`, `field_key: str`, `status: Literal["missing", "conflicting", "unresolved"]`, `conflicting_values: list[str]`, `evidence_ids: list[str]`
+  `ListingGapField`: `item_key: str`, `field_key: str`, `status: Literal["missing", "conflicting", "unresolved"]`, `conflicting_values: list[str]`, `evidence: list[Evidence]` (the listing text itself, so a seller page needs no buyer comparison)
   `ListingBeatenBy`: `item_key: str`, `field_key: str`, `competitor_item_keys: list[str]`
-  `ListingGapReport`: `listing_id: str`, `comparisons_count: int`, `gaps: list[ListingGapField]`, `beaten_by: list[ListingBeatenBy]`, `exclusion_counts: dict[ExclusionReason, int]`, `uncertainty_counts: dict[str, int]`
+  `ListingGapReport`: `listing_id: str`, `schema_fields: list[SchemaField]`, `comparisons_count: int`, `gaps: list[ListingGapField]`, `beaten_by: list[ListingBeatenBy]`, `exclusion_counts: dict[ExclusionReason, int]`, `uncertainty_counts: dict[str, int]`
 
 B-2. `services/luna-api/app/decision/ranking.py`, function `rank_comparison`
 
@@ -117,22 +121,22 @@ B-2. `services/luna-api/app/decision/ranking.py`, function `rank_comparison`
 
 B-3. New file `services/luna-api/app/decision/gap_report.py`, one pure function
 
-`def build_gap_report(session_state: DemoSessionState, listing_id: str) -> ListingGapReport`
+`def build_gap_report(comparisons: Iterable[ComparisonResponse], listing_id: str) -> ListingGapReport`
 
-- `comparisons` = every value in `session_state.comparisons` where some `evidence.items[i]["listing_id"] == listing_id`.
+- Matching comparisons = every given comparison where some `evidence.items[i].listing_id == listing_id`.
 - For each such comparison and each of its items with that listing id:
-  gaps: every fact in `evidence.facts_by_item[item_key]` with `status != "supported"`, deduplicated on `(item_key, field_key, status)`.
+  gaps: every fact in `evidence.facts_by_item[item_key]` with `status != "supported"`, deduplicated on the whole row. Each comparison extracts independently, so two disagreeing findings are both listed.
   beaten_by: for each of those fields, the other item keys in the same comparison whose fact for that field is `supported`, deduplicated on `(item_key, field_key)` with competitors unioned.
   counts: `comparison.recommendation.exclusion_reasons.get(item_key)` increments `exclusion_counts`; each entry of `comparison.recommendation.uncertain_fields.get(item_key, [])` increments `uncertainty_counts`.
 - `comparisons_count = len(comparisons)`.
 - The store keeps only the latest `ComparisonResponse` per comparison id, so a count means "comparisons whose current state excludes this listing". There is no revision history and you must not add one.
 - A listing in zero comparisons returns a report with zero counts and empty lists. That is a valid answer, not an error.
-- Scope is the authorized session only. Reading across all sessions is one loop over the store's values, but it is a deliberate exception to B2's isolation. Do not do it today; the page says "in this demo session".
+- Scope (decision D-18): the route passes every active session's comparisons. This is the deliberate exception to B2's isolation; the report carries counts and listing text only.
 
 B-4. New file `services/luna-api/app/routes/listings.py`
 
 - `GET /api/listings/{listing_id}/gap-report`, `response_model=ListingGapReport`, dependency `require_demo_session_state` from `app/routes/session_auth.py`, exactly like `get_catalog`.
-- Body: `provider = cast(CatalogProvider, request.app.state.catalog_provider)`; if `await provider.get_listing(listing_id) is None` raise `CatalogError("unknown_listing")`; else `return build_gap_report(session_state, listing_id)`.
+- Body: `provider = cast(CatalogProvider, request.app.state.catalog_provider)`; if `await provider.get_listing(listing_id) is None` raise `CatalogError("unknown_listing")`; else build the report from every comparison in `request.app.state.demo_sessions` (already swept of expired sessions by the dependency, at most 1,000 comparisons).
 - `CatalogError("unknown_listing")` is already mapped to HTTP 400 `UNKNOWN_LISTING` in `app/errors.py`. No new exception class, no new handler.
 - Register the router in `create_app` in `app/main.py` after `catalog_router`.
 
@@ -157,25 +161,25 @@ searched and not found. The frontend is JavaScript, so no generated-types claim 
 handwritten transport type was invented; the running service's OpenAPI remains the source of
 truth.
 
-C-2. `packages/luna-widget/src/SellerGapReport.jsx` renders the report with
-`{ report, onOpenEvidence, onClose }`.
+C-2. `packages/luna-widget/src/SellerGapReport.jsx` is a standalone seller page,
+`<SellerGapReport apiBaseUrl="/api" />`.
 
-- Renders three lists straight from the report: gaps, beaten by, why buyers dropped you. It computes nothing: no counting, no sorting, no status reinterpretation.
-- Each gap row calls `onOpenEvidence(gap.evidence_ids)`. `onOpenEvidence` is the same callback the comparison table already uses to open the evidence drawer. There is no second drawer.
-- Fixed banner text: "Demo seller view. Counts cover comparisons in this demo session only."
+- It starts its own demo session, lists the catalog's listings and fetches the chosen listing's report.
+- Renders three lists straight from the report: gaps (with the listing text inline), beaten by, why buyers dropped you. It computes nothing: no counting, no sorting, no status reinterpretation.
+- Fixed banner: demo seller view, no seller login, counts cover buyer comparisons from sessions started in the last hour on this demo server.
 
-C-3. The existing API client and bearer token fetch
-`GET /api/listings/{listingId}/gap-report`. The existing widget error boundary shows the server
-message. There is no retry or fallback data.
+C-3. The existing API client fetches `GET /api/listings/{listingId}/gap-report`. If the API has
+forgotten the page's session (HTTP 401), the page starts a new session and reads once more; the
+report is a read, so this cannot duplicate work. Other failures show the widget's error text.
 
-C-4/C-5. The implementation is simpler than the proposed host routes: the "Seller view" action
-lives beside excluded items in the shared recommendation component and the report stays inside
-the shared widget that owns the demo token. Both hosts therefore inherit one implementation;
-neither host duplicates seller state, fetching or presentation.
+C-4/C-5. The buyer widget has no seller action. Host A's existing top-bar **Seller Centre** link
+opens `#/SellerCentre` (`src/components/Section/SellerCentre.jsx`), a thin route that mounts
+`SellerGapReport`. Host B is the buyer portability proof and has no seller page.
 
-C-6. Playwright runs the same revision 0→1→2→3 journey in both hosts, opens listing C's seller
-view and asserts the weight/warranty gaps, `over_budget: 1` presentation and canonical evidence
-panel reuse.
+C-6. Playwright asserts the buyer journey shows no **Seller view** in both hosts, then (Host A)
+runs a buyer comparison with a S$70 budget, opens Seller Centre from the top bar and asserts the
+comparison and over-budget counts each rose by one over a baseline read, plus the weight gap,
+both warranty sentences and the competitor that states weight.
 
 **Done when**
 
@@ -184,8 +188,8 @@ panel reuse.
 - A second GET returns identical JSON.
 - **B complete:** the three backend conditions above pass, including a public create → ask →
   gap-report route test.
-- **C complete for demo scope:** Host A and Host B render the same report from the same response
-  through `@luna/widget`; no host-specific seller implementation exists.
+- **C complete for demo scope:** Host A's Seller Centre renders the report through
+  `@luna/widget`'s `SellerGapReport`; the buyer widget in both hosts shows no seller UI.
 
 ---
 
@@ -556,7 +560,7 @@ Mapped to the spec's work steps and gates (§1.2, §1.3). Times are the spec's c
 
 | Order | Proposal | Earliest start | Blocked by | Owner path | Cut if |
 |---|---|---|---|---|---|
-| 1 | **Seller Listing Gap Report** | After **G2** passes (03:30) | B2 exclusion reasons exposed; B3 agent merged so B has capacity; C3 wired so C has a working Host A | B route + aggregation, then C page in Host A and `minimal-host` | G2 slips, or C4 portability (G3) is red |
+| 1 | **Seller Listing Gap Report** | After **G2** passes (03:30) | B2 exclusion reasons exposed; B3 agent merged so B has capacity; C3 wired so C has a working Host A | B route + aggregation, then C Seller Centre page in Host A | G2 slips, or C4 portability (G3) is red |
 | 2 | **Vietnamese reviews in fixture** | After A3 reviews pass (04:00) and **before** A4 scorer runs | A3 complete; A4 not yet frozen | A only | A4 is behind; never edit fixture after `results.json` without rerunning |
 | 3 | **Review-disputed claims** | After **G3** (04:15) | Three-way contract approval; A3 done; C generated types regenerable | A extraction + validator, B snapshot/test, C marker | Any P0 test red, or approval not obtained by 04:30 |
 | 4 | **True landed price** | After **G4** decision (04:45), only with slack in all three streams | Three-way contract approval; fixture voucher fields; B ranking change; C table change | A, B, C in one commit | Normally roadmap. Spec §8 says B takes at most one optional item |
@@ -578,7 +582,7 @@ Proposal 1 first because it adds the missing Operations half of our pitch with n
 
 Insert one beat after the correction step and before the portability switch, about ten seconds:
 
-> "Same evidence, other side of the marketplace." Open the Seller Gap Report for the listing Luna just excluded. Read the top reason aloud: missing weight, and the competitor that states it. "The buyer got a decision; the seller got the fix."
+> "Same evidence, other side of the marketplace." Click **Seller Centre** in the top bar and choose the listing Luna just excluded. Read the top reason aloud: missing weight, and the competitor that states it. "The buyer got a decision; the seller got the fix."
 
 Pitch sentence addition: **"Luna turns every comparison into two outputs: a defensible decision for the buyer and a precise fix list for the seller."**
 
@@ -586,4 +590,4 @@ Pitch sentence addition: **"Luna turns every comparison into two outputs: a defe
 
 - No conversion, GMV, return-rate or chat-volume lift numbers. We have none and will not invent any.
 - No real Shopee seller, voucher or chat integration. All data paths run on the labelled mock provider.
-- Exclusion counts in the gap report are from demo sessions only and are shown as such.
+- Exclusion counts in the gap report are from active demo sessions on one server only and are shown as such.

@@ -1,8 +1,7 @@
 # `@luna/widget`
 
 This package is the only browser owner of Luna comparison UI, API calls, evidence/citation
-rendering, session-scoped seller insights and GPT-Live WebRTC media. It imports neither demo
-host.
+rendering, seller insights and GPT-Live WebRTC media. It imports neither demo host.
 
 ## Host contract
 
@@ -45,13 +44,32 @@ is labelled as arithmetic over the cited list-price, shop-voucher and shipping r
 Missing/unresolved specifications have no fabricated citation; the host explicitly says no
 verified source exists.
 
+## Session renewal
+
+The API keeps demo sessions in memory, so a server restart or the one-hour expiry forgets them.
+The widget always sends a token, so any 401 means its session is gone. Creating a comparison or
+reading a seller report then starts a new session and sends that request once more; the server
+rejected the first attempt before doing any work. A comparison-bound call (ask, refresh) cannot
+recover the lost comparison, so the widget returns to the picker with the same products still
+picked and says so. Whenever start-up issues a new session it also drops any comparison held
+from the previous one.
+
 ## Seller report ownership
 
-An excluded recommendation exposes **Seller view**. The widget fetches the listing gap report
-with its existing bearer token and renders server-owned gaps, competitor support and decision
-reason counts. Clicking a conflict reuses the existing evidence panel. Hosts do not fetch,
-recount or reinterpret seller insights, and the view never exposes buyer identity,
-conversation, budget or preferences.
+Buyers never see seller insights. A host mounts `SellerGapReport` on its own seller page:
+
+```jsx
+import { SellerGapReport } from '@luna/widget';
+
+<SellerGapReport apiBaseUrl="/api" />
+```
+
+It starts its own demo session, lists the catalog's listings and fetches the chosen listing's
+gap report. The server counts every buyer comparison in all active sessions and returns the
+listing text behind each gap, so the page renders it inline without the buyer evidence panel.
+Hosts do not fetch, recount or reinterpret seller insights, and the report never exposes buyer
+identity, conversation, budget or preferences. There is no seller login: the page is labelled a
+demo seller view and any listing can be opened.
 
 ## Live ownership
 

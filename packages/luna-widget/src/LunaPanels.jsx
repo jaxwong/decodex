@@ -185,7 +185,7 @@ function productSnapshot(evidence, item) {
   };
 }
 
-export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing, onOpenSellerReport }) {
+export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing }) {
   const [differencesOnly, setDifferencesOnly] = useState(true);
   const { evidence, recommendation, preferences } = comparison;
   const schemaFields = evidence.schema_fields;
@@ -254,8 +254,6 @@ export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing, o
                     onClick={() => onNavigateToListing(productSnapshot(evidence, item))}>
                     View product
                   </button>
-                  {status?.tone === 'out' && <button type="button" className="luna-link"
-                    onClick={() => onOpenSellerReport(item.listing_id)}>Seller view</button>}
                 </span>
               </th>;
             })}
@@ -308,7 +306,6 @@ ComparisonTable.propTypes = {
   comparison: PropTypes.object.isRequired,
   onOpenCell: PropTypes.func.isRequired,
   onNavigateToListing: PropTypes.func.isRequired,
-  onOpenSellerReport: PropTypes.func.isRequired,
 };
 
 // A cited ID points either at a listing fact (open that table cell) or at a quote
