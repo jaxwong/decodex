@@ -3,6 +3,7 @@
 import logging
 from http import HTTPStatus
 
+from app.contracts.evidence import Aspect
 from app.contracts.session import (
     DEFAULT_ACTIVE_TAB,
     ComparisonResponse,
@@ -93,10 +94,14 @@ def get_review_aspect(
     session_state: DemoSessionState,
     comparison_id: str,
     *,
-    aspect: str,
+    aspects: list[Aspect],
     item_keys: list[str],
 ) -> ReviewAspectResult:
-    """Return bounded review aggregates and literal mentions for known items and one aspect."""
+    """Return bounded review aggregates and literal mentions for known items and aspects.
+
+    A general "what do reviews say" question needs every aspect at once, so one call may
+    name several; the result stays bounded by the comparison's stored summaries and mentions.
+    """
     comparison = require_comparison(session_state, comparison_id)
     known_item_keys = {item.item_key for item in comparison.evidence.items}
     unknown_item_keys = set(item_keys) - known_item_keys
@@ -104,13 +109,14 @@ def get_review_aspect(
         raise UnknownItem(f"unknown item keys: {sorted(unknown_item_keys)!r}")
 
     known_aspects = {summary.aspect for summary in comparison.evidence.review_summaries}
-    if aspect not in known_aspects:
-        raise UnknownReviewAspect(f"unknown review aspect: {aspect!r}")
+    unknown_aspects = set(aspects) - known_aspects
+    if not aspects or unknown_aspects:
+        raise UnknownReviewAspect(f"unknown review aspects: {sorted(unknown_aspects)!r}")
 
     summaries = [
         summary
         for summary in comparison.evidence.review_summaries
-        if summary.item_key in item_keys and summary.aspect == aspect
+        if summary.item_key in item_keys and summary.aspect in aspects
     ]
     mention_ids = {mention_id for summary in summaries for mention_id in summary.mention_ids}
     mentions = [
@@ -118,7 +124,7 @@ def get_review_aspect(
         for mention_id, mention in comparison.evidence.review_mentions.items()
         if mention_id in mention_ids
     ]
-    return ReviewAspectResult(aspect=aspect, summaries=summaries, mentions=mentions)
+    return ReviewAspectResult(aspects=aspects, summaries=summaries, mentions=mentions)
 
 
 def inspect_evidence(

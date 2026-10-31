@@ -19,11 +19,13 @@ from app.decision.tools import (
     RevisionConflict,
     UnknownEvidence,
     UnknownItem,
+    UnknownReviewAspect,
     apply_preferences,
     get_comparison,
     get_review_aspect,
     inspect_evidence,
 )
+from app.evidence.schema import ASPECTS
 
 CHECKED_AT = datetime(2026, 10, 31, 3, 0, tzinfo=UTC)
 
@@ -141,7 +143,7 @@ def test_get_review_aspect_returns_counts_and_literal_mentions() -> None:
     result = get_review_aspect(
         session_state,
         comparison_id,
-        aspect="heat",
+        aspects=["heat"],
         item_keys=["listingA:100w", "listingB:65w"],
     )
 
@@ -159,7 +161,7 @@ def test_heat_aspect_quotes_vietnamese_and_mixed_reviews_in_their_own_words() ->
     session_state = require_active_demo_session(session_store, token=token, checked_at=CHECKED_AT)
 
     result = get_review_aspect(
-        session_state, comparison_id, aspect="heat", item_keys=["listingA:100w"]
+        session_state, comparison_id, aspects=["heat"], item_keys=["listingA:100w"]
     )
 
     [summary] = result.summaries
@@ -173,6 +175,37 @@ def test_heat_aspect_quotes_vietnamese_and_mixed_reviews_in_their_own_words() ->
     assert ("listingA-r20", "Gets hot when fast charging") in negative_excerpts
 
 
+def test_every_aspect_in_one_call_covers_the_whole_review_picture() -> None:
+    session_store, token, comparison_id = create_comparison_state()
+    session_state = require_active_demo_session(session_store, token=token, checked_at=CHECKED_AT)
+
+    result = get_review_aspect(
+        session_state,
+        comparison_id,
+        aspects=list(ASPECTS),
+        item_keys=["listingA:100w", "listingB:65w", "listingC:87w"],
+    )
+
+    assert result.aspects == list(ASPECTS)
+    assert len(result.summaries) == len(ASPECTS) * 3
+    assert {summary.aspect for summary in result.summaries} == set(ASPECTS)
+    comparison = require_comparison(session_state, comparison_id)
+    assert {mention.id for mention in result.mentions} == set(comparison.evidence.review_mentions)
+
+
+def test_tool_call_rejects_unknown_aspect() -> None:
+    session_store, token, comparison_id = create_comparison_state()
+    session_state = require_active_demo_session(session_store, token=token, checked_at=CHECKED_AT)
+
+    with pytest.raises(UnknownReviewAspect, match="unknown review aspects"):
+        get_review_aspect(
+            session_state,
+            comparison_id,
+            aspects=["overall"],  # type: ignore[list-item]
+            item_keys=["listingA:100w"],
+        )
+
+
 def test_tool_call_rejects_unknown_item() -> None:
     session_store, token, comparison_id = create_comparison_state()
     session_state = require_active_demo_session(session_store, token=token, checked_at=CHECKED_AT)
@@ -181,7 +214,7 @@ def test_tool_call_rejects_unknown_item() -> None:
         get_review_aspect(
             session_state,
             comparison_id,
-            aspect="heat",
+            aspects=["heat"],
             item_keys=["invented:item"],
         )
 
