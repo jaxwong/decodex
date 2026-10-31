@@ -1,7 +1,12 @@
+import json
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
+import httpx2
 from fastapi.testclient import TestClient
+from openai import APITimeoutError
+from openai.types.responses import Response
 
 from app.contracts.evidence import ComparisonEvidence
 from app.decision.sessions import DemoSessionStore, create_demo_session
@@ -165,5 +170,192 @@ def test_openapi_exposes_bearer_auth_and_canonical_comparison_contract() -> None
     assert "/api/catalog" in schema["paths"]
     assert "/api/comparisons" in schema["paths"]
     assert "/api/comparisons/{comparison_id}" in schema["paths"]
+    assert "/api/comparisons/{comparison_id}/ask" in schema["paths"]
     assert "HTTPBearer" in schema["components"]["securitySchemes"]
     assert "ComparisonResponse" in schema["components"]["schemas"]
+    assert "AskComparisonRequest" in schema["components"]["schemas"]
+    assert "AskComparisonResponse" in schema["components"]["schemas"]
+
+
+def agent_response(response_id: str, output: list[dict[str, object]]) -> Response:
+    """Build one concrete SDK response for the route boundary."""
+    return Response.model_validate(
+        {
+            "id": response_id,
+            "object": "response",
+            "created_at": 0,
+            "status": "completed",
+            "model": "gpt-6-luna",
+            "output": output,
+            "parallel_tool_calls": False,
+            "tool_choice": "auto",
+            "tools": [],
+        }
+    )
+
+
+def test_ask_returns_validated_answer_and_current_server_decision() -> None:
+    provider_requests: list[dict[str, Any]] = []
+
+    async def create_model_response(**request: Any) -> Response:
+        provider_requests.append(request)
+        cited_id = next(
+            iter(
+                json.loads(request["input"][-2]["content"].split("\n", maxsplit=1)[1])["items"][0][
+                    "facts"
+                ][0]["evidence_ids"]
+            )
+        )
+        return agent_response(
+            "resp_answer",
+            [
+                {
+                    "id": "msg_answer",
+                    "type": "message",
+                    "status": "completed",
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "output_text",
+                            "text": json.dumps(
+                                {
+                                    "answer": "The table remains evidence-bound.",
+                                    "cited_ids": [cited_id],
+                                }
+                            ),
+                            "annotations": [],
+                        }
+                    ],
+                }
+            ],
+        )
+
+    client = TestClient(
+        create_app(
+            catalog_provider=MockCatalogProvider(),
+            build_evidence=build_fixture_evidence,
+            create_model_response=create_model_response,
+            text_model="gpt-6-luna",
+        )
+    )
+    token = client.post("/api/demo-sessions").json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    comparison = client.post(
+        "/api/comparisons",
+        headers=headers,
+        json={"items": SELECTIONS},
+    ).json()
+
+    unauthorized_response = client.post(
+        f"/api/comparisons/{comparison['comparison_id']}/ask",
+        json={
+            "conversation_id": "conv-1",
+            "message": "Which facts are verified?",
+            "expected_revision": 0,
+        },
+    )
+    response = client.post(
+        f"/api/comparisons/{comparison['comparison_id']}/ask",
+        headers=headers,
+        json={
+            "conversation_id": "conv-1",
+            "message": "Which facts are verified?",
+            "expected_revision": 0,
+        },
+    )
+
+    assert unauthorized_response.status_code == 401
+    assert response.status_code == 200
+    assert response.json()["conversation_id"] == "conv-1"
+    assert response.json()["request_id"].startswith("req_")
+    assert response.json()["answer"] == "The table remains evidence-bound."
+    assert response.json()["recommendation"]["item_key"] is None
+    assert response.json()["ui_patch"] is None
+    assert len(provider_requests) == 1
+
+
+def test_timeout_after_update_preserves_mutation_and_prevents_retry() -> None:
+    provider_call_count = 0
+
+    async def create_model_response(**request: Any) -> Response:
+        nonlocal provider_call_count
+        del request
+        provider_call_count += 1
+        if provider_call_count == 1:
+            return agent_response(
+                "resp_apply",
+                [
+                    {
+                        "id": "fc_apply",
+                        "type": "function_call",
+                        "call_id": "call_apply",
+                        "name": "apply_preferences",
+                        "arguments": json.dumps(
+                            {
+                                "comparison_id": comparison["comparison_id"],
+                                "patch": {
+                                    "max_price_minor": 8000,
+                                    "min_output_w": None,
+                                    "priorities": ["price_minor"],
+                                },
+                                "expected_revision": 0,
+                            }
+                        ),
+                        "status": "completed",
+                    }
+                ],
+            )
+        raise APITimeoutError(request=httpx2.Request("POST", "https://api.openai.com"))
+
+    client = TestClient(
+        create_app(
+            catalog_provider=MockCatalogProvider(),
+            build_evidence=build_fixture_evidence,
+            create_model_response=create_model_response,
+            text_model="gpt-6-luna",
+        )
+    )
+    token = client.post("/api/demo-sessions").json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    comparison = client.post(
+        "/api/comparisons",
+        headers=headers,
+        json={"items": SELECTIONS},
+    ).json()
+    request_body = {
+        "conversation_id": "conv-1",
+        "message": "Under S$80, prioritize price.",
+        "expected_revision": 0,
+    }
+
+    timeout_response = client.post(
+        f"/api/comparisons/{comparison['comparison_id']}/ask",
+        headers=headers,
+        json=request_body,
+    )
+    retry_response = client.post(
+        f"/api/comparisons/{comparison['comparison_id']}/ask",
+        headers=headers,
+        json=request_body,
+    )
+    saved_comparison = client.get(
+        f"/api/comparisons/{comparison['comparison_id']}",
+        headers=headers,
+    ).json()
+    expected_timeout_message = "Preferences were applied, but Luna's reply timed out."
+    expected_timeout_message += " Refresh the comparison."
+
+    assert timeout_response.status_code == 503
+    assert timeout_response.json() == {
+        "error": {
+            "code": "LUNA_TIMEOUT_AFTER_UPDATE",
+            "message": expected_timeout_message,
+            "retryable": False,
+            "current_revision": 1,
+        }
+    }
+    assert retry_response.status_code == 409
+    assert retry_response.json()["error"]["code"] == "STALE_COMPARISON"
+    assert saved_comparison["revision"] == 1
+    assert saved_comparison["preferences"]["max_price_minor"] == 8000
+    assert provider_call_count == 2

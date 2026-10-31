@@ -151,6 +151,10 @@ def test_agent_executes_one_mutation_and_returns_only_valid_citations() -> None:
             "apply_preferences",
             "inspect_evidence",
         }
+        apply_tool = next(
+            tool for tool in provider_requests[0]["tools"] if tool["name"] == "apply_preferences"
+        )
+        assert apply_tool["parameters"]["properties"]["expected_revision"]["enum"] == [0]
         assert "untrusted" in provider_requests[0]["instructions"].lower()
         assert provider_requests[1]["previous_response_id"] == "resp_tool"
         assert provider_requests[1]["input"][0]["type"] == "function_call_output"
