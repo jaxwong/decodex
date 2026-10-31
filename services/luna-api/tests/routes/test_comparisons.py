@@ -186,6 +186,24 @@ def test_openapi_exposes_bearer_auth_and_canonical_comparison_contract() -> None
     }
 
 
+def test_ask_without_composed_model_runtime_fails_explicitly() -> None:
+    client, headers = create_authorized_client()
+    comparison = client.post(
+        "/api/comparisons",
+        headers=headers,
+        json={"items": SELECTIONS},
+    ).json()
+
+    response = client.post(
+        f"/api/comparisons/{comparison['comparison_id']}/ask",
+        headers=headers,
+        json={"conversation_id": "conv-1", "message": "Compare them.", "expected_revision": 0},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "LUNA_NOT_CONFIGURED"
+
+
 def agent_response(response_id: str, output: list[dict[str, object]]) -> Response:
     """Build one concrete SDK response for the route boundary."""
     return Response.model_validate(

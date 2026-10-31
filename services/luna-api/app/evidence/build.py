@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import os
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -16,10 +15,10 @@ from app.contracts.evidence import (
     ComparisonSelection,
     ReviewMention,
 )
-from app.providers import CatalogError, CatalogProvider, provider_factory
+from app.providers import CatalogError, CatalogProvider
 
 from .index import build_evidence_index
-from .model import ExtractionError, ModelClient, OpenAIModelClient, ReviewCandidates, SpecCandidates
+from .model import ExtractionError, ModelClient, ReviewCandidates, SpecCandidates
 from .reviews import aggregate_reviews, review_batches, review_evidence, validate_review_mentions
 from .schema import SCHEMA_FIELDS
 from .validate import unresolved_facts, validate_facts
@@ -194,14 +193,12 @@ async def build_comparison_evidence(
 ) -> ComparisonEvidence:
     """Build exact-variant evidence with injected or server-configured dependencies.
 
-    With no injection, uses LUNA_CATALOG_PROVIDER (only 'mock' supported) and a real
-    Responses client. Missing credentials produce unresolved analysis, never a fake
-    model answer. Catalog identity errors raise CatalogError before model work.
+    The application composition root injects one process-owned builder. Direct callers
+    must bind dependencies explicitly; this function never creates a second client.
     """
     builder = _builder.get()
     if builder is None:
-        builder = EvidenceBuilder(
-            provider_factory({"provider": os.environ.get("LUNA_CATALOG_PROVIDER", "mock")}),
-            OpenAIModelClient(),
+        raise RuntimeError(
+            "build_comparison_evidence requires evidence_dependencies at the call boundary"
         )
     return await builder.build(selections)

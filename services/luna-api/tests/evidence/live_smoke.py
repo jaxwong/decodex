@@ -12,19 +12,23 @@ from eval.smoke import run_smoke
 from openai import AsyncOpenAI, DefaultAsyncHttpxClient
 
 from app.evidence import OpenAIModelClient
+from app.openai.runtime import OPENAI_REQUEST_TIMEOUT_SECONDS
 from app.providers import MockCatalogProvider
 
 ROOT = Path(__file__).resolve().parents[4]
 
 
 async def smoke() -> dict[str, object]:
+    model_name = os.environ.get("OPENAI_TEXT_MODEL")
+    if model_name is None or not model_name.strip():
+        raise RuntimeError("OPENAI_TEXT_MODEL is required for the evidence live smoke")
     budget = RequestBudget(limit=6)
     async with AsyncOpenAI(
         max_retries=0,
-        timeout=30,
+        timeout=OPENAI_REQUEST_TIMEOUT_SECONDS,
         http_client=DefaultAsyncHttpxClient(event_hooks={"request": [budget.track]}),
     ) as sdk:
-        model = OpenAIModelClient(sdk)
+        model = OpenAIModelClient(sdk, model=model_name)
         report = await run_smoke(MockCatalogProvider(), model)
         report["model"] = model.model
         report["attempted_requests"] = len(budget.attempts)

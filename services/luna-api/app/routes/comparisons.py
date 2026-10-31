@@ -19,13 +19,9 @@ from app.decision.comparisons import (
 )
 from app.decision.sessions import DemoSessionState
 from app.errors import ErrorResponse
-from app.openai.live_agent import require_runtime_live_model, start_live_session
-from app.openai.text_agent import (
-    CreateModelResponse,
-    create_runtime_openai_client,
-    require_runtime_text_model,
-    run_luna,
-)
+from app.openai.live_agent import start_live_session
+from app.openai.runtime import OpenAIRuntime
+from app.openai.text_agent import LunaAgentConfigurationError, run_luna
 from app.routes.session_auth import require_demo_session_state
 
 router = APIRouter(prefix="/api", tags=["comparisons"])
@@ -92,34 +88,18 @@ async def post_comparison_ask(
     session_state: Annotated[DemoSessionState, Depends(require_demo_session_state)],
 ) -> AskComparisonResponse:
     """Run one bounded evidence-backed Luna turn for an authorized comparison."""
-    injected_create_response = cast(
-        CreateModelResponse | None,
-        request.app.state.create_model_response,
+    runtime = cast(OpenAIRuntime, request.app.state.openai_runtime)
+    if runtime.create_response is None or runtime.text_model is None:
+        raise LunaAgentConfigurationError("Text model access is not configured in create_app")
+    return await run_luna(
+        session_state,
+        comparison_id=comparison_id,
+        conversation_id=ask_request.conversation_id,
+        message=ask_request.message,
+        expected_revision=ask_request.expected_revision,
+        create_response=runtime.create_response,
+        model=runtime.text_model,
     )
-    injected_text_model = cast(str | None, request.app.state.openai_text_model)
-    if injected_create_response is not None:
-        assert injected_text_model is not None
-        return await run_luna(
-            session_state,
-            comparison_id=comparison_id,
-            conversation_id=ask_request.conversation_id,
-            message=ask_request.message,
-            expected_revision=ask_request.expected_revision,
-            create_response=injected_create_response,
-            model=injected_text_model,
-        )
-
-    text_model = require_runtime_text_model()
-    async with create_runtime_openai_client() as openai_client:
-        return await run_luna(
-            session_state,
-            comparison_id=comparison_id,
-            conversation_id=ask_request.conversation_id,
-            message=ask_request.message,
-            expected_revision=ask_request.expected_revision,
-            create_response=openai_client.responses.create,
-            model=text_model,
-        )
 
 
 @router.post(
@@ -137,19 +117,20 @@ async def post_comparison_ask(
 async def post_comparison_live_session(
     comparison_id: str,
     live_request: LiveSessionRequest,
+    request: Request,
     session_state: Annotated[DemoSessionState, Depends(require_demo_session_state)],
 ) -> LiveSessionResponse:
     """Create a comparison-bound GPT-Live WebRTC session with its sideband attached."""
     require_comparison(session_state, comparison_id)
-    live_model = require_runtime_live_model()
-    text_model = require_runtime_text_model()
-    async with create_runtime_openai_client() as openai_client:
-        live_response = await start_live_session(
-            openai_client,
-            session_state,
-            comparison_id=comparison_id,
-            offer_sdp=live_request.sdp,
-            live_model=live_model,
-            text_model=text_model,
-        )
+    runtime = cast(OpenAIRuntime, request.app.state.openai_runtime)
+    if runtime.client is None or runtime.live_model is None or runtime.text_model is None:
+        raise LunaAgentConfigurationError("Live model access is not configured in create_app")
+    live_response = await start_live_session(
+        runtime.client,
+        session_state,
+        comparison_id=comparison_id,
+        offer_sdp=live_request.sdp,
+        live_model=runtime.live_model,
+        text_model=runtime.text_model,
+    )
     return LiveSessionResponse.model_validate(live_response.model_dump())

@@ -11,10 +11,11 @@ from typing import Literal
 from openai import OpenAI, OpenAIError
 from pydantic import BaseModel, ConfigDict
 
+from app.openai.runtime import OPENAI_REQUEST_TIMEOUT_SECONDS
+
 MAX_EXTERNAL_CALLS = 2
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
 CAPABILITY_REPORT_PATH = REPOSITORY_ROOT / "docs" / "capability-smoke.json"
-OPENAI_REQUEST_TIMEOUT_SECONDS = 30.0
 
 
 class CapabilitySmokeFailed(RuntimeError):

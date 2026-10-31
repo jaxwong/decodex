@@ -29,7 +29,7 @@ suite and text-agent implementation hashes before projecting that artifact into
 as history but is reported as unavailable until an authorized paid rerun replaces it.
 
 The live CLI loads the ignored root `.env` without overwriting process variables.
-It requires `OPENAI_API_KEY` and uses `OPENAI_TEXT_MODEL` (default `gpt-6-luna`).
+It requires explicit non-blank `OPENAI_API_KEY` and `OPENAI_TEXT_MODEL` values.
 Credentials and authorization headers are never written to the report.
 
 One live invocation runs the strengthened demo smoke first, then grounded and

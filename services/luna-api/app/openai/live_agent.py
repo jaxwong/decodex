@@ -3,7 +3,6 @@
 import asyncio
 import json
 import logging
-import os
 import secrets
 from dataclasses import dataclass
 from http import HTTPStatus
@@ -38,7 +37,6 @@ from app.errors import ApiFailure, ErrorCode, ErrorDetail, ToolErrorResponse
 from app.openai.text_agent import (
     EVIDENCE_POLICY,
     MAX_OUTPUT_TOKENS,
-    LunaAgentConfigurationError,
     LunaToolCallRejected,
     build_luna_tools,
     execute_luna_tool,
@@ -91,14 +89,6 @@ class LunaLiveProtocolError(ApiFailure):
     http_status = HTTPStatus.BAD_GATEWAY
     public_message = "The Live provider returned an invalid session response."
     retryable = False
-
-
-def require_runtime_live_model() -> str:
-    """Return the configured Live model or raise instead of inventing a default."""
-    model = os.environ.get("OPENAI_LIVE_MODEL")
-    if model is None or not model.strip():
-        raise LunaAgentConfigurationError("OPENAI_LIVE_MODEL is not set")
-    return model
 
 
 def _live_tools(comparison_id: str, expected_revision: int) -> list[LiveFunctionToolParam]:

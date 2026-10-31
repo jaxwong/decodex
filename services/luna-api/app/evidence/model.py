@@ -2,13 +2,13 @@
 
 import asyncio
 import json
-import os
 from typing import Any, Protocol, TypeVar
 
 from openai import AsyncOpenAI, OpenAIError
 from pydantic import BaseModel, ConfigDict
 
 from app.contracts.evidence import Aspect, FieldKey, Sentiment, Status
+from app.openai.runtime import OPENAI_REQUEST_TIMEOUT_SECONDS
 
 from .prompt import REVIEW_PROMPT, SPEC_PROMPT
 
@@ -58,10 +58,10 @@ ParsedModel = TypeVar("ParsedModel", bound=BaseModel)
 
 
 class OpenAIModelClient:
-    """Lazy server-only SDK client. No retries, tools or hidden offline fallback.
+    """Evidence adapter for one process-owned SDK client and explicit model.
 
-    Inject an AsyncOpenAI-compatible SDK client for transport tests. Credentials are
-    read by the SDK only when an actual request is made.
+    Missing transport or model configuration is an explicit extraction failure. The
+    caller owns client lifetime; this adapter never creates a connection pool.
     """
 
     def __init__(
@@ -69,19 +69,23 @@ class OpenAIModelClient:
         client: AsyncOpenAI | None = None,
         *,
         model: str | None = None,
-        timeout_seconds: float = 30,
+        timeout_seconds: float = OPENAI_REQUEST_TIMEOUT_SECONDS,
     ) -> None:
+        if model is not None and not model.strip():
+            raise ValueError("OpenAIModelClient model must not be blank")
+        if timeout_seconds <= 0:
+            raise ValueError("OpenAIModelClient timeout_seconds must be positive")
         self._client = client
-        self.model = model or os.environ.get("OPENAI_TEXT_MODEL", "gpt-6-luna")
+        self.model = model
         self.timeout_seconds = timeout_seconds
         self.observations: list[dict[str, Any]] = []
 
     async def _parse(
         self, prompt: str, request: dict[str, Any], response_type: type[ParsedModel]
     ) -> ParsedModel:
+        if self._client is None or self.model is None:
+            raise ExtractionError("OpenAI evidence extraction is not configured")
         try:
-            if self._client is None:
-                self._client = AsyncOpenAI(max_retries=0, timeout=self.timeout_seconds)
             response = await asyncio.wait_for(
                 self._client.responses.parse(
                     model=self.model,

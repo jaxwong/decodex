@@ -16,9 +16,9 @@ from pydantic import BaseModel, ConfigDict, model_validator
 
 from app.contracts.evidence import Evidence, FieldKey, Status
 from app.evidence.schema import SCHEMA_FIELDS
+from app.openai.runtime import OPENAI_REQUEST_TIMEOUT_SECONDS
 
 MAX_LIVE_REQUESTS = 36
-REQUEST_TIMEOUT_SECONDS = 30
 logger = logging.getLogger(__name__)
 
 
@@ -118,7 +118,7 @@ async def free_form_specs(
                 ],
                 store=False,
             ),
-            REQUEST_TIMEOUT_SECONDS,
+            OPENAI_REQUEST_TIMEOUT_SECONDS,
         )
         usage = response.usage.model_dump() if response.usage is not None else None
         raw = response.output_text
