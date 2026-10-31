@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 
 import pytest
+from eval.fixtures import SELECTIONS, build_sample_evidence
 
 from app.contracts.evidence import ComparisonEvidence, ComparisonSelection
 from app.contracts.session import Preferences
@@ -23,7 +24,6 @@ from app.decision.tools import (
     get_review_aspect,
     inspect_evidence,
 )
-from tests.decision.fixtures import SELECTIONS, build_fixture_evidence
 
 CHECKED_AT = datetime(2026, 10, 31, 3, 0, tzinfo=UTC)
 
@@ -39,7 +39,7 @@ def create_comparison_state() -> tuple[DemoSessionStore, str, str]:
     )
     selections = [ComparisonSelection.model_validate(selection) for selection in SELECTIONS]
     comparison = asyncio.run(
-        create_comparison(session_state, selections, build_evidence=build_fixture_evidence)
+        create_comparison(session_state, selections, build_evidence=build_sample_evidence)
     )
     return session_store, demo_session.token, comparison.comparison_id
 
@@ -59,7 +59,7 @@ def test_create_comparison_calls_evidence_builder_once() -> None:
         requested_selections: Sequence[ComparisonSelection],
     ) -> ComparisonEvidence:
         build_calls.append([selection.model_dump() for selection in requested_selections])
-        return await build_fixture_evidence(requested_selections)
+        return await build_sample_evidence(requested_selections)
 
     comparison = asyncio.run(
         create_comparison(session_state, selections, build_evidence=counting_builder)

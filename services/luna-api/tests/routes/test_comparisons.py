@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx2
+from eval.fixtures import SELECTIONS, build_sample_evidence
 from fastapi.testclient import TestClient
 from openai import APITimeoutError
 from openai.types.responses import Response
@@ -12,7 +13,6 @@ from app.contracts.evidence import ComparisonEvidence, ComparisonSelection
 from app.decision.sessions import DemoSessionStore, create_demo_session
 from app.main import create_app
 from app.providers import CatalogError, MockCatalogProvider
-from tests.decision.fixtures import SELECTIONS, build_fixture_evidence
 
 
 def create_authorized_client() -> tuple[TestClient, dict[str, str]]:
@@ -20,7 +20,7 @@ def create_authorized_client() -> tuple[TestClient, dict[str, str]]:
     client = TestClient(
         create_app(
             catalog_provider=MockCatalogProvider(),
-            build_evidence=build_fixture_evidence,
+            build_evidence=build_sample_evidence,
         )
     )
     session_response = client.post("/api/demo-sessions")
@@ -260,7 +260,7 @@ def test_ask_returns_validated_answer_and_current_server_decision() -> None:
     client = TestClient(
         create_app(
             catalog_provider=MockCatalogProvider(),
-            build_evidence=build_fixture_evidence,
+            build_evidence=build_sample_evidence,
             create_model_response=create_model_response,
             text_model="gpt-6-luna",
         )
@@ -337,7 +337,7 @@ def test_timeout_after_update_preserves_mutation_and_prevents_retry() -> None:
     client = TestClient(
         create_app(
             catalog_provider=MockCatalogProvider(),
-            build_evidence=build_fixture_evidence,
+            build_evidence=build_sample_evidence,
             create_model_response=create_model_response,
             text_model="gpt-6-luna",
         )
@@ -441,7 +441,7 @@ def test_invalid_answer_after_update_returns_committed_revision() -> None:
     client = TestClient(
         create_app(
             catalog_provider=MockCatalogProvider(),
-            build_evidence=build_fixture_evidence,
+            build_evidence=build_sample_evidence,
             create_model_response=create_model_response,
             text_model="gpt-6-luna",
         )

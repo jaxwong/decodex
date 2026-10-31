@@ -13,6 +13,8 @@ from app.contracts.evidence import (
 )
 
 type RankingPriority = Literal["weight_g", "price_minor", "max_output_w", "review_reliability"]
+type ActiveTab = Literal["specs", "reviews"]
+DEFAULT_ACTIVE_TAB: ActiveTab = "specs"
 
 
 class _SessionModel(BaseModel):
@@ -72,7 +74,7 @@ class UiPatch(_SessionModel):
     focused_fields: list[str]
     excluded_item_keys: list[str]
     highlight_item_key: str | None
-    active_tab: Literal["specs", "reviews"]
+    active_tab: ActiveTab
 
 
 class ComparisonResponse(_SessionModel):
