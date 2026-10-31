@@ -21,8 +21,9 @@ from typing import Any
 
 import httpx2
 from dotenv import load_dotenv
+from eval.agent import load_agent_benchmark
 from eval.baselines import predict
-from eval.live import MAX_LIVE_REQUESTS, RequestBudget, free_form_specs
+from eval.live import MAX_LIVE_REQUESTS, RequestBudget, free_form_specs, token_summary
 from eval.metrics import score
 from eval.smoke import SMOKE_SELECTIONS, run_smoke
 from openai import AsyncOpenAI, DefaultAsyncHttpxClient
@@ -90,24 +91,6 @@ async def request_plan(
     if plan["total"] > MAX_LIVE_REQUESTS:
         raise RuntimeError("Fixture request plan exceeds the approved 36-request ceiling")
     return plan
-
-
-def token_summary(usages: list[dict[str, Any] | None], attempted: int) -> dict[str, Any]:
-    """Report observed usage and coverage; absent token fields are never guessed."""
-    keys = ("input_tokens", "output_tokens", "total_tokens")
-    records = [u for u in usages if u is not None]
-    totals = {
-        key: sum(u[key] for u in records)
-        if records and all(type(u.get(key)) is int for u in records)
-        else None
-        for key in keys
-    }
-    return {
-        "observed_totals": totals,
-        "responses_with_usage": len(records),
-        "attempted_requests": attempted,
-        "complete": len(records) == attempted and all(v is not None for v in totals.values()),
-    }
 
 
 async def live_predictions(
@@ -226,6 +209,7 @@ async def evaluate(
     elapsed_ms = (perf_counter() - start) * 1000
     measured = await live_predictions(provider, selections, transport) if live else None
     labels = json.loads((ROOT / "data/ground_truth.json").read_text())
+    agent_benchmark = load_agent_benchmark()
     result: dict[str, Any] = {
         "conditions": {
             "synthetic": True,
@@ -261,8 +245,10 @@ async def evaluate(
             "Not executed; requires explicit --live and API credentials"
         ),
         "ungrounded_free_form": unavailable("No live free-form baseline executed"),
-        "agent_output_evaluation": unavailable(
-            "Developer B supplies decision/agent outputs and tests"
+        "agent_output_evaluation": (
+            agent_benchmark.model_dump(mode="json")
+            if agent_benchmark is not None
+            else unavailable("Developer B's paid agent benchmark has not been executed")
         ),
     }
     if measured is not None:
@@ -351,6 +337,7 @@ def main() -> None:
                 "output": str(args.output),
                 "baseline": result["regex_keyword_baseline"]["metrics"],
                 "live": result["grounded_structured_outputs"].get("available", False),
+                "agent": result["agent_output_evaluation"].get("available", False),
             },
             indent=2,
         )
