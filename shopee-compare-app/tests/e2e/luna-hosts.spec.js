@@ -195,6 +195,47 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   expect(consoleErrors).toEqual([]);
 });
 
+test('Host A cart lists catalog variants and opens the ticked ones in Luna', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'host-a-chromium', 'The cart is a Host A storefront page');
+  const consoleErrors = [];
+  page.on('console', message => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  const atlas = page.getByRole('checkbox', { name: /100W synthetic SKU.*Shipping \+SGD 15\.00/ });
+  const breeze = page.getByRole('checkbox', { name: /65W synthetic SKU.*Shipping \+SGD 17\.00/ });
+  const comet = page.getByRole('checkbox', { name: /87W synthetic SKU.*Shipping \+SGD 3\.00/ });
+
+  await page.goto('/#/Cart');
+  const cart = page.getByRole('region', { name: 'Cart products' });
+  for (const [name, price] of [
+    ['SYNTHETIC Atlas power bank family 100W synthetic SKU', 'SGD 60.00'],
+    ['SYNTHETIC Breeze power bank family 65W synthetic SKU', 'SGD 69.65'],
+    ['SYNTHETIC Comet power bank family 87W synthetic SKU', 'SGD 79.87'],
+  ]) {
+    await expect(cart.getByRole('checkbox', { name: `Select ${name}` })).toBeChecked();
+    await expect(cart.locator('article').filter({ hasText: price })).toHaveCount(1);
+  }
+  await expect(page.getByText('Total (3 items):')).toContainText('SGD 209.52');
+
+  await cart.getByRole('checkbox', { name: 'Select SYNTHETIC Breeze power bank family 65W synthetic SKU' }).uncheck();
+  await page.getByRole('button', { name: 'Compare now' }).click();
+  await expect(page).toHaveURL(/#\/Compare$/);
+  await expect(atlas).toBeChecked();
+  await expect(comet).toBeChecked();
+  await expect(breeze).not.toBeChecked();
+  await expect(page.getByText('2 of 4 picked')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Compare 2 products' })).toBeEnabled();
+
+  await page.getByRole('link', { name: '< Back to Cart' }).click();
+  await page.getByRole('checkbox', { name: /^Select All/ }).uncheck();
+  await page.getByRole('button', { name: 'Compare now' }).click();
+  await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toBeVisible();
+  await expect(atlas).toBeVisible();
+  await expect(atlas).not.toBeChecked();
+  await expect(page.getByText('0 of 4 picked')).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+});
+
 test('Seller Centre counts an excluded listing from another buyer session', async ({ page, request }, testInfo) => {
   test.skip(testInfo.project.name !== 'host-a-chromium', 'Seller Centre is a Host A storefront page');
   const consoleErrors = [];

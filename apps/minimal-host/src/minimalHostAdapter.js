@@ -4,8 +4,8 @@ export function createMinimalHostAdapter(onNavigate) {
   return {
     adapter: {
       hostId: 'minimal-host',
-      getCurrentSelection() {
-        return selection;
+      getCurrentSelections() {
+        return selection ? [selection] : [];
       },
       onSelectionChange(subscriber) {
         subscribers.add(subscriber);

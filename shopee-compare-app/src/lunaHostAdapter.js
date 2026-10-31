@@ -1,8 +1,8 @@
-export function createShopeeLunaAdapter(openProduct) {
+export function createShopeeLunaAdapter(openProduct, cartSelections) {
   return {
     hostId: 'shopee-compare-app',
-    getCurrentSelection() {
-      return null;
+    getCurrentSelections() {
+      return cartSelections;
     },
     onSelectionChange() {
       return () => {};
