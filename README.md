@@ -58,8 +58,10 @@ Terminal 3:
 npm run dev --workspace minimal-host -- --port 5174
 ```
 
-Open Host A at `http://127.0.0.1:5173/#/Cart` and Host B at
-`http://127.0.0.1:5174/`. Both hosts proxy relative `/api` calls to port 8000.
+Open Host A at `http://127.0.0.1:5173/` and Host B at
+`http://127.0.0.1:5174/`. Both hosts proxy relative `/api` calls to port 8000. Host A's demo
+walk is search → product page → cart → **Compare now** → **Choose this one** → checkout; see
+[its README](shopee-compare-app/README.md).
 
 ## Honest current limits
 
@@ -68,9 +70,9 @@ Open Host A at `http://127.0.0.1:5173/#/Cart` and Host B at
   microphone speech produced captions and changed the comparison from revision 0 to 1, but no
   audible Luna response was heard. The run was not retried. Use text in the main demo and do
   not claim working voice audio.
-- Host A now has one comparison implementation: `@luna/widget` on `#/Compare`. The demo cart
-  holds exact backend catalog variants; **Compare now** with 2–4 ticked opens Luna straight on
-  their comparison table. Cart text is never treated as trusted evidence.
+- Host A has one comparison implementation: `@luna/widget` on `#/Compare`. Its search,
+  product page, cart and checkout render Luna's backend catalog; storefront text is never
+  treated as trusted evidence. Checkout is a demo: cash on delivery only, nothing is charged.
 - Docker/Render deployment and public smoke proof are not implemented.
 - `npm install` currently reports dependency audit findings; no automatic or breaking audit fix
   has been applied.

@@ -317,4 +317,28 @@ The automatic comparison uses the session issued in the same start-up, so it nee
 if it fails, the picker stays open with the same picks for a manual Compare. The three cart rows
 are hardcoded demo contents; a real marketplace cart still needs an authorized catalog contract.
 Host B returns its single selection as a one-item array. Checkout and "You May Also Like" remain
-clone presentation.
+clone presentation. D-20 replaces both.
+
+## D-20 — Host A is a Shopee storefront over the catalog; product view is its product page
+
+**Decision:** The demo catalog reads like real listings (fictional brand titles, plain variant
+labels, drawn product images, sentiment-based star ratings). Host A gets search
+(`GET /api/catalog?q=`), a Shopee-style product page (`GET /api/catalog/{listing_id}`), a cart
+and checkout over that catalog, and **Choose this one** in the comparison, wired through the
+widget's existing optional `requestAddToCart`. In Host A, **View product** opens the product page
+over the comparison instead of the cited evidence panel. While a cart-handed comparison builds,
+the widget shows those products loading instead of the picker.
+
+**Why:** The demo must walk search → product → cart → compare → choose → checkout, and every
+step showed something unrelated or unfinished: a dead search box, no product page, an evidence
+dump labelled as the product, a pre-ticked picker during a multi-second build, and clone checkout
+pages with other products in pesos. Shoppers judge a listing page by Shopee's layout; Luna's
+evidence belongs in the comparison, where every cell already opens its sources.
+
+**Consequences:** Seller text on the product page is unverified by design and is labelled as the
+listing; Luna's checked values and citations stay in the comparison table and source panel.
+Host B keeps the cited snapshot preview, so I-56's citation projection is still exercised. The
+product page costs one catalog GET and no model call. Checkout totals per line and is cash on
+delivery only; nothing is charged. Renaming fixtures changed source text the recorded paid runs
+were hashed against; both were already stale on `main` before this change. Images are inlined
+SVG data URIs, so every host and the single-file build show them without a file server.

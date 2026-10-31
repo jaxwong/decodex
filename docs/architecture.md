@@ -31,12 +31,15 @@ The repository contains three different levels of completion:
 - **Deployment incomplete:** the single-image runtime, deployment files and public smoke proof
   remain missing.
 
-Host A, Host B and the API now share one canonical comparison path. Host A's demo cart holds
-exact trusted catalog variants: it renders their titles and prices from `/api/catalog`, and
-**Compare now** hands the ticked listing/variant IDs to Luna, which compares 2–4 of them
-immediately and otherwise shows its picker with them picked. The cart
-never sends product text as evidence. Its three rows are demo contents; a real marketplace cart
-still needs an authorized catalog contract before its identities can be used.
+Host A, Host B and the API now share one canonical comparison path. Host A's storefront
+(`src/shop.jsx`) loads `/api/catalog` once and keeps a cart of exact trusted catalog variants.
+Search asks `/api/catalog?q=`; the product page shows `/api/catalog/{listing_id}`, the seller's
+unverified listing text and reviews. **Compare now** hands the ticked listing/variant IDs to
+Luna, which shows those products loading and compares 2–4 of them immediately, and otherwise
+shows its picker with them picked. **Choose this one** calls the host's `requestAddToCart`, which
+checks out that exact variant. No storefront page sends product text as evidence. The cart's
+three starting rows are demo contents; a real marketplace cart still needs an authorized catalog
+contract before its identities can be used.
 
 ## System map
 
@@ -45,9 +48,9 @@ flowchart LR
     Buyer[Buyer]
 
     subgraph HostA["Host A: shopee-compare-app"]
-        Cart[Catalog-backed demo cart]
+        Cart[Catalog-backed storefront: search, product page, cart, checkout]
         HostARoute[Thin #/Compare route]
-        HostAAdapter[Host A navigation adapter]
+        HostAAdapter[Host A adapter: selections, product view, checkout]
     end
 
     subgraph HostB["Host B: apps/minimal-host"]
@@ -123,14 +126,18 @@ flowchart LR
 
 ### Product view evidence flow
 
-**View product** does not fetch or infer a second product record. `ComparisonTable` projects the
+**View product** passes `navigateToListing` one host snapshot. `ComparisonTable` projects the
 selected item, its server-validated list/voucher/shipping/delivered amounts, all `schema_fields`,
-its `facts_by_item` entries and their existing evidence IDs into one host snapshot. Exact source
-type, source text and source location travel with each listed price component and each supported
-or conflicting specification. The delivered total is labelled as arithmetic over those three
-cited components. Missing and unresolved facts carry no source and are rendered as abstentions.
-Host A and Host B own different presentation, but neither recomputes a value or citation.
-Opening and closing the view keeps the widget mounted and makes zero external calls.
+its `facts_by_item` entries and their existing evidence IDs into it. Exact source type, source
+text and source location travel with each listed price component and each supported or
+conflicting specification. The delivered total is labelled as arithmetic over those three cited
+components. Missing and unresolved facts carry no source and are rendered as abstentions.
+
+Each host decides what to show, and the widget stays mounted either way. Host B renders the
+cited snapshot and makes zero external calls. Host A uses only the snapshot's listing and variant
+IDs to open its Shopee product page over the comparison, which makes one
+`GET /api/catalog/{listing_id}` and no model call; seller text there is labelled as the listing,
+not as Luna's verified values.
 
 ## API composition root
 
@@ -175,7 +182,8 @@ A missing, unknown or expired token never reveals whether another session owns a
 |---|---|---|
 | `GET` | `/api/health` | Process liveness only |
 | `POST` | `/api/demo-sessions` | Creates an opaque process-local session |
-| `GET` | `/api/catalog` | Returns bounded catalog previews and exact variants |
+| `GET` | `/api/catalog` | Returns bounded catalog previews and exact variants; `q` (≤100 chars) matches titles |
+| `GET` | `/api/catalog/{listing_id}` | Returns one storefront listing: seller description, per-variant specification lines and every review (two provider calls, no model call) |
 | `POST` | `/api/comparisons` | Builds immutable evidence once and stores revision `0` |
 | `GET` | `/api/comparisons/{id}` | Returns the latest authorized comparison state |
 | `POST` | `/api/comparisons/{id}/ask` | Runs one bounded text-agent turn |

@@ -86,9 +86,9 @@ compares the wrong capacity, colour or power configuration.
 rejected rather than silently replaced by a default or sibling variant.
 
 **Status:** **Browser ready.** The sole comparison view selects exact variants from the API
-catalog in both hosts. Host A's demo cart holds exact catalog variants, and **Compare now**
-with 2–4 ticked opens Luna straight on their comparison. A real marketplace cart still needs
-authorized canonical identities.
+catalog in both hosts. In Host A, Mai can search, open a product page, pick an exact model and
+add it to the cart; **Compare now** with 2–4 ticked shows those products loading and then their
+comparison. A real marketplace cart still needs authorized canonical identities.
 
 ### 2. Turn incompatible listings into one table
 
@@ -206,8 +206,10 @@ snapshot, the four delivered-price amounts and all eight normalized specificatio
 Exact evidence excerpts and locations render for the three listed price components and every
 supported/conflicting fact; delivered total is explicitly derived, while missing facts abstain.
 The view opens and closes without another API/model call or comparison reset. It is labelled
-synthetic where applicable. A real authorized marketplace product URL and checkout automation
-remain out of scope.
+synthetic where applicable. In Host A, **View product** opens the Shopee-style product page over
+the comparison instead, and **Choose this one** checks out exactly that variant: a demo checkout
+whose one-unit total equals Luna's delivered total, cash on delivery only. A real authorized
+marketplace product URL, payment and checkout automation remain out of scope.
 
 ## The same decision by voice
 

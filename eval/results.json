@@ -7,8 +7,8 @@
     "label_provenance": "Fabricated fixture labels authored in a separate file; no human adjudication claimed.",
     "labels_supplied_to_extractor": false,
     "source_sha256": {
-      "listings.json": "3090506f7e796de5a29b50d7d91aa0fb660a552bf5f84c1417421d215dcb12c2",
-      "reviews.json": "375cf5c9bcb8834d663bdfbddc206864ad4e8236116c620974eb783396956d60",
+      "listings.json": "40ff25a4349e70a8b2c32980994cd2e60642e2b7b1761104b429db72e370620a",
+      "reviews.json": "641906c6d717b595ba8f5ff67b550178ce9374489ddb954087560700b0f009ff",
       "ground_truth.json": "96ec91b4e7fb832740440e8dd7be3cb9bad662d14b195bbf23a23c73297dd09c"
     },
     "limitations": [
@@ -77,7 +77,7 @@
         "denominator": 1
       }
     },
-    "observed_corpus_latency_ms": 3.54754101135768,
+    "observed_corpus_latency_ms": 2.585291978903115,
     "tokens": {
       "available": false,
       "reason": "No model called for deterministic baseline"
