@@ -465,7 +465,7 @@ def test_sideband_returns_structured_tool_error_for_unknown_item() -> None:
             "get_review_aspect",
             {
                 "comparison_id": comparison_id,
-                "aspect": "heat",
+                "aspects": ["heat"],
                 "item_keys": ["invented:item"],
             },
         )

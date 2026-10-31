@@ -18,6 +18,7 @@ from openai.types.responses import (
 from openai.types.responses.response_input_param import FunctionCallOutput
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
+from app.contracts.evidence import Aspect
 from app.contracts.session import (
     AskComparisonResponse,
     Preferences,
@@ -42,6 +43,7 @@ from app.decision.tools import (
     inspect_evidence,
 )
 from app.errors import ApiFailure, ErrorCode
+from app.evidence.schema import ASPECTS
 from app.openai import runtime as openai_runtime
 
 logger = logging.getLogger(__name__)
@@ -85,8 +87,16 @@ class GetComparisonArguments(_AgentModel):
 
 class GetReviewAspectArguments(_AgentModel):
     comparison_id: str
-    aspect: str = Field(min_length=1)
+    # Enumerated in the strict schema: a free string let the model ask for "overall".
+    aspects: list[Aspect] = Field(min_length=1, max_length=len(ASPECTS))
     item_keys: list[str] = Field(min_length=1, max_length=4)
+
+    @field_validator("aspects")
+    @classmethod
+    def require_unique_aspects(cls, aspects: list[Aspect]) -> list[Aspect]:
+        if len(aspects) != len(set(aspects)):
+            raise ValueError("aspects must not contain duplicates")
+        return aspects
 
 
 class ApplyPreferencesArguments(_AgentModel):
@@ -280,7 +290,9 @@ def build_luna_tools(comparison_id: str, expected_revision: int) -> list[Functio
         _tool_schema(
             name="get_review_aspect",
             description=(
-                "Read bounded review summaries and literal mentions for one aspect. "
+                "Read bounded review summaries and literal mentions for one or more aspects: "
+                + ", ".join(ASPECTS)
+                + ". For a general question about reviews, request every aspect in one call. "
                 "For review claims, cite each returned mention ID; never cite its review ID."
             ),
             parameters=argument_schemas[1],
@@ -314,6 +326,12 @@ def _parse_arguments[AgentArguments: _AgentModel](
     try:
         return argument_model.model_validate_json(function_call.arguments)
     except ValidationError as failure:
+        logger.warning(
+            "Rejected Luna tool arguments tool=%s arguments=%s error=%s",
+            function_call.name,
+            function_call.arguments[:500],
+            failure.errors(include_url=False)[:3],
+        )
         raise LunaToolCallRejected(
             f"{function_call.name} returned invalid strict arguments"
         ) from failure
@@ -342,7 +360,7 @@ def execute_luna_tool(
             review_result = get_review_aspect(
                 session_state,
                 comparison_id,
-                aspect=review_arguments.aspect,
+                aspects=review_arguments.aspects,
                 item_keys=review_arguments.item_keys,
             )
             return review_result.model_dump_json(), None
@@ -370,6 +388,12 @@ def execute_luna_tool(
             )
             return evidence_result.model_dump_json(), None
     except (UnknownEvidence, UnknownItem, UnknownReviewAspect) as failure:
+        logger.warning(
+            "Rejected Luna tool call tool=%s arguments=%s reason=%s",
+            function_call.name,
+            function_call.arguments[:500],
+            failure,
+        )
         raise LunaToolCallRejected(
             f"{function_call.name} referenced data outside the authorized comparison"
         ) from failure

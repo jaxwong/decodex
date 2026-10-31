@@ -12,6 +12,7 @@ from openai.types.responses import Response
 
 from app.evidence import EvidenceBuilder
 from app.evidence.index import build_evidence_index
+from app.evidence.schema import ASPECTS
 from app.main import create_app
 from app.providers import MockCatalogProvider
 from tests.evidence.fakes import FakeModelClient
@@ -85,9 +86,27 @@ def _model_response(response_id: str, output: list[dict[str, object]]) -> Respon
     )
 
 
+def _review_mention_ids(function_output: str) -> list[str]:
+    """Cite the first two mention IDs the review tool returned, as the real model would."""
+    result = json.loads(function_output)
+    return [mention["id"] for mention in result["mentions"]][:2]
+
+
 async def create_scripted_response(**request: Any) -> Response:
-    """Answer a disputed-claim question read-only, or apply one preference mutation."""
+    """Answer a reviews or disputed-claim question read-only, or apply one preference mutation."""
     if request.get("previous_response_id") is not None:
+        first_input = cast(list[dict[str, Any]], request["input"])[0]
+        if first_input.get("type") == "function_call_output" and '"aspects"' in str(
+            first_input.get("output", "")
+        ):
+            return _answer_response(
+                "resp_e2e_reviews",
+                answer=(
+                    "Across the analysed reviews, heat is the most common complaint and "
+                    "portability the most common praise; here are two of the mentions."
+                ),
+                cited_ids=_review_mention_ids(str(first_input["output"])),
+            )
         return _answer_response(
             "resp_e2e_answer",
             answer=(
@@ -99,7 +118,32 @@ async def create_scripted_response(**request: Any) -> Response:
         )
 
     model_input = cast(list[dict[str, Any]], request["input"])
-    if "claim" in str(model_input[-1]["content"]).lower():
+    last_message = str(model_input[-1]["content"]).lower()
+    if "what do reviews say" in last_message:
+        comparison_id = _comparison_snapshot(model_input)["comparison_id"]
+        return _model_response(
+            "resp_e2e_reviews_tool",
+            [
+                {
+                    "id": "fc_e2e_reviews",
+                    "type": "function_call",
+                    "call_id": "call_e2e_reviews",
+                    "name": "get_review_aspect",
+                    "arguments": json.dumps(
+                        {
+                            "comparison_id": comparison_id,
+                            "aspects": list(ASPECTS),
+                            "item_keys": [
+                                item["item_key"]
+                                for item in _comparison_snapshot(model_input)["items"]
+                            ],
+                        }
+                    ),
+                    "status": "completed",
+                }
+            ],
+        )
+    if "claim" in last_message:
         breeze = next(
             item
             for item in _comparison_snapshot(model_input)["items"]
