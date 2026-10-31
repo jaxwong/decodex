@@ -3,7 +3,7 @@
   "available": true,
   "synthetic": true,
   "status": "partial",
-  "executed_at_utc": "2026-10-31T04:46:34.669528+00:00",
+  "executed_at_utc": "2026-10-31T05:39:38.378221+00:00",
   "model": "gpt-6-luna",
   "response_models": [
     "gpt-6-luna"
@@ -45,6 +45,10 @@
       "model": "gpt-6-luna"
     },
     {
+      "scenario_id": "priority_correction",
+      "model": "gpt-6-luna"
+    },
+    {
       "scenario_id": "unclear_intent",
       "model": "gpt-6-luna"
     },
@@ -98,10 +102,6 @@
     },
     {
       "scenario_id": "no_survivors",
-      "model": "gpt-6-luna"
-    },
-    {
-      "scenario_id": "no_comparable_winner",
       "model": "gpt-6-luna"
     },
     {
@@ -126,7 +126,7 @@
     }
   ],
   "evidence_sha256": "e03db370155339706d84a67a206d2287223387f35e6ecba7e398e30e7cbe85db",
-  "scenario_suite_sha256": "609d2e88a859cf12647c08fc57dcded37c1aa46b6bd15b9a5bebb283d58736ba",
+  "scenario_suite_sha256": "17ca24f2cab02f85673cc62bd256f61ac56c60e564bf9c8127814b51fbbf1d74",
   "metrics": {
     "scenario_success": {
       "value": 0.8333333333333334,
@@ -134,13 +134,13 @@
       "denominator": 12
     },
     "tool_success": {
-      "value": 1.0,
-      "numerator": 11,
+      "value": 0.9090909090909091,
+      "numerator": 10,
       "denominator": 11
     },
     "ui_outcome_success": {
-      "value": 1.0,
-      "numerator": 12,
+      "value": 0.9166666666666666,
+      "numerator": 11,
       "denominator": 12
     },
     "citation_behavior_success": {
@@ -161,27 +161,27 @@
   },
   "latency_ms": {
     "samples": [
-      8093.685708008707,
-      5910.874167107977,
-      4015.081833000295,
-      3919.030874967575,
-      7130.516165983863,
-      6349.354916950688,
-      4088.1597499828786,
-      4262.0677090017125,
-      5821.650707977824,
-      6326.301167020574,
-      6914.334167027846
+      6342.284208047204,
+      6097.999250050634,
+      7652.521083015017,
+      4791.291125002317,
+      5929.863666999154,
+      6407.790833036415,
+      4055.6423329981044,
+      4394.277459010482,
+      5737.414499977604,
+      3577.692291000858,
+      6855.821167002432
     ],
-    "p50": 5910.874167107977,
-    "p95_nearest_rank": 8093.685708008707,
+    "p50": 5929.863666999154,
+    "p95_nearest_rank": 7652.521083015017,
     "sample_count": 11
   },
   "tokens": {
     "observed_totals": {
-      "input_tokens": 71663,
-      "output_tokens": 1935,
-      "total_tokens": 73598
+      "input_tokens": 76509,
+      "output_tokens": 1965,
+      "total_tokens": 78474
     },
     "responses_with_usage": 28,
     "attempted_requests": 28,
@@ -192,14 +192,14 @@
       "scenario_id": "budget_limit",
       "message": "Set my maximum budget to S$70. Keep minimum power unset and use no ranking priorities.",
       "status": "passed",
-      "answer": "Done — maximum budget set to S$70. Minimum output and ranking priorities remain unset. The S$79.87 option is excluded by your budget.",
+      "answer": "Maximum budget set to S$70. Minimum power remains unset, and no ranking priorities are applied.",
       "cited_ids": [],
       "tool_names": [
         "get_comparison",
         "apply_preferences"
       ],
       "provider_calls": 3,
-      "latency_ms": 8093.685708008707,
+      "latency_ms": 6342.284208047204,
       "revision": 1,
       "preferences": {
         "max_price_minor": 7000,
@@ -224,14 +224,14 @@
       "scenario_id": "power_threshold",
       "message": "Require at least 87 watts. Keep the budget unset and use no ranking priorities.",
       "status": "passed",
-      "answer": "Set the minimum output to 87 W, left the budget unset, and applied no ranking priorities. The 65 W option is excluded; no single winner is selected.",
+      "answer": "Set the minimum output to 87 W, left the budget unset, and applied no ranking priorities. The 65 W option is excluded; no single winner is ranked.",
       "cited_ids": [],
       "tool_names": [
         "get_comparison",
         "apply_preferences"
       ],
       "provider_calls": 3,
-      "latency_ms": 5910.874167107977,
+      "latency_ms": 6097.999250050634,
       "revision": 1,
       "preferences": {
         "max_price_minor": null,
@@ -256,13 +256,18 @@
       "scenario_id": "priority_correction",
       "message": "Actually prioritize price only. Keep budget and minimum power unset.",
       "status": "passed",
-      "answer": "Updated your priorities to price only; budget and minimum power remain unset. The current top-ranked option is the Atlas 100W at SGD 60.00.",
-      "cited_ids": [],
+      "answer": "Updated your priorities to price only, with no budget or minimum power limit. The lowest-priced option is Atlas (100W) at SGD 60.00; Breeze (65W) is SGD 69.65, and Comet (87W) is SGD 79.87.",
+      "cited_ids": [
+        "listingA:100w:attribute:1",
+        "listingB:65w:attribute:1",
+        "listingC:87w:attribute:1"
+      ],
       "tool_names": [
+        "get_comparison",
         "apply_preferences"
       ],
-      "provider_calls": 2,
-      "latency_ms": 4015.081833000295,
+      "provider_calls": 3,
+      "latency_ms": 7652.521083015017,
       "revision": 2,
       "preferences": {
         "max_price_minor": null,
@@ -293,7 +298,7 @@
         "get_comparison"
       ],
       "provider_calls": 2,
-      "latency_ms": 3919.030874967575,
+      "latency_ms": 4791.291125002317,
       "revision": 0,
       "preferences": {
         "max_price_minor": null,
@@ -316,13 +321,13 @@
       "scenario_id": "review_query",
       "message": "What do the analyzed reviews mention about heat for all three items? Use review evidence and cite supporting review mention IDs.",
       "status": "failed",
-      "answer": "I could not verify that answer's citations. The deterministic comparison table remains available.",
+      "answer": null,
       "cited_ids": [],
       "tool_names": [
         "get_review_aspect"
       ],
       "provider_calls": 2,
-      "latency_ms": 7130.516165983863,
+      "latency_ms": 5929.863666999154,
       "revision": 0,
       "preferences": {
         "max_price_minor": null,
@@ -336,16 +341,16 @@
         "state": true,
         "tools": true,
         "citations": false,
-        "expected_error": true,
+        "expected_error": false,
         "provider_call_limit": true
       },
-      "error": null
+      "error": "LunaAgentContractError"
     },
     {
       "scenario_id": "contradictory_claim",
       "message": "Why is listingC:87w warranty conflicting? Inspect the stored evidence and cite both conflicting source IDs.",
       "status": "passed",
-      "answer": "The listing’s 87W variant attribute says “Warranty: 1 year,” while its description says “Warranty: 24 months.” Those sources disagree: 1 year is 12 months, not 24.",
+      "answer": "The sources disagree: the 87W variant’s attribute says “Warranty: 1 year,” while its description says “Warranty: 24 months.” One year is 12 months, so the two sources conflict.",
       "cited_ids": [
         "listingC:87w:attribute:6",
         "listingC:87w:description:warranty"
@@ -355,7 +360,7 @@
         "inspect_evidence"
       ],
       "provider_calls": 3,
-      "latency_ms": 6349.354916950688,
+      "latency_ms": 6407.790833036415,
       "revision": 0,
       "preferences": {
         "max_price_minor": null,
@@ -378,13 +383,13 @@
       "scenario_id": "missing_field",
       "message": "Does listingC:87w have a verified weight? Do not infer it. Cite evidence only if weight evidence exists.",
       "status": "passed",
-      "answer": "No. ListingC:87w has no verified weight listed, so I can’t provide or infer one.",
+      "answer": "No. ListingC:87w has no verified weight information, so I won’t infer one.",
       "cited_ids": [],
       "tool_names": [
         "get_comparison"
       ],
       "provider_calls": 2,
-      "latency_ms": 4088.1597499828786,
+      "latency_ms": 4055.6423329981044,
       "revision": 0,
       "preferences": {
         "max_price_minor": null,
@@ -411,7 +416,7 @@
       "cited_ids": [],
       "tool_names": [],
       "provider_calls": 0,
-      "latency_ms": 0.05625002086162567,
+      "latency_ms": 0.18333306070417166,
       "revision": 1,
       "preferences": {
         "max_price_minor": 7000,
@@ -436,13 +441,13 @@
       "scenario_id": "invalid_item",
       "message": "What is the maximum output of invented:999w? Do not substitute another item.",
       "status": "passed",
-      "answer": "I can’t identify “invented:999w” in the supplied comparison, so I don’t have its maximum output.",
+      "answer": "I can’t determine a maximum output for invented:999w; that item isn’t in this comparison.",
       "cited_ids": [],
       "tool_names": [
         "get_comparison"
       ],
       "provider_calls": 2,
-      "latency_ms": 4262.0677090017125,
+      "latency_ms": 4394.277459010482,
       "revision": 0,
       "preferences": {
         "max_price_minor": null,
@@ -465,14 +470,14 @@
       "scenario_id": "no_survivors",
       "message": "Set my maximum budget to S$50. Keep minimum power unset and use no ranking priorities.",
       "status": "passed",
-      "answer": "Maximum budget set to S$50. Minimum power remains unset, and no ranking priorities are selected. All three listed options exceed the budget.",
+      "answer": "Maximum budget set to S$50. Minimum power remains unset, and no ranking priorities are applied. All three listed options exceed the budget.",
       "cited_ids": [],
       "tool_names": [
         "get_comparison",
         "apply_preferences"
       ],
       "provider_calls": 3,
-      "latency_ms": 5821.650707977824,
+      "latency_ms": 5737.414499977604,
       "revision": 1,
       "preferences": {
         "max_price_minor": 5000,
@@ -503,25 +508,22 @@
       "cited_ids": [],
       "tool_names": [
         "get_comparison",
-        "apply_preferences",
         "get_review_aspect"
       ],
-      "provider_calls": 3,
-      "latency_ms": 6326.301167020574,
-      "revision": 1,
+      "provider_calls": 2,
+      "latency_ms": 3577.692291000858,
+      "revision": 0,
       "preferences": {
         "max_price_minor": null,
         "min_output_w": null,
-        "priorities": [
-          "review_reliability"
-        ]
+        "priorities": []
       },
       "recommendation_item_key": null,
       "excluded_item_keys": [],
       "uncertain_item_keys": [],
       "checks": {
-        "state": true,
-        "tools": true,
+        "state": false,
+        "tools": false,
         "citations": true,
         "expected_error": false,
         "provider_call_limit": true
@@ -532,19 +534,17 @@
       "scenario_id": "why_recommendation",
       "message": "Why is the current recommendation best for portability? Use comparison facts and cite stored evidence.",
       "status": "passed",
-      "answer": "The recommendation prioritizes weight: the Breeze 65W weighs 310 g, versus 420 g for the Atlas 100W, while both have 20 Ah capacity. That makes the Breeze the lighter supported option; the Comet’s weight is missing, so its portability can’t be compared reliably.",
+      "answer": "The current recommendation, the Breeze 65W, ranks first for portability because its listed weight is 310 g, compared with 420 g for the Atlas 100W—110 g lighter. The Comet 87W remains uncertain because no supported weight is available, so it can’t be compared on portability.",
       "cited_ids": [
         "listingB:65w:attribute:3",
-        "listingA:100w:attribute:3",
-        "listingB:65w:attribute:0",
-        "listingA:100w:attribute:0"
+        "listingA:100w:attribute:3"
       ],
       "tool_names": [
         "get_comparison",
         "inspect_evidence"
       ],
       "provider_calls": 3,
-      "latency_ms": 6914.334167027846,
+      "latency_ms": 6855.821167002432,
       "revision": 1,
       "preferences": {
         "max_price_minor": null,
