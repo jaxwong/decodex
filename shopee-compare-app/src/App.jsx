@@ -25,6 +25,9 @@ import OrderConfirmation from './components/Section/OrderConfirmation';
 import Signup from './components/Authentication/Signup';
 import Compare from './components/Section/Compare';
 import SellerCentre from './components/Section/SellerCentre';
+import SearchResults from './components/Section/SearchResults';
+import ProductPage from './components/Section/ProductPage';
+import { ShopProvider } from './shop';
 
 const MainLayout = ({ children }) => (
   <>
@@ -62,16 +65,20 @@ AddtoCart.propTypes = layoutPropTypes;
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<MainLayout><Landing /><Category/><Discovery/><Info/></MainLayout>} />
-        <Route path="/Login" element={<SubNavLayout><Login /></SubNavLayout>} />
-        <Route path="/Signup" element={<SubNavLayout><Signup /></SubNavLayout>} />
-        <Route path="/Cart" element={<AddtoCart><Cart/></AddtoCart>}/>
-        <Route path="/Compare" element={<AddtoCart><Compare/></AddtoCart>}/>
-        <Route path="/SellerCentre" element={<AddtoCart><SellerCentre/></AddtoCart>}/>
-        <Route path="/Checkout" element={<AddtoCart><Checkout/></AddtoCart>}/>
-        <Route path="/OrderConfirmation" element={<AddtoCart><OrderConfirmation/></AddtoCart>}/>
-      </Routes>
+      <ShopProvider>
+        <Routes>
+          <Route path="/" element={<MainLayout><Landing /><Category/><Discovery/><Info/></MainLayout>} />
+          <Route path="/Login" element={<SubNavLayout><Login /></SubNavLayout>} />
+          <Route path="/Signup" element={<SubNavLayout><Signup /></SubNavLayout>} />
+          <Route path="/Search" element={<MainLayout><SearchResults/></MainLayout>}/>
+          <Route path="/Product/:listingId" element={<MainLayout><ProductPage/></MainLayout>}/>
+          <Route path="/Cart" element={<MainLayout><Cart/></MainLayout>}/>
+          <Route path="/Compare" element={<MainLayout><Compare/></MainLayout>}/>
+          <Route path="/SellerCentre" element={<AddtoCart><SellerCentre/></AddtoCart>}/>
+          <Route path="/Checkout" element={<MainLayout><Checkout/></MainLayout>}/>
+          <Route path="/OrderConfirmation" element={<MainLayout><OrderConfirmation/></MainLayout>}/>
+        </Routes>
+      </ShopProvider>
     </Router>
   );
 }

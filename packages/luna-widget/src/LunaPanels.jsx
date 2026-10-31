@@ -212,7 +212,9 @@ function productSnapshot(evidence, item) {
   };
 }
 
-export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing, onAskSeller }) {
+export function ComparisonTable({
+  comparison, onOpenCell, imagesByListing, onNavigateToListing, onAskSeller, onChoose,
+}) {
   const [differencesOnly, setDifferencesOnly] = useState(true);
   const { evidence, recommendation, preferences } = comparison;
   const schemaFields = evidence.schema_fields;
@@ -270,6 +272,8 @@ export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing, o
               return <th key={item.item_key} scope="col"
                 className={`luna-product${isTop ? ' is-top' : ''}${status?.tone === 'out' ? ' is-out' : ''}`}>
                 {status && <span className={`luna-badge luna-badge-${status.tone}`}>{status.label}</span>}
+                {imagesByListing.get(item.listing_id)
+                  && <img className="luna-product-image" src={imagesByListing.get(item.listing_id)} alt=""/>}
                 <span className="luna-product-title">{item.title}</span>
                 <span className="luna-product-variant">{item.variant_label}</span>
                 <span className="luna-product-list-price">
@@ -284,6 +288,10 @@ export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing, o
                     View product
                   </button>
                 </span>
+                {onChoose && <button type="button" className="luna-button luna-button-small"
+                  aria-label={`Choose ${itemName(item)}`} onClick={() => onChoose(item)}>
+                  Choose this one
+                </button>}
               </th>;
             })}
           </tr>
@@ -339,8 +347,10 @@ export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing, o
 ComparisonTable.propTypes = {
   comparison: PropTypes.object.isRequired,
   onOpenCell: PropTypes.func.isRequired,
+  imagesByListing: PropTypes.instanceOf(Map).isRequired,
   onNavigateToListing: PropTypes.func.isRequired,
   onAskSeller: PropTypes.func.isRequired,
+  onChoose: PropTypes.func,
 };
 
 // A cited ID points either at a listing fact (open that table cell) or at a quote
