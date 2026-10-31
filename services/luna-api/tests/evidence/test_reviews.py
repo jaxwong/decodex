@@ -1,3 +1,6 @@
+import json
+import unicodedata
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -15,6 +18,8 @@ from app.evidence.reviews import (
 from app.providers import CatalogError, MockCatalogProvider
 from tests.evidence.fakes import FakeModelClient
 from tests.evidence.test_pipeline import SELECTIONS, comparison, fact
+
+ROOT = Path(__file__).resolve().parents[4]
 
 
 def validate(
@@ -94,15 +99,15 @@ def test_mixed_sentiment_unique_review_aggregation() -> None:
     summary = next(
         s for s in result.review_summaries if s.item_key == "listingA:100w" and s.aspect == "heat"
     )
-    assert (summary.positive_count, summary.negative_count, summary.analyzed_reviews) == (2, 3, 14)
+    assert (summary.positive_count, summary.negative_count, summary.analyzed_reviews) == (2, 5, 16)
     mixed = [m for m in mentions.values() if m.review_id == "listingA-r12"]
     assert {m.sentiment for m in mixed} == {"positive", "negative"}
     duplicate = next(m for m in mixed if m.sentiment == "negative")
     repeated = dict(mentions, extra=duplicate.model_copy(update={"id": "extra", "excerpt": "hot"}))
-    recomputed = aggregate_reviews(
-        "listingA:100w", repeated, {f"listingA-r{n:02}" for n in range(1, 15)}
-    )
-    assert next(s for s in recomputed if s.aspect == "heat").negative_count == 3
+    # Atlas 100W's exact reviews: r01-r14 plus the Vietnamese and mixed-language r19-r20.
+    exact_review_ids = {f"listingA-r{n:02}" for n in [*range(1, 15), 19, 20]}
+    recomputed = aggregate_reviews("listingA:100w", repeated, exact_review_ids)
+    assert next(s for s in recomputed if s.aspect == "heat").negative_count == 5
 
 
 def test_failed_review_batch_not_counted_as_analyzed() -> None:
@@ -162,9 +167,9 @@ def test_unknown_review_variant_classification_before_model() -> None:
     model = FakeModelClient()
     comparison(model)
     assert {request["item_key"]: len(request["reviews"]) for request in model.review_requests} == {
-        "listingA:100w": 14,
+        "listingA:100w": 16,
         "listingB:65w": 16,
-        "listingC:87w": 14,
+        "listingC:87w": 16,
     }
     for request in model.review_requests:
         assert all(r["variant_id"] == request["variant_id"] for r in request["reviews"])
@@ -237,11 +242,12 @@ def test_partially_failed_review_batches_keep_successful_denominator() -> None:
     summary = next(
         s for s in result.review_summaries if s.item_key == "listingA:100w" and s.aspect == "heat"
     )
-    assert summary.analyzed_reviews == 12
+    # 16 exact reviews plus 10 injected split into two batches of 13; the second one fails.
+    assert summary.analyzed_reviews == 13
     first_item = result.items[0]
     assert isinstance(first_item, AnalyzedComparisonItem)
     assert first_item.review_status == "unresolved"
-    assert first_item.review_coverage.exact_reviews_available == 24
+    assert first_item.review_coverage.exact_reviews_available == 26
 
 
 CAPACITY_DISPUTE_REVIEWS = {"listingB-r19", "listingB-r20"}
@@ -346,3 +352,48 @@ def test_sibling_variant_dispute_is_rejected_before_it_can_attach() -> None:
     validation = validate_review_mentions(candidates, reviews, "listingA:100w", "100w")
     assert validation.rejected_count == 1
     assert validation.mentions == {} and validation.disputes == {}
+
+
+VIETNAMESE_REVIEW = "Sạc nhanh nhưng nóng kinh khủng."
+
+
+def validate_vietnamese(excerpt: str) -> ReviewValidation:
+    candidates = ReviewCandidates.model_validate(
+        {
+            "mentions": [
+                {
+                    "review_id": "r1",
+                    "aspect": "heat",
+                    "sentiment": "negative",
+                    "excerpt": excerpt,
+                    "disputes_field_key": None,
+                }
+            ]
+        }
+    )
+    reviews = [{"review_id": "r1", "variant_id": "100w", "text": VIETNAMESE_REVIEW}]
+    return validate_review_mentions(candidates, reviews, "listingA:100w", "100w")
+
+
+def test_vietnamese_excerpt_is_accepted_only_with_its_exact_diacritics() -> None:
+    exact = validate_vietnamese("nóng kinh khủng")
+    assert exact.rejected_count == 0
+    assert [m.excerpt for m in exact.mentions.values()] == ["nóng kinh khủng"]
+
+    stripped = "".join(
+        c for c in unicodedata.normalize("NFD", "nóng kinh khủng") if not unicodedata.combining(c)
+    )
+    assert stripped == "nong kinh khung"
+    assert validate_vietnamese(stripped).rejected_count == 1
+
+
+def test_fixture_review_text_is_nfc_so_exact_excerpts_can_match() -> None:
+    reviews = json.loads((ROOT / "data/reviews.json").read_text(encoding="utf-8"))["reviews"]
+    labels = json.loads((ROOT / "data/ground_truth.json").read_text(encoding="utf-8"))
+    assert any(not review["text"].isascii() for review in reviews)
+    assert all(unicodedata.is_normalized("NFC", review["text"]) for review in reviews)
+    assert all(
+        unicodedata.is_normalized("NFC", mention["excerpt"])
+        for review in labels["reviews"]
+        for mention in review["mentions"]
+    )

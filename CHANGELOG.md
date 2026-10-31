@@ -4,6 +4,22 @@ This file records implemented Luna milestones. The implementation spec remains t
 
 ## 31 October 2026
 
+### Implemented on `feat/mixed-language-reviews`
+
+- Proposal 5: the synthetic review corpus now includes the region's languages. Atlas 100W gains
+  a Vietnamese review (charging positive, heat negative) and the proposal's mixed-language
+  example ("Gets hot when fast charging la, …"); Comet 87W gains Vietnamese portability-positive
+  and reliability-negative reviews. Each listing now has 20 reviews, the spec's maximum.
+- Breeze 65W already had 20 reviews, so its second capacity-dispute review is now the
+  Vietnamese one instead of an added review; the dispute still rests on two distinct reviews.
+- Labels copy spans from the original NFC text. One `REVIEW_PROMPT` sentence tells extraction
+  to quote any language exactly, never translated or normalised. No contract, agent or UI change.
+- Rerun scorer: 60 source reviews, 59 labelled units. The keyword baseline misses every
+  Vietnamese unit, so its review recall is 53/59 (was 51/53); the number is kept as measured.
+- Tests cover exact Vietnamese excerpts versus diacritic-stripped ones, NFC fixture text, the
+  heat aspect quoting the Vietnamese and mixed reviews with review IDs, and both hosts' dispute
+  drawers showing the Vietnamese quote.
+
 ### Implemented on `feat/demo-flow-rich-data`
 
 - Demo catalog reads like real listings: Atlas Portable, Breeze Slim and Comet Travel Power

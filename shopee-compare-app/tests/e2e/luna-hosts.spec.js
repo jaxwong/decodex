@@ -160,6 +160,10 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await expect(reviewQuotes.getByText('Customer review · listingB-r19')).toBeVisible();
   await expect(reviewQuotes.getByText('“Charges my phone twice, nowhere near 20000mAh”')).toBeVisible();
   await expect(reviewQuotes.getByText('Customer review · listingB-r20')).toBeVisible();
+  // The reviewer's Vietnamese is quoted as written, diacritics included, never translated.
+  await expect(reviewQuotes.getByText(
+    '“Chỉ sạc đầy điện thoại được hai lần, không được 20000mAh như quảng cáo”',
+  )).toBeVisible();
   await expect(sourcePanel.getByText(/count among reviews analysed, not a defect rate/)).toBeVisible();
   await sourcePanel.getByRole('button', { name: 'Ask Luna about this' }).click();
   await expect(page.getByLabel('Message Luna'))
@@ -167,7 +171,7 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await page.getByRole('button', { name: 'Send' }).click();
   await expect(page.getByText(/Luna cannot verify the true figure/)).toBeVisible();
   await expect(page.getByRole('button', { name: /^Source: .*review: “Charges my phone twice/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Source: .*review: “Only two phone charges/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Source: .*review: “Chỉ sạc đầy điện thoại được hai lần/ })).toBeVisible();
   await expect(widget).toHaveAttribute('data-revision', '0');
   await expect(disputedCapacity).toContainText('20,000 mAh');
 

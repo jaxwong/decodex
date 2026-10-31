@@ -414,7 +414,7 @@ def test_provider_pagination_and_stable_snapshots() -> None:
             "listingA", "100w", cursor=first["next_cursor"], limit=10
         )
         reviews = first["reviews"] + second["reviews"]
-        assert len(reviews) == len({r["review_id"] for r in reviews}) == 16
+        assert len(reviews) == len({r["review_id"] for r in reviews}) == 18
         assert not second["next_cursor"]
         assert sum(r["variant_id"] is None for r in reviews) == 2
         assert version == await MockCatalogProvider().get_snapshot_version("listingA")

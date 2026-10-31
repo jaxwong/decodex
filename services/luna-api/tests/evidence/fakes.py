@@ -66,6 +66,12 @@ class FakeModelClient:
             ("good value", "value", "positive", None),
             ("poor value", "value", "negative", None),
             ("case is blue", "other", "neutral", None),
+            ("Sạc nhanh", "charging", "positive", None),
+            ("nóng kinh khủng", "heat", "negative", None),
+            ("Gets hot when fast charging", "heat", "negative", None),
+            ("charges my laptop ok", "charging", "positive", None),
+            ("nhỏ gọn, nhẹ", "portability", "positive", None),
+            ("Dùng được một tuần thì hỏng", "reliability", "negative", None),
             (
                 "Charges my phone twice, nowhere near 20000mAh",
                 "charging",
@@ -73,7 +79,7 @@ class FakeModelClient:
                 "capacity_mah",
             ),
             (
-                "Only two phone charges per fill, not the 20000mAh claimed",
+                "Chỉ sạc đầy điện thoại được hai lần, không được 20000mAh như quảng cáo",
                 "charging",
                 "negative",
                 "capacity_mah",

@@ -28,7 +28,7 @@ def test_deterministic_evaluation_behavior() -> None:
     assert metrics["contradiction_recall"] == ratio(0, 4)
     assert metrics["variant_leakage_rate"] == ratio(9, 12)
     assert not first["grounded_structured_outputs"]["available"]
-    assert first["conditions"]["source_review_count"] == 56
+    assert first["conditions"]["source_review_count"] == 60
     # The keyword baseline emits no disputes, so precision is unavailable, not zero.
     assert metrics["dispute_precision"] == ratio(0, 0)
     assert metrics["dispute_recall"] == ratio(0, 1)
@@ -42,8 +42,8 @@ def test_scorer_checks_hand_authored_expected_values() -> None:
     assert metrics["evidence_precision"] == ratio(24, 24)
     assert metrics["unsupported_claim_rate"] == ratio(0, 22)
     assert metrics["contradiction_recall"] == ratio(1, 1)
-    assert metrics["review_mention_precision"] == ratio(47, 47)
-    assert metrics["review_mention_recall"] == ratio(47, 47)
+    assert metrics["review_mention_precision"] == ratio(53, 53)
+    assert metrics["review_mention_recall"] == ratio(53, 53)
     assert metrics["dispute_precision"] == ratio(1, 1)
     assert metrics["dispute_recall"] == ratio(1, 1)
 
@@ -62,8 +62,8 @@ def test_scorer_review_support_and_variant_exclusion() -> None:
     predictions = comparison().model_dump()
     next(iter(predictions["review_mentions"].values()))["excerpt"] = "Invented quotation"
     metrics = score(predictions, labels(), SELECTIONS)
-    assert metrics["review_mention_precision"] == ratio(46, 47)
-    assert metrics["review_mention_recall"] == ratio(46, 47)
+    assert metrics["review_mention_precision"] == ratio(52, 53)
+    assert metrics["review_mention_recall"] == ratio(52, 53)
 
 
 def test_scorer_rejects_dispute_citing_an_unlabelled_review() -> None:

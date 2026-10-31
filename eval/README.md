@@ -87,12 +87,21 @@ network call. Do not add the standalone smoke to this combined run under the sam
 
 The scorer loads `data/ground_truth.json` only after inference finishes. Neither
 baseline nor model receives labels. Sources cover twelve variants, eight fields
-(96 labelled cells) and 56 fabricated reviews, six of which have unknown variants.
-The 50 known-variant reviews yield 53 labelled unique aspect/sentiment support
-units; three known-variant reviews contain speculation and no supported mentions.
+(96 labelled cells) and 60 fabricated reviews (20 per listing), six of which have
+unknown variants. The 54 known-variant reviews yield 59 labelled unique aspect/sentiment
+support units; three known-variant reviews contain speculation and no supported mentions.
 Two reviews on `listingB:65w` (`listingB-r19`, `listingB-r20`) report charging a phone
 twice and are labelled in `ground_truth.json` `disputes` as contradicting that SKU's
 consistent 20 Ah capacity claim.
+
+Five reviews are not plain English. Four are Vietnamese: `listingA-r19` (charging
+positive, heat negative), `listingB-r20` (the second capacity dispute), `listingC-r19`
+(portability positive) and `listingC-r20` (reliability negative). `listingA-r20` is the
+proposal's mixed-language example: English with the particle "la". Their labelled spans are copied from the original text, which is
+stored in Unicode NFC; excerpts are compared as exact substrings, so a translated or
+diacritic-stripped quote is rejected. The keyword baseline matches English words only,
+so it misses all Vietnamese units and its review recall falls to 53/59; that number is
+reported as measured, not hidden.
 Labels and sources are generated reproducibly by `data/generate_fixtures.py`.
 They were authored together as synthetic cases, with no independent human
 adjudication or production data. This tests implementation behavior, not general
@@ -111,7 +120,7 @@ JSON null. Definitions:
 | Contradiction recall | Conflicts preserving both alternatives in the exact normalized format / 4 contradictory cells |
 | Variant leakage rate | Wrong selected output matching a known sibling's output / 12 max-output cells |
 | Review mention precision | Correct unique item/review/aspect/sentiment units with literal excerpts containing a labelled supporting span / emitted unique units |
-| Review mention recall | Same correct review units / 53 labelled units for selected exact SKUs |
+| Review mention recall | Same correct review units / 59 labelled units for selected exact SKUs |
 | Dispute precision | Emitted disputed (item, field) claims whose every disputing mention comes from a labelled disputing review / emitted disputed claims |
 | Dispute recall | Same matched disputed claims / 1 labelled disputed claim |
 

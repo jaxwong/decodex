@@ -23,8 +23,6 @@ LANDED_PRICE_COMPONENTS = {
     'listingC': {'shipping_minor': 300, 'shop_voucher_minor': 1000},
 }
 
-# Reviewers on Breeze's 65W demo SKU report experienced capacity that contradicts the
-# seller's consistent 20 Ah claim. Two distinct reviews meet DISPUTE_MIN_REVIEWS.
 # Storefront titles and product images. Images are drawn renders of fictional products, inlined
 # as data URIs so every host, including the single-file build, shows them without a file server.
 PRODUCTS = {
@@ -33,13 +31,34 @@ PRODUCTS = {
     'Comet': ('Comet Travel Power Bank', 'comet.svg'),
 }
 
+# Reviewers on Breeze's 65W demo SKU report experienced capacity that contradicts the
+# seller's consistent 20 Ah claim. Two distinct reviews meet DISPUTE_MIN_REVIEWS; one is in
+# Vietnamese, so the dispute rests on evidence in two languages.
 DISPUTING_REVIEWS = {
     'listingB': ('65w', 'capacity_mah', [
         ('Charges my phone twice, nowhere near 20000mAh.',
          [('charging', 'negative', 'Charges my phone twice, nowhere near 20000mAh')]),
-        ('Only two phone charges per fill, not the 20000mAh claimed.',
-         [('charging', 'negative', 'Only two phone charges per fill, not the 20000mAh claimed')]),
+        ('Chỉ sạc đầy điện thoại được hai lần, không được 20000mAh như quảng cáo.',
+         [('charging', 'negative', 'Chỉ sạc đầy điện thoại được hai lần, không được 20000mAh như quảng cáo')]),
     ]),
+}
+
+# Shopee buyers in the region write in Vietnamese or mix languages in one sentence. These
+# reviews on each remaining listing's demo SKU are labelled with spans copied from the
+# original text; nothing is translated. Strings are NFC, the form the excerpt check compares.
+REGIONAL_REVIEWS = {
+    'listingA': [
+        ('Sạc nhanh nhưng nóng kinh khủng.',
+         [('charging', 'positive', 'Sạc nhanh'), ('heat', 'negative', 'nóng kinh khủng')]),
+        ('Gets hot when fast charging la, but charges my laptop ok.',
+         [('heat', 'negative', 'Gets hot when fast charging'), ('charging', 'positive', 'charges my laptop ok')]),
+    ],
+    'listingC': [
+        ('Pin nhỏ gọn, nhẹ, bỏ balo mang đi cả ngày không thấy nặng.',
+         [('portability', 'positive', 'nhỏ gọn, nhẹ')]),
+        ('Dùng được một tuần thì hỏng, không sạc được nữa.',
+         [('reliability', 'negative', 'Dùng được một tuần thì hỏng')]),
+    ],
 }
 
 
@@ -142,10 +161,14 @@ def generate():
             ('It gets hot at my desk.', [('heat', 'negative', 'gets hot')]),
         ]
         disputing_vid, disputed_field, disputing = DISPUTING_REVIEWS.get(lid, (None, None, []))
-        for n, (text, mentions) in enumerate(phrases + disputing):
-            vid = str(demo) + 'w' if n < 14 else '130w' if n < 16 else None if n < 18 else disputing_vid
+        regional = REGIONAL_REVIEWS.get(lid, [])
+        demo_vid = str(demo) + 'w'
+        for n, (text, mentions) in enumerate(phrases + disputing + regional):
+            is_disputing = 18 <= n < 18 + len(disputing)
+            vid = (demo_vid if n < 14 else '130w' if n < 16 else None if n < 18
+                   else disputing_vid if is_disputing else demo_vid)
             rid = f'{lid}-r{n + 1:02}'
-            if n >= 18:
+            if is_disputing:
                 labels['disputes'].setdefault(f'{lid}:{vid}', {}).setdefault(disputed_field, []).append(rid)
             reviews.append({'review_id': rid, 'listing_id': lid, 'variant_id': vid, 'rating': review_rating(mentions),
                             'text': text, 'created_at': None, 'source': 'fixture'})
