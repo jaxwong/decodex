@@ -12,7 +12,6 @@ async function openLuna(page, projectName) {
     await page.getByRole('button', { name: 'Compare now' }).click();
     await expect(page).toHaveURL(/#\/Compare$/);
     await expect(page.getByRole('heading', { name: 'Shopee Compare' })).toBeVisible();
-    await page.getByRole('button', { name: 'Ask Luna' }).click();
     return;
   }
   await page.goto('/');
@@ -223,4 +222,18 @@ test('widget source imports neither host', async () => {
     .join('\n');
   expect(source).not.toContain('shopee-compare-app');
   expect(source).not.toContain('apps/minimal-host');
+});
+
+test('Host A has one comparison owner', async () => {
+  const hostSourceDirectory = path.join(repositoryRoot, 'shopee-compare-app/src');
+  expect(fs.existsSync(path.join(hostSourceDirectory, 'compare'))).toBe(false);
+  const source = [
+    'App.jsx',
+    'components/Section/cart.jsx',
+    'components/Section/Compare.jsx',
+  ].map(relativePath => fs.readFileSync(path.join(hostSourceDirectory, relativePath), 'utf8'))
+    .join('\n');
+  expect(source).not.toContain('CompareProvider');
+  expect(source).not.toContain('api.openai.com');
+  expect(source).not.toContain('Live AI settings');
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+import PropTypes from 'prop-types';
 import { HashRouter, MemoryRouter, Routes, Route } from 'react-router-dom';
 
 // HashRouter needs a real page URL. Inside sandboxed previews (about:srcdoc / blob:)
@@ -24,7 +24,6 @@ import Checkout from './components/Section/Checkout';
 import OrderConfirmation from './components/Section/OrderConfirmation';
 import Signup from './components/Authentication/Signup';
 import Compare from './components/Section/Compare';
-import { CompareProvider } from './compare/CompareContext';
 
 const MainLayout = ({ children }) => (
   <>
@@ -50,9 +49,17 @@ const AddtoCart = ({children}) => (
   </>
 )
 
+const layoutPropTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+Router.propTypes = layoutPropTypes;
+MainLayout.propTypes = layoutPropTypes;
+SubNavLayout.propTypes = layoutPropTypes;
+AddtoCart.propTypes = layoutPropTypes;
+
 function App() {
   return (
-    <CompareProvider>
     <Router>
       <Routes>
         <Route path="/" element={<MainLayout><Landing /><Category/><Discovery/><Info/></MainLayout>} />
@@ -64,7 +71,6 @@ function App() {
         <Route path="/OrderConfirmation" element={<AddtoCart><OrderConfirmation/></AddtoCart>}/>
       </Routes>
     </Router>
-    </CompareProvider>
   );
 }
 
