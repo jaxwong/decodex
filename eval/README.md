@@ -23,9 +23,10 @@ cd services/luna-api
 PYTHONPATH=../.. uv run --frozen python -m eval.agent --live
 ```
 
-It writes only `eval/agent-results.json`. A later `make eval` validates the evidence and
-scenario-suite hashes and projects that artifact into `eval/results.json`; `make eval` does not
-make a provider call.
+It writes only `eval/agent-results.json`. A later `make eval` validates the evidence, scenario
+suite and text-agent implementation hashes before projecting that artifact into
+`eval/results.json`; `make eval` does not make a provider call. A stale artifact remains on disk
+as history but is reported as unavailable until an authorized paid rerun replaces it.
 
 The live CLI loads the ignored root `.env` without overwriting process variables.
 It requires `OPENAI_API_KEY` and uses `OPENAI_TEXT_MODEL` (default `gpt-6-luna`).
@@ -116,6 +117,11 @@ response IDs, reasoning or credentials.
 [`agent-results.json`](agent-results.json) records one actual `gpt-6-luna` run. It used 28 of
 44 permitted provider requests and completed with `partial` status: 10 of 12 scenarios passed.
 The CLI exited 2 as designed for a partial run. It was not retried.
+
+This run predates B7's terminal-mutation and citation-contract changes. The artifact remains
+unchanged as historical evidence, while the current `eval/results.json` marks agent evaluation
+unavailable because the implementation hash changed. The measurements below do not validate
+B7; a new paid run requires explicit authorization.
 
 | Metric | Observed result |
 |---|---:|
