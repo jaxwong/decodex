@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import PropTypes from 'prop-types';
 
 // Host A's storefront state. Luna's backend catalog owns every title, image and price; this
-// provider only loads it and keeps the shopper's cart, which holds exact catalog variant IDs.
+// provider only loads it and keeps the shopper's cart, which holds exact catalog variant IDs,
+// plus which lines are ticked for checkout (ticks survive leaving and returning to the cart).
 const ShopContext = createContext(null);
 
 const cartLine = (listingId, variantId, quantity = 1) => ({
@@ -37,6 +38,10 @@ export function ShopProvider({ children }) {
     const [listings, setListings] = useState(null);
     const [catalogError, setCatalogError] = useState('');
     const [cart, setCart] = useState(initialCart);
+    // Ticked lines mean "check these out", as on Shopee. New lines start ticked.
+    const [selectedIds, setSelectedIds] = useState(() => new Set(initialCart.map(line => line.id)));
+    // The line Luna's "Pick this one" ticked alone; cleared as soon as the shopper re-ticks by hand.
+    const [pickedId, setPickedId] = useState(null);
 
     function startSession() {
         // Shared by every page, so one page's abort never cancels another page's session.
@@ -74,12 +79,35 @@ export function ShopProvider({ children }) {
         .map(variant => [`${listing.listing_id}:${variant.variant_id}`, { listing, variant }]))), [listings]);
 
     const addToCart = useCallback((listingId, variantId, quantity) => {
-        setCart(current => {
-            const id = `${listingId}:${variantId}`;
-            return current.some(line => line.id === id)
-                ? current.map(line => line.id === id ? { ...line, quantity: line.quantity + quantity } : line)
-                : [...current, cartLine(listingId, variantId, quantity)];
+        const id = `${listingId}:${variantId}`;
+        setCart(current => current.some(line => line.id === id)
+            ? current.map(line => line.id === id ? { ...line, quantity: line.quantity + quantity } : line)
+            : [...current, cartLine(listingId, variantId, quantity)]);
+        setSelectedIds(current => new Set([...current, id]));
+    }, []);
+
+    const toggleSelected = useCallback(id => {
+        setSelectedIds(current => {
+            const next = new Set(current);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
         });
+        setPickedId(null);
+    }, []);
+
+    const setAllSelected = useCallback(selected => {
+        setSelectedIds(selected ? new Set(cart.map(line => line.id)) : new Set());
+        setPickedId(null);
+    }, [cart]);
+
+    // Luna's pick: in the cart (added if absent) and the only ticked line. Nothing is bought.
+    const pickProduct = useCallback((listingId, variantId) => {
+        const id = `${listingId}:${variantId}`;
+        setCart(current => current.some(line => line.id === id)
+            ? current : [...current, cartLine(listingId, variantId, 1)]);
+        setSelectedIds(new Set([id]));
+        setPickedId(id);
     }, []);
 
     const updateQuantity = useCallback((id, change) => {
@@ -89,11 +117,15 @@ export function ShopProvider({ children }) {
 
     const removeFromCart = useCallback(ids => {
         setCart(current => current.filter(line => !ids.includes(line.id)));
+        setSelectedIds(current => new Set([...current].filter(id => !ids.includes(id))));
+        setPickedId(current => (ids.includes(current) ? null : current));
     }, []);
 
     const shop = useMemo(() => ({
-        listings, variants, catalogError, apiGet, cart, addToCart, updateQuantity, removeFromCart,
-    }), [listings, variants, catalogError, apiGet, cart, addToCart, updateQuantity, removeFromCart]);
+        listings, variants, catalogError, apiGet, cart, selectedIds, pickedId,
+        addToCart, updateQuantity, removeFromCart, toggleSelected, setAllSelected, pickProduct,
+    }), [listings, variants, catalogError, apiGet, cart, selectedIds, pickedId,
+        addToCart, updateQuantity, removeFromCart, toggleSelected, setAllSelected, pickProduct]);
 
     return <ShopContext.Provider value={shop}>{children}</ShopContext.Provider>;
 }

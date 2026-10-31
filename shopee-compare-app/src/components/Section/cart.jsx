@@ -1,17 +1,13 @@
-import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { money, useShop } from '../../shop';
 
 function Cart() {
     const navigate = useNavigate();
-    const { state: routeState } = useLocation();
-    const { cart, variants, catalogError, updateQuantity, removeFromCart } = useShop();
-    // Ticks mean "check these out", as on Shopee. Arriving from Luna's "Pick this one" ticks
-    // only the picked product so the shopper decides what to do with it here.
-    const pickedId = routeState?.pickedId ?? null;
-    const [selectedItemIds, setSelectedItemIds] = useState(
-        () => new Set(pickedId ? [pickedId] : cart.map(line => line.id)),
-    );
+    // Ticks live in the shop state so a pick made in Luna is already ticked on arrival here.
+    const {
+        cart, variants, catalogError, selectedIds: selectedItemIds, pickedId,
+        updateQuantity, removeFromCart, toggleSelected, setAllSelected,
+    } = useShop();
 
     const missingIds = variants ? cart.map(line => line.id).filter(id => !variants.has(id)) : [];
     // The cart total adds prices together, which is only meaningful in one currency.
@@ -29,27 +25,9 @@ function Cart() {
     );
     const selectedQuantity = selectedItems.reduce((total, line) => total + line.quantity, 0);
 
-    const toggleItem = itemId => {
-        setSelectedItemIds(current => {
-            const next = new Set(current);
-            if (next.has(itemId)) next.delete(itemId);
-            else next.add(itemId);
-            return next;
-        });
-    };
-
     const toggleAll = () => {
         const allSelected = cart.length > 0 && selectedItemIds.size === cart.length;
-        setSelectedItemIds(allSelected ? new Set() : new Set(cart.map(line => line.id)));
-    };
-
-    const removeItem = itemId => {
-        removeFromCart([itemId]);
-        setSelectedItemIds(current => {
-            const next = new Set(current);
-            next.delete(itemId);
-            return next;
-        });
+        setAllSelected(!allSelected);
     };
 
     return (
@@ -86,7 +64,7 @@ function Cart() {
                                     type="checkbox"
                                     aria-label={`Select ${name}`}
                                     checked={selectedItemIds.has(line.id)}
-                                    onChange={() => toggleItem(line.id)}
+                                    onChange={() => toggleSelected(line.id)}
                                     className="h-4 w-4 accent-shopee"
                                 />
                                 <Link to={`/Product/${line.listingId}?variant=${line.variantId}`} className="group flex min-w-0 gap-3">
@@ -130,7 +108,7 @@ function Cart() {
                                     <p className="font-medium text-shopee">{money(variant.price_minor * line.quantity, variant.currency)}</p>
                                     <button
                                         type="button"
-                                        onClick={() => removeItem(line.id)}
+                                        onClick={() => removeFromCart([line.id])}
                                         className="mt-1 text-xs text-gray-500 hover:text-shopee"
                                     >
                                         Delete
