@@ -27,3 +27,19 @@ access, human user study, production evaluation or deployed integration is claim
   and were not created or changed.
 - Human corrections: none supplied during this implementation. Human review of
   this PR and integration with B/C remain pending; no teammate messages were sent.
+
+## A2 catalog provider
+
+- Codex built the async provider, explicit mock-only factory, ID validation,
+  content-hashed snapshots, scoped pagination and defensive fixture copies.
+- Source files: `data/{listings,reviews,ground_truth}.json`, reproducible generator,
+  and `app/providers/{base,mock,__init__}.py`. Three fabricated listings expose
+  twelve exact variants; each listing has eighteen source reviews.
+- Provider-focused execution:
+  `PYTHONPATH=services/luna-api /tmp/luna-evidence-venv/bin/python -m pytest services/luna-api/tests/evidence/test_pipeline.py -q -k provider`
+  (full passing result recorded in the following pipeline entry).
+- Initial push failed because the system Git helper referred to a missing
+  `credential-manager-core`. Retried using the existing authenticated GitHub CLI
+  credential helper for that command only; push succeeded. No credential values
+  were printed or committed and global Git configuration was not changed.
+- Human corrections: none supplied. B/C consumers have not yet been exercised.
