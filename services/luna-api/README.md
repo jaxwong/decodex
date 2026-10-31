@@ -1,6 +1,6 @@
-# Luna API — Developer B phases B1–B2
+# Luna API — Developer B phases B1–B3
 
-The service now owns the API shell, authenticated demo sessions, canonical comparison state, deterministic ranking, four decision tools, and OpenAI capability checks. A owns immutable marketplace evidence and C owns its frontend projection.
+The service owns the API shell, authenticated demo sessions, canonical comparison state, deterministic ranking, four decision tools, bounded Responses chat, and OpenAI capability checks. A owns immutable marketplace evidence and C owns its frontend projection.
 
 ## Ownership boundary
 
@@ -17,6 +17,7 @@ Developer B is the only dependency-lock owner. A new Python dependency is reques
 | Term | Meaning |
 | --- | --- |
 | Demo session | An opaque, process-local token and server-owned expiry; not an OpenAI Live session. |
+| Conversation | Bounded successful text turns bound to one comparison in one demo session; not an OpenAI Conversation resource. |
 | Capability check | A bounded developer command that verifies project access; not runtime application behavior. |
 | Live session | An OpenAI audio session created from a WebRTC offer; not app-owned comparison state. |
 
@@ -49,6 +50,19 @@ curl --fail -X POST \
 
 Comparison creation calls A's evidence builder exactly once. Runtime has no fixture fallback; the frozen fixture builder exists only under `tests/`.
 
+Copy the returned `comparison_id` and current `revision`, then ask Luna:
+
+```bash
+export LUNA_COMPARISON_ID='<comparison_id from POST /api/comparisons>'
+curl --fail -X POST \
+  -H "Authorization: Bearer $LUNA_DEMO_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"conversation_id":"demo","message":"Under S$80 and at least 65W; prioritize portability.","expected_revision":0}' \
+  "http://127.0.0.1:8000/api/comparisons/$LUNA_COMPARISON_ID/ask"
+```
+
+One text turn makes at most four Responses calls: the initial request plus continuations for at most three tool rounds. SDK retries and parallel tool calls are disabled. Luna can mutate state only through `apply_preferences`; a timeout after that mutation returns the saved revision and tells the client not to repeat the request.
+
 ## Decision tools
 
 B2 exposes exactly four Python tool functions for B3 text and B4 Live delegation:
@@ -66,7 +80,7 @@ Ranking applies budget and minimum-power constraints before lexicographic object
 make api-test
 ```
 
-The B-owned B2 behavior subset is independently runnable without network or API credits:
+The B-owned B2–B3 behavior subset is independently runnable without network or API credits:
 
 ```bash
 cd services/luna-api
