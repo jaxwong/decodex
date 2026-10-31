@@ -1,11 +1,17 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { money, useShop } from '../../shop';
 
 function Cart() {
     const navigate = useNavigate();
+    const { state: routeState } = useLocation();
     const { cart, variants, catalogError, updateQuantity, removeFromCart } = useShop();
-    const [selectedItemIds, setSelectedItemIds] = useState(() => new Set(cart.map(line => line.id)));
+    // Ticks mean "check these out", as on Shopee. Arriving from Luna's "Pick this one" ticks
+    // only the picked product so the shopper decides what to do with it here.
+    const pickedId = routeState?.pickedId ?? null;
+    const [selectedItemIds, setSelectedItemIds] = useState(
+        () => new Set(pickedId ? [pickedId] : cart.map(line => line.id)),
+    );
 
     const missingIds = variants ? cart.map(line => line.id).filter(id => !variants.has(id)) : [];
     // The cart total adds prices together, which is only meaningful in one currency.
@@ -53,24 +59,13 @@ function Cart() {
                     <header className="flex flex-wrap items-center gap-3 p-4">
                         <h1 className="text-xl font-medium text-shopee">Shopping Cart</h1>
                         <span className="text-sm text-gray-400">({cart.length} items)</span>
-                        <div className="ml-auto text-right">
-                            <p className="text-sm font-medium text-gray-700">Compare products with Luna</p>
-                            <p className="text-xs text-gray-500">
-                                Tick 2–4 products, then compare them side by side.
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => navigate('/Compare', {
-                                state: {
-                                    cartSelections: selectedItems.map(({ listingId, variantId }) => ({ listingId, variantId })),
-                                },
-                            })}
-                            className="rounded-sm bg-shopee px-5 py-2 text-sm font-medium text-white hover:bg-shopee2"
-                        >
-                            Compare now
-                        </button>
                     </header>
+                    {pickedId && variants?.has(pickedId) && cart.some(line => line.id === pickedId) && (
+                        <p role="status" className="border-t border-gray-100 px-4 py-3 text-sm text-gray-700">
+                            You picked <strong>{variants.get(pickedId).listing.title} · {variants.get(pickedId).variant.label}</strong> in
+                            Luna, so only it is ticked. Check out when you&apos;re ready, or tick the others again.
+                        </p>
+                    )}
                 </section>
 
                 <section aria-label="Cart products" className="space-y-3">
@@ -169,6 +164,22 @@ function Cart() {
                             </span>
                         </p>
                     </div>
+                    <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:w-auto">
+                    <div className="text-right">
+                        <button
+                            type="button"
+                            disabled={!ready || selectedItems.length < 2 || selectedItems.length > 4}
+                            onClick={() => navigate('/Compare', {
+                                state: {
+                                    cartSelections: selectedItems.map(({ listingId, variantId }) => ({ listingId, variantId })),
+                                },
+                            })}
+                            className="border border-shopee px-5 py-3 text-sm font-medium uppercase text-shopee hover:bg-orange-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 disabled:hover:bg-transparent"
+                        >
+                            Compare now ({selectedItems.length})
+                        </button>
+                        <p className="mt-1 text-[11px] text-gray-500">Not sure which? Luna compares 2–4 ticked products.</p>
+                    </div>
                     <button
                         type="button"
                         disabled={selectedItems.length === 0 || !ready}
@@ -179,6 +190,7 @@ function Cart() {
                     >
                         Check Out
                     </button>
+                    </div>
                 </section>
             </div>
         </main>

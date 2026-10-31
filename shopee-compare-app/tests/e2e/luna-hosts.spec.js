@@ -219,10 +219,6 @@ test('Host A cart lists catalog variants and compares the ticked ones in Luna', 
   page.on('console', message => {
     if (message.type() === 'error') consoleErrors.push(message.text());
   });
-  const atlas = page.getByRole('checkbox', { name: /100W.*Shipping \+SGD 15\.00/ });
-  const breeze = page.getByRole('checkbox', { name: /65W.*Shipping \+SGD 17\.00/ });
-  const comet = page.getByRole('checkbox', { name: /87W.*Shipping \+SGD 3\.00/ });
-
   await page.goto('/#/Cart');
   const cart = page.getByRole('region', { name: 'Cart products' });
   for (const [name, price] of [
@@ -262,8 +258,8 @@ test('Host A cart lists catalog variants and compares the ticked ones in Luna', 
   await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toHaveCount(0);
   await page.unroute('**/api/comparisons');
 
-  // Luna asks for exactly the ticked products. This request meets a simulated outage, so the
-  // picker stays open with the picks.
+  // Luna asks for exactly the ticked products. This request meets a simulated outage; Host A
+  // has no picker, so the same picks stay and the shopper builds the comparison again.
   await page.getByRole('link', { name: '< Back to Cart' }).click();
   await tickBreeze.uncheck();
   let requestedItems = null;
@@ -275,39 +271,40 @@ test('Host A cart lists catalog variants and compares the ticked ones in Luna', 
       body: JSON.stringify({ error: { code: 'PROVIDER_UNAVAILABLE', message: 'Catalog provider is unavailable.' } }),
     });
   });
-  await page.getByRole('button', { name: 'Compare now' }).click();
+  await page.getByRole('button', { name: 'Compare now (2)' }).click();
   await expect(page.getByRole('alert')).toHaveText('Luna ran into a problem on our side. Please try again in a moment.');
   expect(requestedItems).toEqual([
     { listing_id: 'listingA', variant_id: '100w' },
     { listing_id: 'listingC', variant_id: '87w' },
   ]);
-  await expect(atlas).toBeChecked();
-  await expect(comet).toBeChecked();
-  await expect(breeze).not.toBeChecked();
-  await expect(page.getByRole('button', { name: 'Compare 2 products' })).toBeEnabled();
+  const retry = page.getByRole('status').filter({ hasText: 'Your 2 products are still picked' });
+  await expect(retry.getByText('Atlas Portable Power Bank · 100W', { exact: true })).toBeVisible();
+  await expect(retry.getByText('Comet Travel Power Bank · 87W', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toHaveCount(0);
   await page.unroute('**/api/comparisons');
   // The outage above logs its expected request errors; everything after it must stay clean.
   consoleErrors.length = 0;
+  await retry.getByRole('button', { name: 'Build the comparison again' }).click();
+  await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
 
-  // One product cannot be compared alone, so Luna shows the picker with it already picked.
+  // Ticks mean checkout, as on Shopee. Fewer than two ticked cannot be compared, so the button
+  // says so instead of opening a picker, and #/Compare without cart picks returns to the cart.
   await page.getByRole('link', { name: '< Back to Cart' }).click();
   await tickBreeze.uncheck();
   await tickComet.uncheck();
-  await page.getByRole('button', { name: 'Compare now' }).click();
-  await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toBeVisible();
-  await expect(atlas).toBeChecked();
-  await expect(breeze).not.toBeChecked();
-  await expect(comet).not.toBeChecked();
-  await expect(page.getByText('1 of 4 picked')).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Compare 1 product/ })).toBeDisabled();
-
-  await page.getByRole('link', { name: '< Back to Cart' }).click();
+  await expect(page.getByRole('button', { name: 'Compare now (1)' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Check Out' })).toBeEnabled();
+  await cart.getByRole('checkbox', { name: 'Select Atlas Portable Power Bank 100W' }).uncheck();
+  await expect(page.getByRole('button', { name: 'Compare now (0)' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Check Out' })).toBeDisabled();
+  // Select All from a partial or empty selection ticks everything; from everything, nothing.
+  await page.getByRole('checkbox', { name: /^Select All/ }).check();
+  await expect(page.getByRole('button', { name: 'Compare now (3)' })).toBeEnabled();
   await page.getByRole('checkbox', { name: /^Select All/ }).uncheck();
-  await page.getByRole('button', { name: 'Compare now' }).click();
-  await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toBeVisible();
-  await expect(atlas).toBeVisible();
-  await expect(atlas).not.toBeChecked();
-  await expect(page.getByText('0 of 4 picked')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Compare now (0)' })).toBeDisabled();
+  await page.goto('/#/Compare');
+  await expect(page).toHaveURL(/#\/Cart$/);
   expect(consoleErrors).toEqual([]);
 });
 
@@ -382,10 +379,20 @@ test('Host A checks out the cart or the product chosen in Luna', async ({ page }
   await expect(summary).toContainText('Shop Voucher Discount−SGD 15.00');
   await expect(summary).toContainText('Total PaymentSGD 229.52');
 
+  // Picking in Luna is not buying: the shopper lands back in the cart with only that product
+  // ticked and checks out from there.
   await page.goto('/#/Cart');
   await page.getByRole('button', { name: 'Compare now' }).click();
   await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
-  await page.getByRole('button', { name: 'Choose Comet Travel Power Bank · 87W' }).click();
+  await page.getByRole('button', { name: 'Pick Comet Travel Power Bank · 87W' }).click();
+  await expect(page).toHaveURL(/#\/Cart$/);
+  await expect(page.getByRole('status')).toContainText('You picked Comet Travel Power Bank · 87W in Luna');
+  const cart = page.getByRole('region', { name: 'Cart products' });
+  await expect(cart.getByRole('checkbox', { name: 'Select Comet Travel Power Bank 87W' })).toBeChecked();
+  await expect(cart.getByRole('checkbox', { name: 'Select Atlas Portable Power Bank 100W' })).not.toBeChecked();
+  await expect(cart.getByRole('checkbox', { name: 'Select Breeze Slim Power Bank 65W' })).not.toBeChecked();
+  await expect(page.getByText('Total (1 items):')).toContainText('SGD 79.87');
+  await page.getByRole('button', { name: 'Check Out' }).click();
   await expect(page).toHaveURL(/#\/Checkout$/);
   await expect(ordered.getByRole('article')).toHaveCount(1);
   await expect(ordered).toContainText('Comet Travel Power Bank');
@@ -424,24 +431,33 @@ test('Seller Centre counts an excluded listing from another buyer session', asyn
 
   await page.getByRole('banner').getByRole('link', { name: 'Seller Centre' }).click();
   await expect(page).toHaveURL(/#\/SellerCentre$/);
+  // Seller Centre is its own product: no buyer search, cart or account links.
+  await expect(page.getByRole('link', { name: 'Switch to buyer view >' })).toBeVisible();
+  await expect(page.getByRole('searchbox')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /^Cart, / })).toHaveCount(0);
   const seller = page.getByRole('region', { name: 'Luna seller insights' });
   await expect(seller.getByText('Demo seller view. There is no seller login')).toBeVisible();
+  // The seller lands on their first listing; Comet is the one this buyer's budget excluded.
+  await expect(seller.getByRole('button', { name: 'Atlas Portable Power Bank', pressed: true })).toBeVisible();
   await seller.getByRole('button', { name: 'Comet Travel Power Bank' }).click();
   const report = seller.getByRole('region', { name: 'Seller report' });
   await expect(report.getByText(`In ${comparisons} buyer comparison${comparisons === 1 ? '' : 's'}`)).toBeVisible();
-  await expect(report.getByText(`Over budget: ${overBudget}`)).toBeVisible();
-  await expect(report.getByText('Weight', { exact: true })).toBeVisible();
+  await expect(report.getByRole('region', { name: 'Buyer questions' })).toContainText('No open questions from buyers.');
+  const overBudgetRow = report.locator('.luna-seller-row').filter({ hasText: 'Over budget' });
+  await expect(overBudgetRow).toContainText(`${overBudget} buyer${overBudget === 1 ? '' : 's'}`);
+  await expect(overBudgetRow).toContainText('budget was below this listing’s delivered price');
+  const weightGap = report.locator('.luna-seller-row').filter({ hasText: 'Not stated' }).filter({ hasText: 'Weight' });
+  await expect(weightGap).toContainText('Add a “Weight” line to the 87W model’s specifications');
   const warrantyText = report.getByRole('list', { name: 'Your listing text for Warranty' });
   await expect(warrantyText.getByText('Warranty: 1 year')).toBeVisible();
   await expect(warrantyText.getByText('Warranty: 24 months')).toBeVisible();
-  await expect(report.getByText('Weight: Atlas Portable')).toBeVisible();
+  await expect(report.getByRole('list', { name: 'Competitors stating Weight' }))
+    .toContainText('Atlas Portable Power Bank · 100W');
   expect(consoleErrors).toEqual([]);
 });
 
-test('a missing value becomes a seller-confirmed source after one simulated seller answer', async ({ page }, testInfo) => {
-  // Seller answers persist in the shared test API, so one host proves the flow on a variant
-  // (Comet 100W) that no other test compares.
-  test.skip(testInfo.project.name !== 'host-a-chromium', 'Shared package needs one seller-loop proof');
+test('a buyer question is answered in Seller Centre and comes back as a cited source', async ({ page, context }, testInfo) => {
+  test.skip(testInfo.project.name !== 'host-a-chromium', 'Seller Centre is a Host A page');
   const consoleErrors = [];
   page.on('console', message => {
     if (message.type() === 'error') consoleErrors.push(message.text());
@@ -449,34 +465,97 @@ test('a missing value becomes a seller-confirmed source after one simulated sell
   const widget = page.getByRole('region', { name: 'Luna shopping assistant' });
   const cometWeight = /^Weight for Comet Travel Power Bank · 100W: /;
 
-  await page.goto('/#/Compare');
-  await page.getByRole('checkbox', { name: /100W.*Shipping \+SGD 15\.00/ }).check();
-  await page.getByRole('checkbox', { name: /100W.*Shipping \+SGD 3\.00/ }).check();
-  await page.getByRole('button', { name: 'Compare 2 products' }).click();
+  // Seller answers persist in the shared test API, so this uses a variant (Comet 100W) that no
+  // other test compares. The cart is the only place to pick in Host A.
+  await page.goto('/#/Product/listingC?variant=100w');
+  await page.getByRole('button', { name: 'Add To Cart' }).click();
+  await page.getByRole('link', { name: 'View cart' }).click();
+  const cart = page.getByRole('region', { name: 'Cart products' });
+  await cart.getByRole('checkbox', { name: 'Select Breeze Slim Power Bank 65W' }).uncheck();
+  await cart.getByRole('checkbox', { name: 'Select Comet Travel Power Bank 87W' }).uncheck();
+  await page.getByRole('button', { name: 'Compare now (2)' }).click();
   await expect(page.getByRole('button', { name: cometWeight })).toContainText('Not stated');
 
+  // The buyer only sends the question. Nothing seller-side appears in the buyer's comparison.
   await page.getByRole('button', {
     name: 'Ask the seller about Weight for Comet Travel Power Bank · 100W',
   }).click();
   const confirm = page.getByRole('dialog', { name: 'Ask the seller' });
-  await expect(confirm.getByText('“What is the Weight (g) of the 100W model?”')).toBeVisible();
+  await expect(confirm.getByText('Weight (g)', { exact: true })).toBeVisible();
   await confirm.getByRole('button', { name: 'Send to seller' }).click();
+  await expect(confirm).toHaveCount(0);
+  await expect(page.getByText(/I’ve asked the seller of Comet Travel Power Bank · 100W: “What is the Weight \(g\) of the 100W model\?”/)).toBeVisible();
+  const waiting = page.getByRole('region', { name: 'Waiting on the seller' });
+  await expect(waiting).toContainText('Weight for Comet Travel Power Bank · 100W');
+  await expect(page.getByRole('button', { name: /^Ask the seller about Weight/ })).toHaveCount(0);
+  await expect(page.getByText('Asked the seller', { exact: true })).toBeVisible();
+  await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Buyer questions' })).toHaveCount(0);
+  await waiting.getByRole('button', { name: 'Check for the seller’s answer' }).click();
+  await expect(waiting.getByRole('status')).toHaveText('No answer yet. The seller hasn’t replied.');
+  await expect(widget).toHaveAttribute('data-revision', '0');
 
-  const inbox = page.getByRole('region', { name: 'Simulated seller inbox' });
-  await expect(inbox.getByRole('note')).toHaveText('Simulated seller. In production this is Seller Centre chat.');
-  await expect(inbox.getByText('Field: Weight')).toBeVisible();
-  await expect(page.getByRole('table', { name: 'Product comparison' })).toHaveCount(0);
-  await inbox.getByLabel('Weight (g)').fill('about 200');
-  await inbox.getByRole('button', { name: 'Send answer' }).click();
-  await expect(page.getByRole('alert'))
+  // A second buyer builds the same comparison before the seller answers, so their table also
+  // shows the gap with its own Ask seller button.
+  const otherBuyer = await context.newPage();
+  const otherErrors = [];
+  otherBuyer.on('console', message => {
+    if (message.type() === 'error') otherErrors.push(message.text());
+  });
+  await otherBuyer.goto('/#/Product/listingC?variant=100w');
+  await otherBuyer.getByRole('button', { name: 'Add To Cart' }).click();
+  await otherBuyer.getByRole('link', { name: 'View cart' }).click();
+  const otherCart = otherBuyer.getByRole('region', { name: 'Cart products' });
+  await otherCart.getByRole('checkbox', { name: 'Select Breeze Slim Power Bank 65W' }).uncheck();
+  await otherCart.getByRole('checkbox', { name: 'Select Comet Travel Power Bank 87W' }).uncheck();
+  await otherBuyer.getByRole('button', { name: 'Compare now (2)' }).click();
+  await expect(otherBuyer.getByRole('button', { name: cometWeight })).toContainText('Not stated');
+  await expect(otherBuyer.getByRole('button', { name: /^Ask the seller about Weight/ })).toBeVisible();
+
+  // The seller answers in Seller Centre, in their own tab.
+  const sellerPage = await context.newPage();
+  const sellerErrors = [];
+  sellerPage.on('console', message => {
+    if (message.type() === 'error') sellerErrors.push(message.text());
+  });
+  await sellerPage.goto('/#/SellerCentre');
+  const seller = sellerPage.getByRole('region', { name: 'Luna seller insights' });
+  await seller.getByRole('button', { name: 'Comet Travel Power Bank' }).click();
+  const inbox = seller.getByRole('region', { name: 'Buyer questions' });
+  await expect(inbox).toContainText('Buyer questions (1)');
+  const card = inbox.getByRole('article', { name: 'Question about Weight' });
+  await expect(card.getByText('Model: 100W')).toBeVisible();
+  await expect(card.getByText('“What is the Weight (g) of the 100W model?”')).toBeVisible();
+  await card.getByLabel('Weight (g)').fill('about 200');
+  await card.getByRole('button', { name: 'Send answer' }).click();
+  await expect(sellerPage.getByRole('alert'))
     .toContainText('Answer with one value in the unit the question asks for, for example 198.');
-  await expect(inbox).toBeVisible();
+  await expect(card).toBeVisible();
   // The rejected answer above logs its expected request error; everything after must stay clean.
-  consoleErrors.length = 0;
+  sellerErrors.length = 0;
+  await card.getByLabel('Weight (g)').fill('198');
+  await card.getByRole('button', { name: 'Send answer' }).click();
+  await expect(inbox.getByRole('status')).toHaveText('Answered “Weight: 198 g”. Buyers see it in their next comparison.');
+  await expect(card).toHaveCount(0);
+  await expect(sellerPage.getByRole('alert')).toHaveCount(0);
+  expect(sellerErrors).toEqual([]);
+  await sellerPage.close();
 
-  await inbox.getByLabel('Weight (g)').fill('198');
-  await inbox.getByRole('button', { name: 'Send answer' }).click();
-  await expect(inbox).toHaveCount(0);
+  // The second buyer's Ask seller meets an already-answered field (HTTP 409): no second
+  // question is opened, and their comparison is rebuilt with the answer instead.
+  await otherBuyer.getByRole('button', { name: /^Ask the seller about Weight/ }).click();
+  await otherBuyer.getByRole('dialog', { name: 'Ask the seller' }).getByRole('button', { name: 'Send to seller' }).click();
+  await expect(otherBuyer.getByText(/The seller had already answered another buyer “Weight: 198 g”/)).toBeVisible();
+  await expect(otherBuyer.getByRole('button', { name: /^Weight for Comet Travel .*100W.*: 198 g, confirmed by seller$/ })).toBeVisible();
+  await expect(otherBuyer.getByRole('region', { name: 'Waiting on the seller' })).toHaveCount(0);
+  await expect(otherBuyer.getByRole('alert')).toHaveCount(0);
+  // The 409 above is an expected request error in the console; nothing else may log.
+  expect(otherErrors.filter(text => !text.includes('409'))).toEqual([]);
+  await otherBuyer.close();
+
+  // Back in the first buyer's tab, the check finds the answer and rebuilds the same comparison.
+  await waiting.getByRole('button', { name: 'Check for the seller’s answer' }).click();
+  await expect(waiting).toHaveCount(0);
   await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(widget).toHaveAttribute('data-revision', '0');
   const answeredWeight = page.getByRole('button', { name: /^Weight for Comet Travel .*100W.*: 198 g, confirmed by seller$/ });
@@ -506,36 +585,37 @@ test('a session the API has forgotten never blocks the shopper', async ({ page }
   page.on('request', request => {
     if (request.method() === 'POST' && request.url().endsWith('/api/demo-sessions')) sessionsCreated += 1;
   });
+
+  // The cart hands Luna three picks and Luna builds the comparison itself.
+  await page.goto('/#/Cart');
+  await page.getByRole('button', { name: 'Compare now' }).click();
+  await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
+  const sessionsAtStart = sessionsCreated;
+
+  // An ask meets the forgotten session: the comparison is gone, the picks are not, and Host A
+  // never shows a picker.
+  await page.route('**/api/comparisons/*/ask', route => route.fulfill(forgottenSession));
+  await page.getByLabel('Message Luna').fill('Cheapest first');
+  await page.getByRole('button', { name: 'Send' }).click();
+  await expect(page.getByRole('alert')).toHaveText(
+    'Luna restarted, so this comparison was cleared. Your products are still picked, so build it again.',
+  );
+  const retry = page.getByRole('status').filter({ hasText: 'Your 3 products are still picked' });
+  await expect(retry.getByText('Breeze Slim Power Bank · 65W', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toHaveCount(0);
+  expect(sessionsCreated).toBe(sessionsAtStart + 1);
+
+  // The rebuild meets a forgotten session once more; Luna renews and sends it once again.
   let compareRejected = false;
   await page.route('**/api/comparisons', async route => {
     if (compareRejected || route.request().method() !== 'POST') return route.fallback();
     compareRejected = true;
     return route.fulfill(forgottenSession);
   });
-
-  // Open Luna without cart picks, so the shopper's own Compare press meets the forgotten session.
-  await page.goto('/#/Compare');
-  await page.getByRole('checkbox', { name: /100W.*Shipping \+SGD 15\.00/ }).check();
-  await page.getByRole('checkbox', { name: /65W.*Shipping \+SGD 17\.00/ }).check();
-  await page.getByRole('checkbox', { name: /87W.*Shipping \+SGD 3\.00/ }).check();
-  // React development mode may run the widget's start-up twice, so count from here.
-  const sessionsAtStart = sessionsCreated;
-  await page.getByRole('button', { name: 'Compare 3 products' }).click();
+  await retry.getByRole('button', { name: 'Build the comparison again' }).click();
   await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
   expect(compareRejected).toBe(true);
-  expect(sessionsCreated).toBe(sessionsAtStart + 1);
-
-  await page.route('**/api/comparisons/*/ask', route => route.fulfill(forgottenSession));
-  await page.getByLabel('Message Luna').fill('Cheapest first');
-  await page.getByRole('button', { name: 'Send' }).click();
-  await expect(page.getByRole('alert')).toHaveText(
-    'Luna restarted, so this comparison was cleared. Your products are still picked. Press Compare to build it again.',
-  );
-  await expect(page.getByRole('checkbox', { name: /100W.*Shipping \+SGD 15\.00/ })).toBeChecked();
-  await expect(page.getByRole('checkbox', { name: /65W.*Shipping \+SGD 17\.00/ })).toBeChecked();
-  await expect(page.getByRole('checkbox', { name: /87W.*Shipping \+SGD 3\.00/ })).toBeChecked();
-  await expect(page.getByRole('button', { name: 'Compare 3 products' })).toBeEnabled();
   expect(sessionsCreated).toBe(sessionsAtStart + 2);
 });
 

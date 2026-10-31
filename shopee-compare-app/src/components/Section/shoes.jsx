@@ -36,8 +36,7 @@ function Shoes() {
     };
 
     const ProductCard = ({ item }) => (
-        <Link 
-            to="/"
+        <div
             className="flex-shrink-0 w-[140px] sm:w-[165px] md:w-[180px] bg-white rounded-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group border border-gray-100"
         >
             <div className="relative aspect-square overflow-hidden bg-gradient-to-b from-gray-50 to-white">
@@ -102,10 +101,10 @@ function Shoes() {
                     <span className="text-gray-400 text-[10px] sm:text-xs line-through">₱{item.originalPrice.toLocaleString()}</span>
                 </div>
             </div>
-        </Link>
+        </div>
     );
 
-    const SectionHeader = ({ title, icon, scrollRef, seeAllLink = "/" }) => (
+    const SectionHeader = ({ title, icon, scrollRef, seeAllLink = "/Search?q=power%20bank" }) => (
         <div className="flex items-center justify-between px-3 sm:px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
             <div className="flex items-center gap-2">
                 {icon}

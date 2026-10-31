@@ -11,25 +11,24 @@ const Router = ({ children }) => hasRealUrl
   ? <HashRouter>{children}</HashRouter>
   : <MemoryRouter initialEntries={['/Cart']}>{children}</MemoryRouter>;
 import Nav from './components/Navigation/Nav';
+import SellerNav from './components/Navigation/SellerNav';
 import SubNav from './components/SubNavigation/SubNav';
 import Landing from './components/Landing';
 import Footer from './components/Footer/Footer';
-import Login from './components/Authentication/Login';
 import Info from './components/Info';
-import LoginNav from './components/Navigation/LoginNav';
 import Category from './components/Section/category';
 import Discovery from './components/Section/discovery';
 import Cart from './components/Section/cart';
 import Checkout from './components/Section/Checkout';
 import OrderConfirmation from './components/Section/OrderConfirmation';
-import Signup from './components/Authentication/Signup';
 import Compare from './components/Section/Compare';
 import SellerCentre from './components/Section/SellerCentre';
 import SearchResults from './components/Section/SearchResults';
 import ProductPage from './components/Section/ProductPage';
 import { ShopProvider } from './shop';
 
-const MainLayout = ({ children }) => (
+// Buyer pages share the Shopee storefront chrome.
+const BuyerLayout = ({ children }) => (
   <>
     <Nav />
     <SubNav />
@@ -38,45 +37,35 @@ const MainLayout = ({ children }) => (
   </>
 );
 
-const SubNavLayout = ({ children }) => (
+// Seller Centre is a different product with its own header: no search, cart or buyer links.
+const SellerLayout = ({ children }) => (
   <>
-    <LoginNav/>
+    <SellerNav />
     {children}
-    <Footer />
   </>
 );
-const AddtoCart = ({children}) => (
-  <>
-  <Nav/>
-  {children}
-  <Footer/>
-  </>
-)
 
 const layoutPropTypes = {
   children: PropTypes.node.isRequired,
 };
 
 Router.propTypes = layoutPropTypes;
-MainLayout.propTypes = layoutPropTypes;
-SubNavLayout.propTypes = layoutPropTypes;
-AddtoCart.propTypes = layoutPropTypes;
+BuyerLayout.propTypes = layoutPropTypes;
+SellerLayout.propTypes = layoutPropTypes;
 
 function App() {
   return (
     <Router>
       <ShopProvider>
         <Routes>
-          <Route path="/" element={<MainLayout><Landing /><Category/><Discovery/><Info/></MainLayout>} />
-          <Route path="/Login" element={<SubNavLayout><Login /></SubNavLayout>} />
-          <Route path="/Signup" element={<SubNavLayout><Signup /></SubNavLayout>} />
-          <Route path="/Search" element={<MainLayout><SearchResults/></MainLayout>}/>
-          <Route path="/Product/:listingId" element={<MainLayout><ProductPage/></MainLayout>}/>
-          <Route path="/Cart" element={<MainLayout><Cart/></MainLayout>}/>
-          <Route path="/Compare" element={<MainLayout><Compare/></MainLayout>}/>
-          <Route path="/SellerCentre" element={<AddtoCart><SellerCentre/></AddtoCart>}/>
-          <Route path="/Checkout" element={<MainLayout><Checkout/></MainLayout>}/>
-          <Route path="/OrderConfirmation" element={<MainLayout><OrderConfirmation/></MainLayout>}/>
+          <Route path="/" element={<BuyerLayout><Landing /><Category/><Discovery/><Info/></BuyerLayout>} />
+          <Route path="/Search" element={<BuyerLayout><SearchResults/></BuyerLayout>}/>
+          <Route path="/Product/:listingId" element={<BuyerLayout><ProductPage/></BuyerLayout>}/>
+          <Route path="/Cart" element={<BuyerLayout><Cart/></BuyerLayout>}/>
+          <Route path="/Compare" element={<BuyerLayout><Compare/></BuyerLayout>}/>
+          <Route path="/Checkout" element={<BuyerLayout><Checkout/></BuyerLayout>}/>
+          <Route path="/OrderConfirmation" element={<BuyerLayout><OrderConfirmation/></BuyerLayout>}/>
+          <Route path="/SellerCentre" element={<SellerLayout><SellerCentre/></SellerLayout>}/>
         </Routes>
       </ShopProvider>
     </Router>

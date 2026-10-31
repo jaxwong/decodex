@@ -1,9 +1,12 @@
 # Shopee Compare — Luna Host A
 
 This Vite app is the Shopee-style Host A for the shared `@luna/widget` workspace package.
-The demo walk is: search **power bank** on the home page → open a product → pick a model and
+The buyer walk is: search **power bank** on the home page → open a product → pick a model and
 **Add To Cart** → cart → tick 2–4 products → **Compare now** (Luna opens on their comparison) →
-**Choose this one** → Checkout → **Place Order**. Seller insight is the top-bar **Seller Centre**.
+**Pick this one** (back to the cart with only that product ticked) → **Check Out** → **Place
+Order**. Ticks keep Shopee's meaning, "what I'll check out"; comparing is a side step, never a
+purchase. The seller walk is the top-bar **Seller Centre**: its own header, the listing's open
+buyer questions to answer, and what buyers ran into.
 Luna uses only relative `/api` calls; model keys, evidence, ranking and seller counts remain on
 `services/luna-api`.
 
@@ -29,12 +32,22 @@ npm run dev --workspace shopee-compare  # http://localhost:5173/
   picked), shop voucher, shipping, model buttons, quantity, specifications exactly as written,
   description and paged star reviews. These are unverified seller claims; Luna's checked values
   live in the comparison.
-- **Compare now** hands the ticked IDs to Luna. With 2–4 ticked, Luna shows those products
-  loading and then the table; with fewer, its picker with them picked. **View product** opens the
-  same product page over the comparison, so closing it returns to the same comparison.
-- **Choose this one** (the widget's optional `requestAddToCart`) checks out exactly that variant.
-  Checkout applies each listing's voucher and shipping once per line, so one unit costs Luna's
-  delivered total. Payment is cash on delivery only; nothing is charged or shipped.
+- **Compare now** is enabled for 2–4 ticked products and hands their IDs to Luna, which shows
+  them loading and then the table. The cart is the only place to pick in Host A: `#/Compare`
+  without 2–4 cart picks returns to the cart, and a lost or failed comparison offers **Build the
+  comparison again** with the same picks instead of a picker. **View product** opens the same
+  product page over the comparison, so closing it returns to the same comparison.
+- **Pick this one** (the widget's optional `requestAddToCart`) returns to the cart with only that
+  product ticked (adding it first if it was not in the cart). Checkout applies each listing's
+  voucher and shipping once per line, so one unit costs Luna's delivered total. Payment is cash
+  on delivery only; nothing is charged or shipped.
+- **Ask seller** on a missing cell sends one fixed-wording question. The buyer's comparison shows
+  it as waiting and **Check for the seller's answer** rebuilds the comparison once the seller
+  has answered. The answer form lives only in **Seller Centre** (`#/SellerCentre`, `SellerNav`
+  layout), under the listing's **Buyer questions**.
+- The clone landing strips (banners, flash sale, categories, sneakers, bags, daily discover)
+  are decoration: their cards are not links, and every **Shop Now** / **See All** / **Shop All**
+  opens the power-bank search. There is no login or sign-up page.
 
 ## Where the feature lives
 
@@ -47,7 +60,8 @@ src/components/Section/cart.jsx           catalog-backed cart and Compare entry 
 src/components/Section/Compare.jsx        #/Compare route that mounts @luna/widget
 src/components/Section/Checkout.jsx       checkout of the handed-over lines
 src/components/Section/SellerCentre.jsx   #/SellerCentre route that mounts SellerGapReport
-src/lunaHostAdapter.js                    cart selections in; product view and checkout out
+src/components/Navigation/SellerNav.jsx   Seller Centre header (no buyer search, cart or links)
+src/lunaHostAdapter.js                    cart selections in; product view and cart pick out
 packages/luna-widget/                     canonical browser comparison UI
 services/luna-api/                        canonical catalog, evidence, ranking and model boundary
 ```

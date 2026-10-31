@@ -69,9 +69,8 @@ function Category() {
                     <div className="overflow-x-auto scrollbar-hide md:overflow-visible">
                         <div className="flex md:grid md:grid-cols-10 min-w-max md:min-w-0">
                             {categories.map((category, index) => (
-                                <Link 
+                                <div
                                     key={index}
-                                    to="/"
                                     className="flex flex-col items-center justify-start p-2.5 sm:p-3 md:p-4 border-r border-b border-gray-100 hover:shadow-xl hover:z-10 relative bg-white transition-all duration-200 group min-w-[85px] sm:min-w-0"
                                 >
                                     <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center mb-1.5 sm:mb-2 relative">
@@ -86,7 +85,7 @@ function Category() {
                                     <span className="text-[10px] sm:text-[11px] md:text-xs text-gray-700 text-center leading-tight line-clamp-2 group-hover:text-shopee transition-colors font-medium">
                                         {category.text}
                                     </span>
-                                </Link>
+                                </div>
                             ))}
                         </div>
                     </div>
@@ -107,7 +106,7 @@ function Category() {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Link to="/" className="text-shopee text-xs sm:text-sm hover:text-shopee2 transition-colors font-medium">
+                            <Link to="/Search?q=power%20bank" className="text-shopee text-xs sm:text-sm hover:text-shopee2 transition-colors font-medium">
                                 See All &gt;
                             </Link>
                             {/* Scroll buttons - desktop only */}
@@ -135,9 +134,8 @@ function Category() {
                             className="flex gap-2 sm:gap-3 p-3 sm:p-4 overflow-x-auto scrollbar-hide scroll-smooth"
                         >
                             {topPicks.map((item) => (
-                                <Link 
+                                <div
                                     key={item.id}
-                                    to="/"
                                     className="flex-shrink-0 w-[145px] sm:w-[170px] md:w-[185px] bg-white border border-gray-100 rounded-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden"
                                 >
                                     <div className="relative aspect-square overflow-hidden bg-gradient-to-b from-gray-50 to-white">
@@ -193,7 +191,7 @@ function Category() {
                                             <span className="text-gray-500 text-[10px] font-medium">{item.sold} sold</span>
                                         </div>
                                     </div>
-                                </Link>
+                                </div>
                             ))}
                         </div>
                     </div>

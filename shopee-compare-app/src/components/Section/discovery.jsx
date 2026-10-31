@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 
 function Discovery() {
     const [activeTab, setActiveTab] = useState('daily');
@@ -93,9 +92,8 @@ function Discovery() {
                 {/* Products Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-[2px] sm:gap-2 bg-gray-200 sm:bg-transparent mt-[2px] sm:mt-2">
                     {currentProducts.map((product) => (
-                        <Link 
+                        <div
                             key={product.id}
-                            to="/"
                             className="bg-white rounded-none sm:rounded-sm overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group relative"
                         >
                             {/* Product Image */}
@@ -184,15 +182,8 @@ function Discovery() {
                             <div className="absolute bottom-0 left-0 right-0 h-0 group-hover:h-9 bg-shopee/95 flex items-center justify-center overflow-hidden transition-all duration-300">
                                 <span className="text-white text-xs font-medium">View Details</span>
                             </div>
-                        </Link>
+                        </div>
                     ))}
-                </div>
-                
-                {/* See More Button */}
-                <div className="flex justify-center mt-5 mb-3">
-                    <button className="bg-white border-2 border-gray-200 text-gray-700 px-10 sm:px-16 md:px-24 py-2.5 sm:py-3 text-xs sm:text-sm font-medium hover:bg-shopee hover:text-white hover:border-shopee transition-all duration-300 rounded-sm shadow-sm">
-                        See More
-                    </button>
                 </div>
             </div>
         </section>
