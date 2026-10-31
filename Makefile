@@ -1,10 +1,9 @@
 SHELL := /bin/sh
 
 API_DIRECTORY := services/luna-api
-
 .DEFAULT_GOAL := api-test
 
-.PHONY: api-sync api-format-check api-lint api-typecheck api-unit api-test api-dev api-capability-smoke eval
+.PHONY: api-sync api-format-check api-lint api-typecheck api-unit api-test api-dev api-capability-smoke eval frontend-build e2e
 
 api-sync:
 	cd $(API_DIRECTORY) && uv sync --frozen
@@ -32,3 +31,9 @@ api-capability-smoke:
 
 eval:
 	cd $(API_DIRECTORY) && PYTHONPATH=../.. uv run --frozen python -m eval.run
+
+frontend-build:
+	npm run build
+
+e2e:
+	npm run test:e2e
