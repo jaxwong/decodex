@@ -40,7 +40,7 @@ the final demo only when both its backend and browser columns are complete.
 | Revision-safe correction | **Complete** — optimistic revision and one mutation owner | **Partial** — current revision is sent and canonical state is refreshed | C: visible stale-turn browser proof and final UI patch presentation |
 | Voice decision | **Complete on server only** — Live session and delegated tool executor | **Not complete** | C: microphone, playback, captions and visible mutation |
 | Portable second host | API is host-neutral | **Not complete** — shared widget package and Host B are absent | C: package widget, build Host B and run the same journey |
-| Seller operations proposal | **Not implemented** | **Not implemented** | Out of current P0 scope |
+| Seller listing gap report | **Complete** — session-scoped gaps, supported competitors, exclusion and uncertainty counts; zero model calls | **Not complete** | C: render the report in Host A and Host B using the generated OpenAPI contract |
 
 A4 is no longer waiting on B: `eval/results.json` contains the current hash-validated partial
 agent artifact. C is no longer waiting on B routes: PR #14 consumes every API needed for the
@@ -250,8 +250,8 @@ widget or API to add Host B.
 ## Seller operations extension
 
 This is Proposal 1 from
-[luna-business-value-proposals.md](luna-business-value-proposals.md). It extends the same
-evidence into a business-facing result; it is not part of the currently implemented system.
+[luna-business-value-proposals.md](luna-business-value-proposals.md). Its read-only backend is
+implemented; the seller browser view is not.
 
 Persona: Linh sells one of the compared power banks.
 
@@ -283,7 +283,10 @@ filters and discovery without manual listing audits.
 **Privacy rule:** Sellers see aggregate reason counts and public listing evidence, never a
 buyer's identity, conversation, budget or preferences.
 
-**Status:** **Planned.** No gap-report route, aggregation or seller UI currently exists.
+**Status:** **Backend ready.** `GET /api/listings/{listing_id}/gap-report` projects only the
+authorized demo session's current comparison states and makes zero model calls. Host A and Host
+B seller views remain C work; seller login, listing ownership and cross-session aggregation are
+not implemented.
 
 ## What the judge should see
 

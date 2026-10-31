@@ -618,3 +618,60 @@ The extra formatted/typed source is a deferred local Playwright test harness and
 this handoff commit. Its browser journey reached `/ask` but did not observe revision 1 after two
 runs, so it was not presented as passing and was excluded rather than delaying A or C. No paid
 provider call was made by these final commands.
+
+## B9: session-scoped seller listing gap report — 31 October 2026
+
+**Outcome:** Implemented Proposal 1's B-owned backend without a model call or new state store.
+Ranking records the reason where it decides exclusion or uncertainty; the authenticated report
+projects current comparison states for one listing in one demo session.
+
+**Boundary decision:** The reason maps are required on the in-memory `Recommendation` but use
+`Field(exclude=True)`. Tests prove they cannot appear in existing comparison responses, the
+OpenAPI `Recommendation`, text-agent initial/tool JSON or the two provider requests in the
+public create → ask → report journey. The additive `ListingGapReport` is the only new wire
+contract, so A4 remains current and C regenerates only the report types.
+
+**Red-to-green evidence:**
+
+```text
+UV_CACHE_DIR=/tmp/decodex-uv-cache uv run --frozen pytest -q tests/decision/test_ranking.py
+3 failed, 2 passed in 0.10s
+exit 1
+
+UV_CACHE_DIR=/tmp/decodex-uv-cache uv run --frozen pytest -q tests/decision/test_ranking.py
+5 passed in 0.07s
+exit 0
+
+UV_CACHE_DIR=/tmp/decodex-uv-cache uv run --frozen pytest -q \
+  tests/decision/test_tools.py::test_get_comparison_returns_compact_normalized_snapshot \
+  tests/decision/test_tools.py::test_preferences_revision_conflict_preserves_newer_correction \
+  tests/routes/test_comparisons.py::test_create_and_get_comparison_returns_canonical_session_state \
+  tests/routes/test_comparisons.py::test_openapi_exposes_bearer_auth_and_canonical_comparison_contract
+4 failed in 0.37s
+exit 1
+
+same command after Field(exclude=True)
+4 passed in 0.29s
+exit 0
+```
+
+**Final verification:**
+
+```text
+UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+61 files already formatted
+All checks passed!
+Success: no issues found in 59 source files
+181 passed in 0.96s
+exit 0
+
+PYTHONPATH=../.. UV_CACHE_DIR=/tmp/decodex-uv-cache \
+  uv run --frozen python -m eval.run --output /tmp/b9-eval-results.json
+live=false
+agent=true
+exit 0
+```
+
+The source counts include the still-uncommitted deferred Playwright harness; it is not part of
+B9. Both verification commands made zero provider calls. C's seller UI, Host B, browser E2E,
+seller authentication/ownership and cross-session aggregation remain out of this backend slice.

@@ -65,6 +65,21 @@ One text turn makes at most four Responses calls: the initial request plus conti
 
 On successful completion, the text boundary logs the request/comparison IDs, saved revision, tool rounds, actual provider-call count, action/citation counts, monotonic elapsed milliseconds, and the four-call ceiling. Logs are an operational projection, never comparison state.
 
+## Seller listing gap report
+
+The read-only seller projection reuses the same session state and evidence without a model call:
+
+```bash
+curl --fail -H "Authorization: Bearer $LUNA_DEMO_TOKEN" \
+  http://127.0.0.1:8000/api/listings/listingC/gap-report
+```
+
+The response contains current-session comparison count, unsupported fields, competitors with
+supported values, exclusion-reason counts and uncertainty-field counts. It never contains a
+buyer identity, conversation, budget or preference. One request makes at most one catalog
+lookup, then reads at most the server-owned ceiling of ten comparisons with four items each.
+There is no model call, retry, cross-session aggregation or retained report state.
+
 ## GPT-Live server boundary
 
 The C-owned browser creates an audio-plus-data WebRTC offer and posts its SDP to:
@@ -94,7 +109,7 @@ B2 exposes exactly four Python tool functions for B3 text and B4 Live delegation
 - `apply_preferences` is the only mutation; it enforces optimistic revision checks.
 - `inspect_evidence` returns exact sources only for stored evidence IDs.
 
-Ranking applies budget and minimum-power constraints before lexicographic objective priorities. Missing facts remain uncertain, review reliability is not converted into a score, and absent criteria produce no invented winner.
+Ranking applies budget and minimum-power constraints before lexicographic objective priorities. Missing facts remain uncertain, review reliability is not converted into a score, and absent criteria produce no invented winner. Ranking also retains server-only exclusion reasons and uncertain field names for the seller report. Those fields are structurally excluded from existing comparison API and agent serialization.
 
 ## Verify
 

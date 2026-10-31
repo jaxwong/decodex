@@ -2,7 +2,7 @@
 
 **Date:** 31 October 2026 (hackathon day)
 **Audience:** Developers A, B and C
-**Status:** proposals, not commitments. Nothing here starts before **G2 (03:30)** passes. The spec's cut order and kill switches win over anything in this file.
+**Status:** Proposal 1 backend implemented on `b9-seller-gap-report`; its C-owned UI remains pending. Proposals 2–5 remain proposals. The spec's cut order and kill switches win over anything in this file.
 **Source of truth for existing scope:** `Shopee_Compare_Luna_V3_Implementation_Spec.md`
 
 ## Why this file exists
@@ -14,6 +14,9 @@ Each proposal below is written in the same order: what the user or business can 
 ---
 
 ## Proposal 1 — Seller Listing Gap Report
+
+**Implementation status:** Developer B steps B-1 through B-5 are complete and tested. Developer
+C steps C-1 through C-6 are not implemented.
 
 ### Business value, in plain language
 
@@ -40,9 +43,9 @@ Persona: Linh runs a small electronics shop on Shopee VN and sells a 20,000 mAh 
 
 **Demo flow (what judges see today)**
 
-1. Buyer flow exactly as spec §13: three variants, normalised table, review aspects, "under S$80, at least 65W, prioritise portability". Listing B is excluded. Correction with "actually prioritise price".
-2. Presenter: "Same evidence, other side of the marketplace." Clicks "Seller view" and picks listing B. The page is labelled **demo seller view**.
-3. Page shows the three blocks computed from the comparisons just made: missing weight, warranty conflict, competitors A and C state weight, dropped twice **in this session** for missing weight.
+1. Buyer compares the three exact variants, then sets a S$70 maximum, 65W minimum and portability before price. Listing C is excluded on budget; its evidence still records missing weight and conflicting warranty.
+2. Presenter: "Same evidence, other side of the marketplace." Clicks "Seller view" for listing C. The page is labelled **demo seller view**.
+3. Page shows the three blocks computed from the current comparison: missing weight, warranty conflict, competitors A and B state weight, and one `over_budget` exclusion **in this session**.
 4. Presenter clicks the warranty conflict. The same evidence drawer the buyer saw opens with both snippets.
 5. Close: "The buyer got a decision, the seller got the fix list. No second system, no extra model call."
 
@@ -54,19 +57,23 @@ A read-only view per listing with three blocks:
 
 1. **Evidence gaps** — each comparison field whose status for this listing is `missing`, `conflicting` or `unresolved`, with the field name and, for conflicts, both source snippets (reuses `Fact.status`, `Fact.conflicting_values`, `Evidence`).
 2. **Beaten by** — fields where a competitor in the same comparison had a `supported` value and this listing did not.
-3. **Why buyers excluded you** — counts of exclusions per reason, aggregated over this session's `apply_preferences` runs: failed budget, failed minimum power, marked uncertain because a field was missing. Counts come **only** from real demo sessions. No seeded numbers.
+3. **Why buyers excluded you** — counts of current comparison outcomes: failed budget, failed minimum power, or marked uncertain because a field was missing. Counts come **only** from real comparisons in the authorized demo session. No revision history or seeded numbers.
 
 ### What already exists to build on
 
 - A's immutable `ComparisonEvidence` with per-field statuses (merged, PR #3).
 - B2's deterministic filter/ranking already produces exclusion and uncertainty per item (`b2-deterministic-session-tools`, 119 tests).
-- B's session store holds every revision, so exclusion reasons can be counted from saved state.
+- B's session store holds the latest state of each comparison, so current exclusion reasons can be counted without a history table.
 
 ### Honest cost and constraints
 
-- **Zero new model calls. No contract change.** It is a projection of state B already owns.
+- **Zero new model calls.** The new gap-report response is an additive API contract. Existing
+  comparison and agent-visible recommendation JSON remains unchanged.
 - Spec §0 lists "seller administration" as out of scope. This is **read-only reporting**, not administration. Keep it that way: no edit, no publish, no seller login.
-- B2 must expose exclusion **reasons**, not only excluded item keys. Checked on 31 October: `services/luna-api/app/decision/ranking.py` records `excluded_item_keys` and `uncertain_item_keys` as sets, and the uncertainty cause survives only as a prose note. B adds a per-item reason enum (failed budget, failed minimum power, uncertain on a named field) to `Recommendation` in `app/contracts/session.py`. That is a B-owned session-contract addition, not an A evidence-contract change, but C's generated types must be regenerated.
+- Ranking now owns structured exclusion reasons and uncertain field names at the decision point.
+  These are required in memory but excluded from comparison and agent serialization. C generates
+  only the additive `ListingGapReport` types from OpenAPI; it does not receive a changed
+  `Recommendation` contract.
 - Demo exclusions must be produced live during the demo or in the rehearsal session visible to judges. Say "in this session" on screen.
 
 ### Exact implementation
@@ -82,8 +89,10 @@ B-1. `services/luna-api/app/contracts/session.py`
 - Add the type alias next to `RankingPriority`:
   `type ExclusionReason = Literal["over_budget", "below_min_output"]`
 - Add two fields to `Recommendation`, after `uncertain_item_keys`:
-  `exclusion_reasons: dict[str, ExclusionReason]` (item_key to reason)
-  `uncertain_fields: dict[str, list[str]]` (item_key to field keys that had no supported value)
+  `exclusion_reasons: dict[str, ExclusionReason] = Field(exclude=True)` (item_key to reason)
+  `uncertain_fields: dict[str, list[str]] = Field(exclude=True)` (item_key to field keys that had no supported value)
+- The exclusion is mandatory: seller-only metadata cannot enter existing comparison JSON,
+  OpenAPI `Recommendation`, text-agent input/tool output or Live context.
 - Keep `excluded_item_keys` and `uncertain_item_keys`. They are derived from the two dicts inside `rank_comparison` and nowhere else, so there is one owner.
 - Add three response models:
   `ListingGapField`: `item_key: str`, `field_key: str`, `status: Literal["missing", "conflicting", "unresolved"]`, `conflicting_values: list[str]`, `evidence_ids: list[str]`
@@ -126,7 +135,8 @@ B-4. New file `services/luna-api/app/routes/listings.py`
 B-5. Tests, no model calls
 
 - `tests/decision/test_ranking.py`: in the existing hard-constraint test add `assert recommendation.exclusion_reasons == {"listingC:87w": "over_budget"}`; in the missing-weight test add `assert recommendation.uncertain_fields == {"listingC:87w": ["weight_g"]}`.
-- New `tests/decision/test_gap_report.py` using `tests/decision/fixtures.py`:
+- New `tests/decision/test_gap_report.py` using the existing public `eval.fixtures` helpers
+  (the proposed `tests/decision/fixtures.py` path was not found and was not invented):
   empty session returns `comparisons_count == 0` and empty collections;
   after one fixture comparison, the `listingC` report has a `weight_g` gap with status `missing`, a `warranty_months` gap with status `conflicting` and both values, and `beaten_by` for `weight_g` lists `["listingA:100w", "listingB:65w"]`;
   after `apply_preferences` with `max_price_minor=7000, min_output_w=65, priorities=["weight_g", "price_minor"]`, `exclusion_counts == {"over_budget": 1}`;
@@ -138,7 +148,7 @@ B-5. Tests, no model calls
 
 **Developer C**
 
-C-1. Types. After B-4 merges, regenerate `packages/luna-widget/src/contracts.ts` from the running service's `GET /openapi.json`. Do not hand-write the report type.
+C-1. Types. After B-4 merges, regenerate `packages/luna-widget/src/contracts.ts` from the running service's `GET /openapi.json`. Do not hand-write the report type. Only the additive gap-report models change; `Recommendation` does not.
 
 C-2. Component `packages/luna-widget/src/SellerGapReport` with props `{ report, onOpenEvidence }`.
 
@@ -159,7 +169,9 @@ C-6. Playwright: after the Story C flow, open `#/Seller/listingC` and assert the
 - `make api-test` exits 0 with the new tests.
 - `GET /api/listings/listingC/gap-report` returns a zero report before any comparison and, after Story C, shows the missing weight gap and `over_budget: 1`.
 - A second GET returns identical JSON.
-- Host A and Host B both render the page from the same response.
+- **B complete:** the three backend conditions above pass, including a public create → ask →
+  gap-report route test.
+- **C pending:** Host A and Host B both render the page from the same response.
 
 ---
 
