@@ -207,7 +207,7 @@ def _tool_schema(
     }
 
 
-def build_luna_tools(comparison_id: str) -> list[FunctionToolParam]:
+def build_luna_tools(comparison_id: str, expected_revision: int) -> list[FunctionToolParam]:
     """Return exactly four strict tools, structurally bound to the authorized comparison."""
     bound_comparison_id = {
         "type": "string",
@@ -271,7 +271,10 @@ def build_luna_tools(comparison_id: str) -> list[FunctionToolParam]:
                     "required": ["max_price_minor", "min_output_w", "priorities"],
                     "additionalProperties": False,
                 },
-                "expected_revision": {"type": "integer", "minimum": 0},
+                "expected_revision": {
+                    "type": "integer",
+                    "enum": [expected_revision],
+                },
             },
             required=["comparison_id", "patch", "expected_revision"],
         ),
@@ -556,7 +559,7 @@ async def run_luna(
         conversation_id=conversation_id,
         message=message,
     )
-    tools = build_luna_tools(comparison_id)
+    tools = build_luna_tools(comparison_id, expected_revision)
     applied_update: PreferenceUpdate | None = None
     response = await _create_response(
         create_response,

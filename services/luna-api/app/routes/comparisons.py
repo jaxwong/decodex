@@ -4,7 +4,12 @@ from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, Request, status
 
-from app.contracts.session import ComparisonResponse, CreateComparisonRequest
+from app.contracts.session import (
+    AskComparisonRequest,
+    AskComparisonResponse,
+    ComparisonResponse,
+    CreateComparisonRequest,
+)
 from app.decision.comparisons import (
     BuildComparisonEvidence,
     create_comparison,
@@ -12,6 +17,12 @@ from app.decision.comparisons import (
 )
 from app.decision.sessions import DemoSessionState
 from app.errors import ErrorResponse
+from app.openai.text_agent import (
+    CreateModelResponse,
+    create_runtime_openai_client,
+    require_runtime_text_model,
+    run_luna,
+)
 from app.routes.session_auth import require_demo_session_state
 
 router = APIRouter(prefix="/api", tags=["comparisons"])
@@ -57,3 +68,52 @@ def get_comparison_response(
 ) -> ComparisonResponse:
     """Return the latest canonical state when it belongs to the authorized session."""
     return require_comparison(session_state, comparison_id)
+
+
+@router.post(
+    "/comparisons/{comparison_id}/ask",
+    response_model=AskComparisonResponse,
+    responses={
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        409: {"model": ErrorResponse},
+        422: {"model": ErrorResponse},
+        502: {"model": ErrorResponse},
+        503: {"model": ErrorResponse},
+    },
+)
+async def post_comparison_ask(
+    comparison_id: str,
+    ask_request: AskComparisonRequest,
+    request: Request,
+    session_state: Annotated[DemoSessionState, Depends(require_demo_session_state)],
+) -> AskComparisonResponse:
+    """Run one bounded evidence-backed Luna turn for an authorized comparison."""
+    injected_create_response = cast(
+        CreateModelResponse | None,
+        request.app.state.create_model_response,
+    )
+    injected_text_model = cast(str | None, request.app.state.openai_text_model)
+    if injected_create_response is not None:
+        assert injected_text_model is not None
+        return await run_luna(
+            session_state,
+            comparison_id=comparison_id,
+            conversation_id=ask_request.conversation_id,
+            message=ask_request.message,
+            expected_revision=ask_request.expected_revision,
+            create_response=injected_create_response,
+            model=injected_text_model,
+        )
+
+    text_model = require_runtime_text_model()
+    async with create_runtime_openai_client() as openai_client:
+        return await run_luna(
+            session_state,
+            comparison_id=comparison_id,
+            conversation_id=ask_request.conversation_id,
+            message=ask_request.message,
+            expected_revision=ask_request.expected_revision,
+            create_response=openai_client.responses.create,
+            model=text_model,
+        )

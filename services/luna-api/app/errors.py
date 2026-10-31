@@ -12,6 +12,15 @@ from app.decision.sessions import (
     DemoSessionRequired,
 )
 from app.decision.tools import RevisionConflict
+from app.openai.text_agent import (
+    ConversationComparisonMismatch,
+    LunaAgentConfigurationError,
+    LunaAgentContractError,
+    LunaAgentTimeout,
+    LunaAgentUnavailable,
+    LunaToolCallRejected,
+    LunaToolLimitReached,
+)
 from app.providers import CatalogError
 
 CATALOG_ERROR_RESPONSES: dict[str, tuple[int, str, bool]] = {
@@ -167,6 +176,102 @@ def register_exception_handlers(app: FastAPI) -> None:
             code=failure.code.upper(),
             message=message,
             retryable=retryable,
+        )
+
+    @app.exception_handler(ConversationComparisonMismatch)
+    async def handle_conversation_comparison_mismatch(
+        request: Request, failure: ConversationComparisonMismatch
+    ) -> JSONResponse:
+        del request, failure
+        return _error_response(
+            http_status=status.HTTP_409_CONFLICT,
+            code="CONVERSATION_COMPARISON_MISMATCH",
+            message="Start a new conversation for this comparison.",
+            retryable=False,
+        )
+
+    @app.exception_handler(LunaAgentConfigurationError)
+    async def handle_luna_configuration(
+        request: Request, failure: LunaAgentConfigurationError
+    ) -> JSONResponse:
+        del request, failure
+        return _error_response(
+            http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="LUNA_NOT_CONFIGURED",
+            message="Luna text chat is not configured on this server.",
+            retryable=False,
+        )
+
+    @app.exception_handler(LunaAgentTimeout)
+    async def handle_luna_timeout(request: Request, failure: LunaAgentTimeout) -> JSONResponse:
+        del request
+        if failure.action_completed:
+            return _error_response(
+                http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                code="LUNA_TIMEOUT_AFTER_UPDATE",
+                message=(
+                    "Preferences were applied, but Luna's reply timed out. Refresh the comparison."
+                ),
+                retryable=False,
+                current_revision=failure.current_revision,
+            )
+        return _error_response(
+            http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="LUNA_TIMEOUT",
+            message="Luna timed out; the comparison was not changed.",
+            retryable=True,
+        )
+
+    @app.exception_handler(LunaAgentUnavailable)
+    async def handle_luna_unavailable(
+        request: Request, failure: LunaAgentUnavailable
+    ) -> JSONResponse:
+        del request
+        if failure.action_completed:
+            return _error_response(
+                http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                code="LUNA_UNAVAILABLE_AFTER_UPDATE",
+                message=(
+                    "Preferences were applied, but Luna's reply failed. Refresh the comparison."
+                ),
+                retryable=False,
+                current_revision=failure.current_revision,
+            )
+        return _error_response(
+            http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="LUNA_UNAVAILABLE",
+            message="Luna is temporarily unavailable; the comparison was not changed.",
+            retryable=True,
+        )
+
+    @app.exception_handler(LunaToolLimitReached)
+    async def handle_luna_tool_limit(
+        request: Request, failure: LunaToolLimitReached
+    ) -> JSONResponse:
+        del request
+        return _error_response(
+            http_status=status.HTTP_502_BAD_GATEWAY,
+            code="LUNA_TOOL_LIMIT",
+            message="Luna could not finish within the three-round tool limit.",
+            retryable=False,
+            current_revision=(failure.current_revision if failure.action_completed else None),
+        )
+
+    @app.exception_handler(LunaToolCallRejected)
+    @app.exception_handler(LunaAgentContractError)
+    async def handle_luna_invalid_response(
+        request: Request,
+        failure: LunaToolCallRejected | LunaAgentContractError,
+    ) -> JSONResponse:
+        del request, failure
+        return _error_response(
+            http_status=status.HTTP_502_BAD_GATEWAY,
+            code="LUNA_INVALID_RESPONSE",
+            message=(
+                "Luna returned an invalid tool request or answer. "
+                "Refresh the comparison before retrying."
+            ),
+            retryable=False,
         )
 
     @app.exception_handler(RequestValidationError)
