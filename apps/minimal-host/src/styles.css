@@ -78,6 +78,33 @@ main {
   cursor: pointer;
 }
 
+.product-price {
+  padding: 12px;
+  border: 1px solid #b7c6ce;
+  background: #f7f9fa;
+}
+
+.product-price dl {
+  margin: 0;
+}
+
+.product-price dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.product-price dl div:last-child {
+  padding-top: 6px;
+  border-top: 1px solid #b7c6ce;
+  font-weight: 700;
+}
+
+.product-price dd {
+  margin: 0;
+}
+
 .product-specifications,
 .product-sources {
   list-style: none;

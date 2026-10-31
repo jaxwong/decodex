@@ -65,11 +65,26 @@ export default function App() {
       <p className="eyebrow">Host B product preview</p>
       <h2>{viewedProduct.title}</h2>
       <p>{viewedProduct.variantLabel}</p>
-      <p>{viewedProduct.currency} {(viewedProduct.priceMinor / 100).toFixed(2)}</p>
-      <p>Price source: trusted catalog variant {viewedProduct.listingId} · {viewedProduct.variantId}</p>
+      <p><strong>Delivered {viewedProduct.price.currency} {(viewedProduct.price.deliveredMinor / 100).toFixed(2)}</strong></p>
       <p>{viewedProduct.synthetic
         ? 'Synthetic demo listing from Luna’s trusted backend catalog.'
         : 'Canonical listing snapshot from Luna’s trusted backend catalog.'}</p>
+      <div className="product-price">
+        <dl aria-label="Price breakdown">
+          <div><dt>List price</dt><dd>{viewedProduct.price.currency} {(viewedProduct.price.listMinor / 100).toFixed(2)}</dd></div>
+          <div><dt>Shop voucher</dt><dd>− {viewedProduct.price.currency} {(viewedProduct.price.shopVoucherMinor / 100).toFixed(2)}</dd></div>
+          <div><dt>Shipping</dt><dd>+ {viewedProduct.price.currency} {(viewedProduct.price.shippingMinor / 100).toFixed(2)}</dd></div>
+          <div><dt>Delivered total</dt><dd>{viewedProduct.price.currency} {(viewedProduct.price.deliveredMinor / 100).toFixed(2)}</dd></div>
+        </dl>
+        <p>Calculated from the exact listed components below.</p>
+        <ul aria-label="Sources for price" className="product-sources">
+          {viewedProduct.price.sources.map(source => <li key={source.evidenceId}>
+            <span>{source.label}</span>
+            <q>{source.text}</q>
+            <code>{source.location}</code>
+          </li>)}
+        </ul>
+      </div>
       <ul aria-label="Product specifications" className="product-specifications">
         {viewedProduct.specifications.map(specification => <li key={specification.fieldKey}>
           <div className="product-specification-value">

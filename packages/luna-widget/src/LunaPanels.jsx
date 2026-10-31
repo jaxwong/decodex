@@ -123,15 +123,44 @@ const cellSpokenText = cell => ({
   unresolved: 'Couldn’t verify',
 }[cell.status] || cell.text);
 
+function productSource(record) {
+  return {
+    evidenceId: record.id,
+    label: sourceLabel(record.source_type),
+    text: record.source_text,
+    location: record.source_location,
+  };
+}
+
+function exactVariantSource(evidence, item, fieldKey) {
+  const location = `variants/${item.variant_id}/${fieldKey}`;
+  const matches = Object.values(evidence.evidence).filter(record =>
+    record.item_key === item.item_key && record.source_location === location);
+  if (matches.length !== 1) {
+    throw new TypeError(`Expected one ${fieldKey} source for ${item.item_key}, found ${matches.length}`);
+  }
+  return productSource(matches[0]);
+}
+
 function productSnapshot(evidence, item) {
   return {
     listingId: item.listing_id,
     variantId: item.variant_id,
     title: item.title,
     variantLabel: item.variant_label,
-    priceMinor: item.price_minor,
-    currency: item.currency,
     synthetic: item.synthetic,
+    price: {
+      currency: item.currency,
+      listMinor: item.price_minor,
+      shopVoucherMinor: item.shop_voucher_minor,
+      shippingMinor: item.shipping_minor,
+      deliveredMinor: item.landed_price_minor,
+      sources: [
+        exactVariantSource(evidence, item, 'price_minor'),
+        exactVariantSource(evidence, item, 'shop_voucher_minor'),
+        exactVariantSource(evidence, item, 'shipping_minor'),
+      ],
+    },
     specifications: evidence.schema_fields.map(field => {
       const fact = factFor(evidence, item.item_key, field.field_key);
       const cell = describeCell(evidence, item, field.field_key);
@@ -143,12 +172,7 @@ function productSnapshot(evidence, item) {
       const sources = fact.evidence_ids.map(evidenceId => {
         const record = evidence.evidence[evidenceId];
         if (!record) throw new TypeError(`Product specification source ${evidenceId} is missing`);
-        return {
-          evidenceId,
-          label: sourceLabel(record.source_type),
-          text: record.source_text,
-          location: record.source_location,
-        };
+        return productSource(record);
       });
       return {
         fieldKey: field.field_key,

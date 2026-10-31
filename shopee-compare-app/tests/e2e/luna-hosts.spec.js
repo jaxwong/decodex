@@ -69,7 +69,22 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   const productView = page.getByRole('region', { name: 'Host product view' });
   await expect(productView.getByRole('heading', { name: 'SYNTHETIC Atlas power bank family' })).toBeVisible();
   await expect(productView.getByText('100W synthetic SKU', { exact: true })).toBeVisible();
-  await expect(productView.getByText('SGD 60.00', { exact: true })).toBeVisible();
+  await expect(productView.getByText('Delivered SGD 75.00', { exact: true })).toBeVisible();
+  const priceBreakdown = productView.locator('dl[aria-label="Price breakdown"]');
+  await expect(priceBreakdown).toContainText('List priceSGD 60.00');
+  await expect(priceBreakdown).toContainText('Shop voucher− SGD 0.00');
+  await expect(priceBreakdown).toContainText('Shipping+ SGD 15.00');
+  await expect(priceBreakdown).toContainText('Delivered totalSGD 75.00');
+  const priceSources = productView.getByRole('list', { name: 'Sources for price' });
+  await expect(priceSources.getByRole('listitem')).toHaveCount(3);
+  for (const [text, location] of [
+    ['List price: SGD 60.00', 'variants/100w/price_minor'],
+    ['Shop voucher: SGD 0.00', 'variants/100w/shop_voucher_minor'],
+    ['Shipping: SGD 15.00', 'variants/100w/shipping_minor'],
+  ]) {
+    await expect(priceSources.getByText(text, { exact: true })).toBeVisible();
+    await expect(priceSources.getByText(location, { exact: true })).toBeVisible();
+  }
   const specifications = productView.getByRole('list', { name: 'Product specifications' });
   const specificationRows = specifications.locator(':scope > li');
   await expect(specificationRows).toHaveCount(8);
