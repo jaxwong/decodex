@@ -113,8 +113,8 @@ the listing's snapshot. Only the `mock` factory is implemented.
 
 The shared Python project, `uv.lock` and root Makefile now belong to B. Use that
 locked environment rather than a separate dependency installation. The A2 quality
-review passed formatting, lint, strict typing and 119 combined A/B tests after
-integrating main at `18f0009`, using a temporary mypy import-path override. B has
+review passed formatting, lint, strict typing and 142 combined A/B tests after
+integrating main at `35c33e2`, using a temporary mypy import-path override. B has
 configured pytest's root import path; B-owned configuration still needs to add
 the repository root to mypy's `mypy_path` before plain `make api-test` passes.
 The user explicitly left that configuration change to Developer B.
@@ -135,13 +135,24 @@ PYTHONPATH=services/luna-api:. services/luna-api/.venv/bin/python -m eval.run
 Separate real-API pathways, requiring a server-side key and available model access:
 
 ```bash
-PYTHONPATH=services/luna-api services/luna-api/.venv/bin/python services/luna-api/tests/evidence/live_smoke.py --live
+PYTHONPATH=services/luna-api:. services/luna-api/.venv/bin/python services/luna-api/tests/evidence/live_smoke.py --live
 PYTHONPATH=services/luna-api:. services/luna-api/.venv/bin/python -m eval.run --live --output eval/live-results.json
 ```
 
-The live pathway is never run by ordinary pytest. This A2 review did not run live
-model requests, browser E2E or deployment. B2 now wraps/stores
-`ComparisonEvidence`; real model-backed comparison creation remains unverified.
+The combined evaluation includes the smoke test. For the current fixtures its
+preflight is six smoke requests, eighteen grounded requests and twelve free-form
+baseline requests, capped at 36 total with no retries. Run the combined command
+alone under that allowance; the standalone smoke is an alternative six-request
+diagnostic. The CLI loads the ignored root `.env` and stores only measured results.
+See root `eval/README.md` for conditions and failure behavior.
+
+The live pathway is never run by ordinary pytest. B2 wraps/stores
+`ComparisonEvidence` and B3 supplies comparison chat. A's extraction verification
+does not establish the browser flow, second-host portability or deployment.
+The approved 31 October live run completed all 36 requests and passed the
+strengthened smoke. `eval/live-results.json` contains the actual predictions,
+sources, counts, tokens and timings; `eval/README.md` explains the measured
+limitations, including neutral review omissions and free-form unit formatting.
 Fixture access on the pushed branch is the A1 handoff; no direct messages to
 teammates or unverified B/C compatibility claims were made.
 
