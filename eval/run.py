@@ -209,7 +209,12 @@ async def evaluate(
     elapsed_ms = (perf_counter() - start) * 1000
     measured = await live_predictions(provider, selections, transport) if live else None
     labels = json.loads((ROOT / "data/ground_truth.json").read_text())
-    agent_benchmark = load_agent_benchmark()
+    try:
+        agent_benchmark = load_agent_benchmark()
+        agent_unavailable_reason = "Developer B's paid agent benchmark has not been executed"
+    except RuntimeError as failure:
+        agent_benchmark = None
+        agent_unavailable_reason = str(failure)
     result: dict[str, Any] = {
         "conditions": {
             "synthetic": True,
@@ -248,7 +253,7 @@ async def evaluate(
         "agent_output_evaluation": (
             agent_benchmark.model_dump(mode="json")
             if agent_benchmark is not None
-            else unavailable("Developer B's paid agent benchmark has not been executed")
+            else unavailable(agent_unavailable_reason)
         ),
     }
     if measured is not None:

@@ -14,6 +14,7 @@ from app.decision.comparisons import create_comparison, require_comparison
 from app.decision.sessions import DemoSessionState
 from app.openai.text_agent import (
     ConversationComparisonMismatch,
+    LunaAgentContractError,
     LunaAgentTimeout,
     LunaToolCallRejected,
     LunaToolLimitReached,
@@ -150,6 +151,7 @@ def test_agent_executes_one_mutation_and_returns_only_valid_citations(
         assert len(provider_requests) == 2
         assert provider_requests[0]["model"] == "gpt-6-luna"
         assert provider_requests[0]["parallel_tool_calls"] is False
+        assert provider_requests[0]["tool_choice"] == "auto"
         assert {tool["name"] for tool in provider_requests[0]["tools"]} == {
             "get_comparison",
             "get_review_aspect",
@@ -159,16 +161,86 @@ def test_agent_executes_one_mutation_and_returns_only_valid_citations(
         apply_tool = next(
             tool for tool in provider_requests[0]["tools"] if tool["name"] == "apply_preferences"
         )
+        review_tool = next(
+            tool for tool in provider_requests[0]["tools"] if tool["name"] == "get_review_aspect"
+        )
+        review_description = review_tool["description"].lower()
         assert apply_tool["parameters"]["properties"]["expected_revision"]["enum"] == [0]
+        assert "mention id" in review_description
+        assert "review id" in review_description
         assert "untrusted" in provider_requests[0]["instructions"].lower()
+        assert "last tool" in provider_requests[0]["instructions"].lower()
+        assert "mention id" in provider_requests[0]["instructions"].lower()
+        assert "review id" in provider_requests[0]["instructions"].lower()
         assert provider_requests[1]["previous_response_id"] == "resp_tool"
         assert provider_requests[1]["input"][0]["type"] == "function_call_output"
+        assert provider_requests[1]["tool_choice"] == "none"
         completion_logs = [
             record.message for record in caplog.records if "Completed Luna turn" in record.message
         ]
         assert len(completion_logs) == 1
         assert "provider_calls=2" in completion_logs[0]
         assert "elapsed_ms=" in completion_logs[0]
+
+    asyncio.run(scenario())
+
+
+def test_agent_rejects_provider_tool_call_after_terminal_mutation() -> None:
+    async def scenario() -> None:
+        session_state, comparison_id = await create_comparison_state()
+        provider_responses = [
+            function_response(
+                "resp_apply",
+                "call_apply",
+                "apply_preferences",
+                {
+                    "comparison_id": comparison_id,
+                    "patch": {
+                        "max_price_minor": None,
+                        "min_output_w": None,
+                        "priorities": ["review_reliability"],
+                    },
+                    "expected_revision": 0,
+                },
+            ),
+            function_response(
+                "resp_forbidden_tool",
+                "call_review",
+                "get_review_aspect",
+                {
+                    "comparison_id": comparison_id,
+                    "aspect": "heat",
+                    "item_keys": ["listingA:100w"],
+                },
+            ),
+            answer_response("resp_unused", answer="This must not be reached.", cited_ids=[]),
+        ]
+        provider_requests: list[dict[str, Any]] = []
+
+        async def create_response(**request: Any) -> Response:
+            provider_requests.append(request)
+            return provider_responses.pop(0)
+
+        with pytest.raises(
+            LunaAgentContractError,
+            match="function call after terminal preference mutation",
+        ) as failure:
+            await run_luna(
+                session_state,
+                comparison_id=comparison_id,
+                conversation_id="conv-1",
+                message="Prioritize review reliability.",
+                expected_revision=0,
+                create_response=create_response,
+                model="gpt-6-luna",
+            )
+
+        assert len(provider_requests) == 2
+        assert provider_requests[1]["tool_choice"] == "none"
+        assert failure.value.action_completed is True
+        assert failure.value.current_revision == 1
+        assert require_comparison(session_state, comparison_id).revision == 1
+        assert session_state.conversations == {}
 
     asyncio.run(scenario())
 

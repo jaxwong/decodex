@@ -45,6 +45,7 @@ from app.openai.text_agent import (
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE_PATH = ROOT / "data" / "sample_comparison_evidence.json"
 AGENT_REPORT_PATH = ROOT / "eval" / "agent-results.json"
+TEXT_AGENT_PATH = ROOT / "services" / "luna-api" / "app" / "openai" / "text_agent.py"
 SCENARIO_SUITE_VERSION: Literal[1] = 1
 MAX_AGENT_REQUESTS = 44
 REQUEST_TIMEOUT_SECONDS = 30.0
@@ -350,28 +351,31 @@ def _evidence_sha256() -> str:
 
 
 def _scenario_suite_sha256() -> str:
-    values = [
-        {
-            "scenario_id": scenario.scenario_id,
-            "message": scenario.message,
-            "setup_patch": (
-                scenario.setup_patch.model_dump(mode="json", exclude_unset=True)
-                if scenario.setup_patch is not None
-                else None
-            ),
-            "expected_request_revision": scenario.expected_request_revision,
-            "expected_preferences": scenario.expected_preferences.model_dump(mode="json"),
-            "expected_revision": scenario.expected_revision,
-            "expected_recommendation_item_key": scenario.expected_recommendation_item_key,
-            "expected_excluded_item_keys": scenario.expected_excluded_item_keys,
-            "expected_uncertain_item_keys": scenario.expected_uncertain_item_keys,
-            "required_tools": scenario.required_tools,
-            "citation_rule": scenario.citation_rule,
-            "is_state_correction": scenario.is_state_correction,
-            "expects_stale_rejection": scenario.expects_stale_rejection,
-        }
-        for scenario in AGENT_SCENARIOS
-    ]
+    values = {
+        "scenarios": [
+            {
+                "scenario_id": scenario.scenario_id,
+                "message": scenario.message,
+                "setup_patch": (
+                    scenario.setup_patch.model_dump(mode="json", exclude_unset=True)
+                    if scenario.setup_patch is not None
+                    else None
+                ),
+                "expected_request_revision": scenario.expected_request_revision,
+                "expected_preferences": scenario.expected_preferences.model_dump(mode="json"),
+                "expected_revision": scenario.expected_revision,
+                "expected_recommendation_item_key": scenario.expected_recommendation_item_key,
+                "expected_excluded_item_keys": scenario.expected_excluded_item_keys,
+                "expected_uncertain_item_keys": scenario.expected_uncertain_item_keys,
+                "required_tools": scenario.required_tools,
+                "citation_rule": scenario.citation_rule,
+                "is_state_correction": scenario.is_state_correction,
+                "expects_stale_rejection": scenario.expects_stale_rejection,
+            }
+            for scenario in AGENT_SCENARIOS
+        ],
+        "text_agent_sha256": hashlib.sha256(TEXT_AGENT_PATH.read_bytes()).hexdigest(),
+    }
     return hashlib.sha256(
         json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
@@ -635,14 +639,14 @@ async def run_agent_benchmark(
 
 
 def load_agent_benchmark(path: Path = AGENT_REPORT_PATH) -> AgentBenchmarkReport | None:
-    """Load the paid artifact or reject it when evidence or scenarios changed."""
+    """Load the paid artifact or reject it when evidence, scenarios, or agent changed."""
     if not path.exists():
         return None
     report = AgentBenchmarkReport.model_validate_json(path.read_text(encoding="utf-8"))
     if report.evidence_sha256 != _evidence_sha256():
         raise RuntimeError("Agent benchmark evidence hash is stale")
     if report.scenario_suite_sha256 != _scenario_suite_sha256():
-        raise RuntimeError("Agent benchmark scenario suite hash is stale")
+        raise RuntimeError("Agent benchmark scenario suite or implementation hash is stale")
     return report
 
 

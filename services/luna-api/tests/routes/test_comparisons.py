@@ -359,3 +359,100 @@ def test_timeout_after_update_preserves_mutation_and_prevents_retry() -> None:
     assert saved_comparison["revision"] == 1
     assert saved_comparison["preferences"]["max_price_minor"] == 8000
     assert provider_call_count == 2
+
+
+def test_invalid_answer_after_update_returns_committed_revision() -> None:
+    provider_call_count = 0
+
+    async def create_model_response(**request: Any) -> Response:
+        nonlocal provider_call_count
+        del request
+        provider_call_count += 1
+        if provider_call_count == 1:
+            return agent_response(
+                "resp_apply",
+                [
+                    {
+                        "id": "fc_apply",
+                        "type": "function_call",
+                        "call_id": "call_apply",
+                        "name": "apply_preferences",
+                        "arguments": json.dumps(
+                            {
+                                "comparison_id": comparison["comparison_id"],
+                                "patch": {
+                                    "max_price_minor": 8000,
+                                    "min_output_w": None,
+                                    "priorities": ["price_minor"],
+                                },
+                                "expected_revision": 0,
+                            }
+                        ),
+                        "status": "completed",
+                    }
+                ],
+            )
+        return agent_response(
+            "resp_invalid_answer",
+            [
+                {
+                    "id": "msg_invalid_answer",
+                    "type": "message",
+                    "status": "completed",
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "output_text",
+                            "text": "{}",
+                            "annotations": [],
+                        }
+                    ],
+                }
+            ],
+        )
+
+    client = TestClient(
+        create_app(
+            catalog_provider=MockCatalogProvider(),
+            build_evidence=build_fixture_evidence,
+            create_model_response=create_model_response,
+            text_model="gpt-6-luna",
+        )
+    )
+    token = client.post("/api/demo-sessions").json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    comparison = client.post(
+        "/api/comparisons",
+        headers=headers,
+        json={"items": SELECTIONS},
+    ).json()
+
+    response = client.post(
+        f"/api/comparisons/{comparison['comparison_id']}/ask",
+        headers=headers,
+        json={
+            "conversation_id": "conv-1",
+            "message": "Under S$80, prioritize price.",
+            "expected_revision": 0,
+        },
+    )
+    saved_comparison = client.get(
+        f"/api/comparisons/{comparison['comparison_id']}",
+        headers=headers,
+    ).json()
+
+    assert response.status_code == 502
+    assert response.json() == {
+        "error": {
+            "code": "LUNA_INVALID_RESPONSE",
+            "message": (
+                "Luna returned an invalid tool request or answer. "
+                "Refresh the comparison before retrying."
+            ),
+            "retryable": False,
+            "current_revision": 1,
+        }
+    }
+    assert saved_comparison["revision"] == 1
+    assert saved_comparison["preferences"]["max_price_minor"] == 8000
+    assert provider_call_count == 2

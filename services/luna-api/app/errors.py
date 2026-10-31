@@ -288,7 +288,12 @@ def register_exception_handlers(app: FastAPI) -> None:
         request: Request,
         failure: LunaToolCallRejected | LunaAgentContractError,
     ) -> JSONResponse:
-        del request, failure
+        del request
+        current_revision = (
+            failure.current_revision
+            if isinstance(failure, LunaAgentContractError) and failure.action_completed
+            else None
+        )
         return _error_response(
             http_status=status.HTTP_502_BAD_GATEWAY,
             code="LUNA_INVALID_RESPONSE",
@@ -297,6 +302,7 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "Refresh the comparison before retrying."
             ),
             retryable=False,
+            current_revision=current_revision,
         )
 
     @app.exception_handler(RequestValidationError)

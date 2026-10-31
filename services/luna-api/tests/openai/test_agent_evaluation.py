@@ -268,7 +268,7 @@ def test_agent_benchmark_artifact_rejects_stale_or_invalid_input(tmp_path: Path)
     stale = report.model_dump(mode="json")
     stale["scenario_suite_sha256"] = "0" * 64
     report_path.write_text(json.dumps(stale), encoding="utf-8")
-    with pytest.raises(RuntimeError, match="scenario suite hash is stale"):
+    with pytest.raises(RuntimeError, match="scenario suite or implementation hash is stale"):
         load_agent_benchmark(report_path)
 
     report_path.write_text("{}", encoding="utf-8")

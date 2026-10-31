@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from eval import run as evaluation_run
 from eval.metrics import ratio, score
-from eval.run import evaluate
 
 from app.providers import MockCatalogProvider
 from tests.evidence.test_pipeline import SELECTIONS, comparison
@@ -19,7 +19,7 @@ def labels() -> dict[str, Any]:
 
 
 def test_deterministic_evaluation_behavior() -> None:
-    first, second = asyncio.run(evaluate()), asyncio.run(evaluate())
+    first, second = asyncio.run(evaluation_run.evaluate()), asyncio.run(evaluation_run.evaluate())
     assert first["conditions"] == second["conditions"]
     assert first["regex_keyword_baseline"]["metrics"] == second["regex_keyword_baseline"]["metrics"]
     metrics = first["regex_keyword_baseline"]["metrics"]
@@ -79,4 +79,20 @@ def test_unavailable_metric_has_no_guessed_zero() -> None:
 def test_explicit_live_evaluation_requires_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     with pytest.raises(RuntimeError, match="OPENAI_API_KEY"):
-        asyncio.run(evaluate(live=True))
+        asyncio.run(evaluation_run.evaluate(live=True))
+
+
+def test_stale_agent_artifact_is_reported_as_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def reject_stale_artifact() -> None:
+        raise RuntimeError("Agent benchmark implementation hash is stale")
+
+    monkeypatch.setattr(evaluation_run, "load_agent_benchmark", reject_stale_artifact)
+
+    result = asyncio.run(evaluation_run.evaluate())
+
+    assert result["agent_output_evaluation"] == {
+        "available": False,
+        "reason": "Agent benchmark implementation hash is stale",
+    }
