@@ -22,6 +22,8 @@ This file records implemented Luna milestones. The implementation spec remains t
   explicitly (`STOREFRONT_REVIEW_LIMIT`), and hand-authored fixture counts in the unit, e2e
   and evaluation checks fail (not crash) when the fixture changes.
 
+
+
 ### Implemented on `feat/extraction-latency`
 
 - A product's spec extraction and review extraction now run concurrently; disputes attach once
