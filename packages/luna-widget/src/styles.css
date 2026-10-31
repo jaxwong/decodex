@@ -800,6 +800,12 @@
   align-self: flex-end;
 }
 
+.luna-widget .luna-message.is-error p {
+  border-color: #fecaca;
+  background: var(--luna-danger-bg);
+  color: var(--luna-danger-ink);
+}
+
 .luna-widget .luna-message.is-user p {
   border-top-right-radius: 4px;
   background: var(--luna-accent);

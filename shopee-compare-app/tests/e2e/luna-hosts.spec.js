@@ -175,6 +175,12 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await expect(widget).toHaveAttribute('data-revision', '0');
   await expect(disputedCapacity).toContainText('20,000 mAh');
 
+  // The general reviews question reads every aspect in one tool call and cites mentions.
+  await page.getByRole('button', { name: 'What do reviews say?' }).click();
+  await expect(page.getByText(/heat is the most common complaint/)).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Source: .*review: / })).toHaveCount(4);
+  await expect(widget).toHaveAttribute('data-revision', '0');
+
   await page.getByLabel('Message Luna').fill(
     'Under S$80, at least 65W, prioritize portability.',
   );
@@ -620,6 +626,18 @@ test('a session the API has forgotten never blocks the shopper', async ({ page }
   await page.getByRole('button', { name: 'Compare now' }).click();
   await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
   const sessionsAtStart = sessionsCreated;
+
+  // A rejected answer is reported in the conversation itself, where the shopper is looking,
+  // and the comparison stays usable.
+  await page.route('**/api/comparisons/*/ask', route => route.fulfill({
+    status: 502,
+    contentType: 'application/json',
+    body: JSON.stringify({ error: { code: 'LUNA_INVALID_RESPONSE', message: 'Luna returned an invalid tool request or answer. Refresh the comparison before retrying.', retryable: false } }),
+  }), { times: 1 });
+  await page.getByRole('button', { name: 'What do reviews say?' }).click();
+  const conversation = page.getByRole('log', { name: 'Conversation with Luna' });
+  await expect(conversation.getByRole('alert')).toContainText('Luna ran into a problem on our side.');
+  await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
 
   // An ask meets the forgotten session: the comparison is gone, the picks are not, and Host A
   // never shows a picker.

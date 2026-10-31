@@ -260,7 +260,10 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
       // A server-side preference mutation may have committed before a failed answer.
       // Refresh explicitly; never automatically replay a potentially mutating ask.
       if (err?.status === 401) await recoverLostComparison();
-      else showError(err);
+      else {
+        console.error('Luna request failed', err?.status, err?.message, err?.details);
+        setMessages(old => [...old, { role: 'assistant', isError: true, text: errorText(err) }]);
+      }
     } finally { setBusy(false); }
   }
 
