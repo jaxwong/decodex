@@ -385,6 +385,20 @@ C-3. No toggle, no editable shipping, no coin or platform voucher rows.
 - Ranking test shows the order flip on landed price.
 - "Under S$80" excludes the listing whose delivered price exceeds the budget and the answer cites the delivered price.
 
+### Implementation status — `feat/true-landed-price`
+
+Implemented across the evidence, decision and shared-widget boundaries. The selected synthetic
+SKUs now demonstrate sticker order A → B → C and delivered order C → A → B. In particular,
+listing B moves from a S$69.65 list price to S$81.65 delivered after a S$5.00 shop voucher and
+S$17.00 shipping, so an S$80 delivered budget excludes it. The comparison table labels the row
+"Delivered price", shows list-versus-delivered values at a glance, and opens the fixed four-line
+breakdown with the required assumption label. No user-specific voucher, coin, platform promotion,
+shipping editor or toggle was added.
+
+The fixture change intentionally makes the prior paid evidence and agent artifacts stale. They
+remain unchanged as historical files; the free scorecard projection reports them unavailable
+until a separately authorized rerun, rather than presenting old measurements as current proof.
+
 ---
 
 ## Proposal 4 — Evidence Gap to Seller Question Loop

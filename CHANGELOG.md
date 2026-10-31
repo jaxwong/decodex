@@ -4,6 +4,21 @@ This file records implemented Luna milestones. The implementation spec remains t
 
 ## 31 October 2026
 
+### Implemented on `feat/true-landed-price`
+
+- Added listed shop-voucher and shipping components to every synthetic variant and one validated
+  `landed_price_minor` per comparison item. The contract rejects invalid arithmetic before ranking.
+- Changed both hard budgets and the existing `price_minor` ranking priority to use delivered totals.
+  The selected demo order flips from sticker A → B → C to delivered C → A → B; listing B is
+  S$69.65 listed and S$81.65 delivered, so an S$80 budget excludes it.
+- Extended the catalog, compact decision snapshot and OpenAPI schemas without adding another
+  pricing computation path. Text and Live agents inherit the explicit delivered-budget rule.
+- Updated the shared Host A/Host B widget with a visible sticker-price warning, list-versus-delivered
+  columns, a four-line breakdown and the fixed listed-assumptions label. No personalisation controls
+  or unsupported discount types were added.
+- Added contract, ranking, budget, tool, OpenAPI and dual-host browser coverage. Existing paid
+  evaluation artifacts remain untouched and are now honestly stale after the source change.
+
 ### Merged into `main`
 
 - **B1 API shell and capability checks — [PR #1](https://github.com/jaxwong/decodex/pull/1):** FastAPI health and demo-session endpoints, locked uv project, bounded Responses function-call smoke, and GPT-Live session smoke. Both OpenAI capabilities passed with retries disabled and at most two provider calls.

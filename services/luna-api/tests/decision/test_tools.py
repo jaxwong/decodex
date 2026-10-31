@@ -124,6 +124,11 @@ def test_get_comparison_returns_compact_normalized_snapshot() -> None:
         "listingC:87w",
     ]
     assert snapshot.items[0].facts[0].evidence_ids
+    assert snapshot.items[0].price_minor == 6000
+    assert snapshot.items[0].shop_voucher_minor == 0
+    assert snapshot.items[0].shipping_minor == 1500
+    assert snapshot.items[0].landed_price_minor == 7500
+    assert len(snapshot.items[0].price_evidence_ids) == 3
     assert "source_text" not in snapshot.model_dump_json()
     assert "exclusion_reasons" not in snapshot.model_dump_json()
     assert "uncertain_fields" not in snapshot.model_dump_json()
@@ -189,7 +194,8 @@ def test_preferences_revision_conflict_preserves_newer_correction() -> None:
 
     assert first_update.ui_patch.base_revision == 0
     assert first_update.ui_patch.new_revision == 1
-    assert first_update.ui_patch.highlight_item_key == "listingB:65w"
+    assert first_update.ui_patch.highlight_item_key == "listingA:100w"
+    assert first_update.recommendation.excluded_item_keys == ["listingB:65w"]
     assert first_update.recommendation.uncertain_item_keys == ["listingC:87w"]
     assert "exclusion_reasons" not in first_update.model_dump_json()
     assert "uncertain_fields" not in first_update.model_dump_json()
@@ -203,7 +209,7 @@ def test_preferences_revision_conflict_preserves_newer_correction() -> None:
 
     assert correction.ui_patch.base_revision == 1
     assert correction.ui_patch.new_revision == 2
-    assert correction.ui_patch.highlight_item_key == "listingA:100w"
+    assert correction.ui_patch.highlight_item_key == "listingC:87w"
 
     with pytest.raises(RevisionConflict) as stale_failure:
         apply_preferences(

@@ -30,3 +30,14 @@ def test_fixture_unknown_evidence_rejected() -> None:
     payload["facts_by_item"]["listingA:100w"][0]["evidence_ids"] = ["invented"]
     with pytest.raises(ValidationError):
         ComparisonEvidence.model_validate(payload)
+
+
+def test_landed_price_arithmetic_must_match_components() -> None:
+    payload = json.loads((ROOT / "data/sample_comparison_evidence.json").read_text())
+    payload["items"][0]["landed_price_minor"] += 1
+
+    with pytest.raises(
+        ValidationError,
+        match="Landed price must equal price minus shop voucher plus shipping",
+    ):
+        ComparisonEvidence.model_validate(payload)

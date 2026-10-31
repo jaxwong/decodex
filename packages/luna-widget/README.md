@@ -28,6 +28,15 @@ Invalid adapters and selections fail at the package boundary. The widget owns on
 comparison bucket/view state. The API owns evidence, preferences, recommendation and revision.
 Hosts own routes, selection context, cart and checkout.
 
+## Delivered-price presentation
+
+The comparison row keeps the API field key `price_minor` for revision focus compatibility, but
+labels and displays it as **Delivered price** using the server-validated `landed_price_minor`.
+Every price cell opens the same four-line list price, shop voucher, shipping and delivered-total
+breakdown. The visible disclaimer is fixed: "Assumes listed shipping and shop voucher." The
+widget never calculates the delivered total, changes shipping, or guesses coin, platform-voucher
+or buyer-specific eligibility.
+
 The demo hosts render their own product previews and keep the widget mounted. A production host
 may navigate to its authorized listing route using `listingId` and `variantId`; the widget never
 invents a marketplace URL. Opening a preview makes no new API or model call. Missing/unresolved

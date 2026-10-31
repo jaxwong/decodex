@@ -7,49 +7,26 @@ All data and labels are synthetic; these results do not establish production qua
 
 | Metric | Regex/keyword | Recorded grounded | Recorded free-form specs |
 |---|---:|---:|---:|
-| Supported fields | 55/88 | 88/88 | 88/88 |
-| Evidence precision | 56/92 | 96/96 | 92/96 |
-| Unsupported claims | 36/92 | 0/88 | 0/88 |
-| Missing recall | 4/4 | 4/4 | 4/4 |
-| Exact normalized conflict recall | 0/4 | 4/4 | 2/4 |
-| Variant leakage | 9/12 | 0/12 | 0/12 |
-| Review precision | 51/54 | 49/49 | Unavailable |
-| Review recall | 51/51 | 49/51 | Unavailable |
+| Supported fields | 55/88 | Unavailable | Unavailable |
+| Evidence precision | 56/92 | Unavailable | Unavailable |
+| Unsupported claims | 36/92 | Unavailable | Unavailable |
+| Missing recall | 4/4 | Unavailable | Unavailable |
+| Exact normalized conflict recall | 0/4 | Unavailable | Unavailable |
+| Variant leakage | 9/12 | Unavailable | Unavailable |
+| Review precision | 51/54 | Unavailable | Unavailable |
+| Review recall | 51/51 | Unavailable | Unavailable |
 
-Recorded evidence run: 2026-10-31T04:30:39.041647+00:00 (UTC), gpt-6-luna, 36 requests.
-Source/label hashes and saved predictions were revalidated. Runtime implementation verification: **not_recorded**.
-This is a historical executed run, not a new verification of current runtime code.
+Recorded evidence unavailable: Recorded evidence source/label hashes are stale.
 
 The recorded free-form conflict score uses exact normalized alternatives;
 it does not independently measure semantic conflict recognition.
-Grounded comparison timing: p50 9.817s; nearest-rank p95 10.051s; 3 samples.
-Grounded usage: 32,827 observed tokens (complete usage coverage); free-form usage: 22,778 observed tokens (complete usage coverage).
+Grounded comparison timing: Unavailable.
+Grounded usage: Unavailable; free-form usage: Unavailable.
 Grounded includes reviews and concurrent calls; free-form covers specifications.
 
 ## Agent handoff
 
-Artifact status: **partial**; evidence, scenario-suite and text-agent hashes validated.
-Recorded at 2026-10-31T05:39:38.378221+00:00 (UTC); 28/44 requests. No rerun was made.
-
-| Metric | Result |
-|---|---:|
-| Scenario success | 10/12 |
-| Tool behavior | 10/11 |
-| Server state outcome | 11/12 |
-| Citation behavior | 4/5 |
-| State correction | 1/1 |
-| Stale-turn protection | 1/1 |
-
-Server state outcomes do not prove browser rendering or UI changes.
-This binding covers the producer's recorded hashes, not every application dependency.
-Agent timing: p50 5.930s; nearest-rank p95 7.653s; 11 samples.
-Agent usage: 78,474 observed tokens (complete usage coverage).
-These small latency samples do not establish production p95 or an SLO.
-
-Failed scenarios retained from the handoff:
-
-- `review_query`: `LunaAgentContractError`; failed checks: citations, expected_error.
-- `no_comparable_winner`: `LunaToolCallRejected`; failed checks: state, tools, expected_error.
+Unavailable: Agent benchmark evidence hash is stale.
 
 ## Explicitly unavailable
 

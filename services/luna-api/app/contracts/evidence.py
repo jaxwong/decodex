@@ -38,6 +38,8 @@ class CatalogVariant(_EvidenceModel):
     variant_id: str
     label: str
     price_minor: int = Field(ge=0)
+    shop_voucher_minor: int = Field(ge=0)
+    shipping_minor: int = Field(ge=0)
     currency: str
 
 
@@ -78,6 +80,9 @@ class ComparisonItem(_EvidenceModel):
     title: str
     variant_label: str
     price_minor: int = Field(ge=0)
+    shop_voucher_minor: int = Field(ge=0)
+    shipping_minor: int = Field(ge=0)
+    landed_price_minor: int = Field(ge=0)
     currency: Literal["SGD"]
     snapshot_version: str
     synthetic: bool
@@ -167,6 +172,10 @@ class ComparisonEvidence(_EvidenceModel):
         for key, item in items.items():
             if key != f"{item.listing_id}:{item.variant_id}":
                 raise ValueError("Invalid exact-SKU identity")
+            if item.landed_price_minor != (
+                item.price_minor - item.shop_voucher_minor + item.shipping_minor
+            ):
+                raise ValueError("Landed price must equal price minus shop voucher plus shipping")
             facts = self.facts_by_item[key]
             if len(facts) != len(fields) or {f.field_key for f in facts} != fields:
                 raise ValueError("Every item must contain every schema field exactly once")

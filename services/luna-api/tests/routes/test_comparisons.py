@@ -52,6 +52,9 @@ def test_catalog_requires_active_session_and_returns_provider_projection() -> No
     assert response.status_code == 200
     assert len(response.json()["listings"]) == 3
     assert response.json()["listings"][0]["synthetic"] is True
+    first_variant = response.json()["listings"][0]["variants"][0]
+    assert first_variant["shipping_minor"] == 1500
+    assert first_variant["shop_voucher_minor"] == 0
 
 
 def test_create_and_get_comparison_returns_canonical_session_state() -> None:
@@ -180,6 +183,14 @@ def test_openapi_exposes_bearer_auth_and_canonical_comparison_contract() -> None
     assert "CatalogListing" in schema["components"]["schemas"]
     assert "AskComparisonRequest" in schema["components"]["schemas"]
     assert "AskComparisonResponse" in schema["components"]["schemas"]
+    comparison_item = schema["components"]["schemas"]["ComparisonItem"]
+    catalog_variant = schema["components"]["schemas"]["CatalogVariant"]
+    assert {
+        "landed_price_minor",
+        "shipping_minor",
+        "shop_voucher_minor",
+    } <= comparison_item["properties"].keys()
+    assert {"shipping_minor", "shop_voucher_minor"} <= catalog_variant["properties"].keys()
     recommendation_properties = schema["components"]["schemas"]["Recommendation"]["properties"]
     assert "exclusion_reasons" not in recommendation_properties
     assert "uncertain_fields" not in recommendation_properties

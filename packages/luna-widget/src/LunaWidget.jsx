@@ -13,7 +13,7 @@ const greeting = {
   role: 'assistant',
   text: 'Here’s the side-by-side. Tell me what matters — budget, weight, charging power or reviews — and I’ll rank them and show you why.',
 };
-const suggestions = ['Cheapest first', 'Lightest first', 'What do reviews say?'];
+const suggestions = ['Lowest delivered price', 'Lightest first', 'What do reviews say?'];
 
 function errorText(error) {
   if (error?.status === 401) return 'Your demo session expired. Restart the session to continue.';
@@ -208,7 +208,12 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
               return <label key={key} className="luna-picker-option">
                 <input type="checkbox" checked={selection.includes(key)}
                   disabled={busy || (!selection.includes(key) && selection.length >= 4)} onChange={() => toggle(key)}/>
-                <span>{variant.label} · {money(variant.price_minor, variant.currency)}</span>
+                <span className="luna-picker-option-copy">
+                  <span>{variant.label}</span>
+                  <small>
+                    List {money(variant.price_minor, variant.currency)} · Voucher −{money(variant.shop_voucher_minor, variant.currency)} · Shipping +{money(variant.shipping_minor, variant.currency)}
+                  </small>
+                </span>
               </label>;
             })}
           </div>)}

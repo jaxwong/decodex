@@ -1,5 +1,17 @@
 # Developer A — Evidence Intelligence
 
+## Cross-owner true landed price — 31 October 2026
+
+- Human request: implement Proposal 3 end to end across A, B and C for the midpoint demo.
+- Added synthetic listed shipping and shop-voucher inputs to all variants; the evidence builder
+  computes one landed total and the strict contract checks the exact arithmetic.
+- Routed delivered totals through budget filtering, price ranking, decision-tool snapshots,
+  OpenAPI, agent instructions and the shared dual-host comparison UI.
+- The demo exposes the price-order reversal, a four-line breakdown and the fixed limitation label;
+  deterministic tests cover invalid arithmetic, ranking reversal, S$80 exclusion and both hosts.
+- The data change invalidates the previous paid evidence and agent artifacts. They were not
+  rewritten or silently promoted; offline evaluation projects them as stale pending authorization.
+
 All products, seller claims and reviews in this branch are fabricated. No Shopee
 access, human user study, production evaluation or deployed integration is claimed.
 
