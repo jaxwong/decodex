@@ -71,6 +71,8 @@ def test_create_and_get_comparison_returns_canonical_session_state() -> None:
     assert create_response.status_code == 201
     assert comparison["revision"] == 0
     assert comparison["recommendation"]["item_key"] is None
+    assert "exclusion_reasons" not in comparison["recommendation"]
+    assert "uncertain_fields" not in comparison["recommendation"]
     assert len(comparison["evidence"]["items"]) == 3
     assert get_response.status_code == 200
     assert get_response.json() == comparison
@@ -178,6 +180,9 @@ def test_openapi_exposes_bearer_auth_and_canonical_comparison_contract() -> None
     assert "CatalogListing" in schema["components"]["schemas"]
     assert "AskComparisonRequest" in schema["components"]["schemas"]
     assert "AskComparisonResponse" in schema["components"]["schemas"]
+    recommendation_properties = schema["components"]["schemas"]["Recommendation"]["properties"]
+    assert "exclusion_reasons" not in recommendation_properties
+    assert "uncertain_fields" not in recommendation_properties
     assert set(schema["components"]["schemas"]["ErrorCode"]["enum"]) >= {
         "INVALID_REQUEST",
         "SESSION_REQUIRED",

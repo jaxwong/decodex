@@ -26,6 +26,19 @@ This file records implemented Luna milestones. The implementation spec remains t
   the direct browser OpenAI path, review UI, portable widget, Host B, voice controls and
   dual-host E2E are C-owned work; no additional B route is pending.
 
+### Implemented on `b9-seller-gap-report`
+
+- Added structured budget, minimum-output and uncertainty reasons at the deterministic ranking
+  owner. Existing item lists are derived from those maps rather than computed independently.
+- Added `GET /api/listings/{listing_id}/gap-report`, a read-only projection of evidence gaps,
+  supported competitors and current decision reasons within the authorized demo session.
+- Seller-only reason maps are required in memory but excluded from existing comparison JSON,
+  OpenAPI `Recommendation`, text-agent tool/input JSON and Live context. A4 remains current.
+- The report performs one catalog lookup, reads at most ten comparisons with four items each,
+  makes zero model calls, retains no new state and never crosses session boundaries.
+- Full API gate: formatting and lint passed, strict typing passed, and **181 tests passed**.
+- C still owns the generated report types, Host A/Host B seller view and browser journey.
+
 ### Implemented on `b5-api-hardening`
 
 - Plain `make api-test` now resolves root `eval.*` modules under strict mypy without an environment override or ignored imports.
