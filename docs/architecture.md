@@ -18,12 +18,12 @@ The repository contains three different levels of completion:
   comparison UI, evidence/citation rendering and Live controls. Host A and the independent
   `apps/minimal-host` mount that same package through separate adapters. `make e2e` runs the
   same comparison/correction/seller journey in both hosts and an import-boundary check.
-- **G4 browser path implemented, real gate pending:** the widget negotiates WebRTC, waits for
+- **G4 browser path implemented, real gate failed:** the widget negotiates WebRTC, waits for
   `session.started`, plays remote audio, renders provisional input/output captions, refreshes
   canonical state after confirmed Live events, and gracefully closes on `session.closed`.
-  Offline Playwright covers that wiring and microphone-denied text fallback. A real paid
-  microphone → GPT-Live → sideband tool → revision change has not been run on this branch, so
-  G4 is not claimed passed.
+  Offline Playwright covers that wiring and microphone-denied text fallback. In one authorized
+  real run, the session returned HTTP 201, speech produced captions and revision 0→1, but no
+  audible Luna response was heard. The run was not retried and voice is cut from the main demo.
 - **Replacement/deployment incomplete:** the old compare engine still exists beside Luna and
   `src/compare/engine.js` still contains a direct browser OpenAI request. The single-image
   runtime, deployment files and public smoke proof remain missing.
@@ -440,14 +440,13 @@ microphone/provider audio. `make test`, `make test-live`, `make demo`, `Dockerfi
 ## Required next integration
 
 The next system-level milestone is not another backend feature. G3 is automated and the G4
-browser path exists. The remaining ordered work is:
+browser path remains excluded from the demo after failing audible output. The remaining ordered
+work is:
 
 1. make Host A's main compare journey use the canonical API selection instead of keeping a
    separate synthetic Luna catalog beside the legacy comparison;
 2. delete the browser API-key settings, direct OpenAI call and independent ranking path;
-3. authorize and run one real local microphone → Live tool → revision proof; cut voice from the
-   main demo if that check fails; and
-4. add the single-origin runtime and deployment only after the canonical Host A replacement.
+3. add the single-origin runtime and deployment only after the canonical Host A replacement.
 
 Do not represent the legacy Host A replacement, real voice mutation, Docker or deployment as
 complete before their individual gates pass. The seller view is complete only for one

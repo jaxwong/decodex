@@ -25,18 +25,18 @@ This document began as the developer handoff and remains the implementation sour
   Host A, `packages/luna-widget` and the independent `apps/minimal-host`; one root lockfile owns
   dependencies. `make e2e` runs the same exact-variant → comparison → cited answer → revision
   correction flow in both hosts and checks that widget source imports neither host.
-- **G4 browser transport is implemented but the gate is not passed:** WebRTC offer/answer,
+- **G4 browser transport is implemented but the gate failed its real run:** WebRTC offer/answer,
   `oai-events`, `session.started`, remote audio, provisional input/output captions, mute, Stop,
-  `session.closed`, canonical refresh and microphone-denied text fallback exist. Playwright uses
-  a labelled browser transport double and makes no provider call. A real authorized microphone
-  → GPT-Live → sideband `apply_preferences` → visible newer revision is still required.
+  `session.closed`, canonical refresh and microphone-denied text fallback exist. One authorized
+  real run returned HTTP 201; spoken input produced captions and a server-owned revision 0→1,
+  but no audible Luna response was heard. It was not retried. The main demo uses text.
 - **Seller operations demo is implemented:** after an exclusion, both hosts render the same
   session-scoped evidence gaps, supported competitors and decision-reason counts from
   `@luna/widget`. Clicking a conflict reuses the canonical evidence panel. The view makes zero
   model calls and exposes no buyer identity, conversation, budget or preferences.
 - **Still incomplete:** Host A retains the legacy direct-browser OpenAI comparison path beside
   Luna; the single-image runtime, deployment and public smoke proof remain.
-  Voice must be cut from the main demo unless the real G4 check passes.
+  Voice is cut from the main demo because the real G4 check did not pass audible output.
 
 1. Push `shopee-compare-app/` and this spec together. Do not push `node_modules/`, generated `dist/`, `.env`, API keys or unrelated local files.
 2. A, B and C branch from the same handoff commit and follow only their rows in section 1. They share A1's fixture; they do not edit each other's areas.
@@ -203,7 +203,7 @@ The team shares **one artifact only**: A's frozen evidence contract plus `data/s
 | **G1 Independent streams ready** | 02:30 | A evidence tests pass; B four tools pass on fixture; C Host A renders full fixture flow | Each owner fixes only their stream; the other two continue their own tests |
 | **G2 P0 integrated** | 03:30 | Host A add → compare → ask → tool → visible revision → citation works | All stretch work stops; failing layer's owner fixes it |
 | **G3 Portability — automated pass** | 04:15 | Same P0 flow works in Host B without changing widget/backend | C fixes adapter coupling; B/A do not create host-specific paths |
-| **G4 Voice decision — real run pending** | 04:45 | Speech invokes the same tool and revision as text | Remove voice from the main demo; keep text. No second voice architecture |
+| **G4 Voice decision — failed audible output** | 04:45 | One real turn produced captions and revision 0→1 but no audible response | Voice removed from the main demo; text retained. No retry or second voice architecture |
 | **G5 Feature freeze** | 05:45 | All P0 tests pass; optional work either passes or is removed | No new code except correctness fixes and demo evidence |
 | **G6 Demo ready** | 07:00 | Two consecutive end-to-end runs and only measured claims | Do not claim unverified behavior |
 
@@ -815,8 +815,9 @@ before backend confirmation. Say what changed in plain language.
 
 ### DoD F5
 
-- [ ] Mic audio reaches GPT-Live; generated voice plays; browser shows connected state.
-- [ ] At least one spoken constraint **invokes backend tool execution and changes the existing comparison state/UI**.
+- [x] Mic audio reaches GPT-Live and browser captions/connected state are visible.
+- [ ] Generated voice plays audibly. The authorized run produced no audible output.
+- [x] At least one spoken constraint **invokes backend tool execution and changes the existing comparison state/UI**.
 - [ ] A correction/interrupt changes a preference without duplicate or stale actions.
 - [x] Provisional captions and Live connection state are covered by deterministic browser tests.
 - [x] API key not present in browser. Mic permission denied → text Luna remains usable.
@@ -983,7 +984,8 @@ Run this manual script **twice from a fresh page**:
 5. Type `Under S$80, at least 65W; prioritize portability`; confirm the UI revision and recommendation visibly change.
 6. Type `Actually prioritize price`; confirm the same comparison receives a newer revision without re-extraction.
 7. Open Host B and repeat add → compare → ask → cite with the same API.
-8. If Live passed G4, speak the correction once; otherwise verify the visible text fallback and do not claim Live.
+8. G4 failed audible output locally. Verify the visible text fallback and do not claim Live in
+   the demo; do not repeat the paid run as a fallback strategy.
 
 Save the command output and one screenshot per host under the team demo artifacts. If either run fails, do not deploy; the owner named by the failing boundary fixes it.
 
@@ -1050,7 +1052,8 @@ services:
 ### 11.3 Deploy and smoke-test
 
 1. Re-run `make api-test`, `make frontend-build`, `make e2e` and the two manual local text runs.
-   Run the paid capability smoke or real G4 microphone check only with explicit authorization.
+   Do not repeat the failed G4 run as a fallback. A separate paid capability smoke still requires
+   explicit authorization and does not change the G4 result.
 2. Commit and push the tested branch.
 3. In Render: **New → Blueprint** → connect the repository → select the pushed branch → keep the root `render.yaml` path → enter `OPENAI_API_KEY` → **Deploy Blueprint**.
 4. Wait until `/api/health` passes. Copy the assigned HTTPS URL.
@@ -1063,7 +1066,8 @@ curl --fail "$DEMO_URL/api/health"
 # Open "$DEMO_URL/minimal/"
 ```
 
-6. Repeat the section 10.4 P0 script once on the public URL. Test microphone permission and one Live correction only if G4 passed locally.
+6. Repeat the section 10.4 P0 script once on the public URL using text. Do not test or demo Live;
+   G4 failed audible output locally.
 7. Turn off automatic deploys during judging; deploy a new commit only after the same local gates pass again.
 
 **Deployment pass condition:** health returns `200`; Host A and Host B load over HTTPS; text Luna executes a real tool and visibly changes the comparison; citations open; no key appears in browser source/network payloads; server logs contain no uncaught error. If public Live fails but text works, cut Live rather than changing deployment architecture.

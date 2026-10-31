@@ -797,4 +797,26 @@ exit 0
 
 These commands made zero provider calls. Seller authentication, listing ownership,
 persistence, cross-session aggregation and week-over-week analytics remain explicitly out of
-scope. The paid real-microphone G4 acceptance run remains separate.
+scope. The paid real-microphone G4 acceptance run remained separate from these deterministic
+commands.
+
+## B12: one authorized real G4 acceptance run — 31 October 2026
+
+**Bound:** One browser Live session only, with no capability smoke and no retry. The operation
+allowed one provider session creation and one sideband attach. The controlled API ran on port
+8001 so its access log was observable without stopping another developer's existing process.
+
+**Observed:**
+
+- `POST /api/comparisons/{comparison_id}/live/session` returned HTTP 201.
+- Real microphone speech produced browser captions.
+- The canonical comparison changed visibly from revision 0 to 1, which can only occur through
+  the server-owned preference mutation path.
+- Subsequent canonical comparison refreshes returned HTTP 200.
+- No audible Luna response was heard.
+- The run was not retried.
+
+**Decision:** G4 failed because audible output is required. The available evidence does not
+distinguish provider speech generation from browser playback, so no root cause is invented.
+Voice is cut from the main demo and text remains the explicit fallback. No code change was made
+to mask the failure or introduce a second voice architecture.

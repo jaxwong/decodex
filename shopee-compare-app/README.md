@@ -51,9 +51,9 @@ The **⚙ Live AI settings** control belongs to the superseded `src/compare` pat
 API key into it. Current Luna text and GPT-Live requests are server-owned and read only the root
 `.env` through FastAPI.
 
-GPT-Live browser controls exist inside `@luna/widget`, but voice is not a demo claim until a
-real microphone turn invokes the backend sideband tool and visibly increments the canonical
-comparison revision. Deterministic Playwright proves wiring and text fallback only.
+GPT-Live browser controls exist inside `@luna/widget`. One authorized real microphone turn
+produced captions and incremented the canonical comparison from revision 0 to 1, but no audible
+response was heard. G4 failed, was not retried, and voice is not a demo claim.
 
 ## Credits / declarations
 

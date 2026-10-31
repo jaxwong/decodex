@@ -132,8 +132,9 @@ These are current repository facts, not accepted exceptions:
    the intended single state/decision owner across the full application.
 3. The backend-connected Luna panel executes an API journey, but it has not replaced the
    parallel legacy comparison path or unified the storefront and API catalog identities.
-4. Browser microphone/audio/stop controls exist and have offline transport proof, but no real
-   spoken provider turn has yet demonstrated a sideband mutation and visible revision change.
+4. One real spoken provider turn produced captions and a visible revision 0→1, but no audible
+   output. G4 failed and voice is excluded from the main demo; generation versus browser
+   playback was not isolated and must not be guessed.
 5. The single-origin Docker/deployment shape is planned, not implemented.
 
 Until these are fixed, backend correctness must not be presented as end-to-end product

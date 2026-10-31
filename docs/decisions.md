@@ -262,7 +262,6 @@ polling creates unbounded calls for a long voice session. Confirmed lifecycle ev
 browser a bounded trigger without introducing a second push service or state owner.
 
 **Consequences:** Offline Playwright proves offer/readiness/captions/mute/close wiring and the
-permission-denied text fallback. It cannot pass G4: one explicitly authorized real microphone
-run must still show provider speech, sideband `apply_preferences`, and a newer canonical
-revision. If that run fails, voice is removed from the main demo rather than replaced by a
-second architecture.
+permission-denied text fallback. The one authorized real run produced captions and a newer
+canonical revision but no audible output. It was not retried. G4 therefore failed and voice is
+removed from the main demo rather than replaced by a second architecture.

@@ -41,7 +41,7 @@ one intentional Host B skip for the single shared-package transport lifecycle te
 
 - Host A's legacy `src/compare` path still owns a parallel comparison and browser OpenAI-key
   route. It is superseded but not yet deleted.
-- A real paid microphone → GPT-Live → sideband `apply_preferences` → visible revision run has
-  not been executed on this branch. Offline Playwright does not pass G4.
+- One real paid microphone run produced captions and a visible revision 0→1 but no audible Luna
+  response. It was not retried; G4 failed and voice is excluded from the main demo.
 - The full cross-product review-aspect view, Docker/Render deployment and public smoke proof
   are not implemented.
