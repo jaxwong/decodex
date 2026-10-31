@@ -25,6 +25,13 @@ from eval.agent import load_agent_benchmark
 from eval.baselines import predict
 from eval.live import MAX_LIVE_REQUESTS, RequestBudget, free_form_specs, token_summary
 from eval.metrics import score
+from eval.scorecard import (
+    SOURCE_NAMES,
+    RecordedEvidenceError,
+    implementation_sha256,
+    load_recorded_evidence,
+    render_scorecard,
+)
 from eval.smoke import SMOKE_SELECTIONS, run_smoke
 from openai import AsyncOpenAI, DefaultAsyncHttpxClient
 
@@ -115,6 +122,8 @@ async def live_predictions(
         "request_limit": budget.limit,
         "executed_at_utc": datetime.now(UTC).isoformat(),
         "sdk_version": version("openai"),
+        "pydantic_version": version("pydantic"),
+        "implementation_sha256": implementation_sha256(),
         "status": "failed",
         "grounded": None,
         "free_form": None,
@@ -224,6 +233,12 @@ async def evaluate(
     )
     labels = json.loads((ROOT / "data/ground_truth.json").read_text())
     try:
+        recorded_evidence = await load_recorded_evidence(labels, selections, provider)
+        evidence_reason = "No saved live evidence run exists"
+    except RecordedEvidenceError as failure:
+        recorded_evidence = None
+        evidence_reason = str(failure)
+    try:
         agent_benchmark = load_agent_benchmark()
         agent_unavailable_reason = "Developer B's paid agent benchmark has not been executed"
     except RuntimeError as failure:
@@ -242,7 +257,7 @@ async def evaluate(
             "labels_supplied_to_extractor": False,
             "source_sha256": {
                 name: hashlib.sha256((ROOT / "data" / name).read_bytes()).hexdigest()
-                for name in ("listings.json", "reviews.json", "ground_truth.json")
+                for name in SOURCE_NAMES
             },
             "limitations": [
                 "Synthetic fixtures do not demonstrate production shopping performance.",
@@ -261,9 +276,18 @@ async def evaluate(
             "cost": unavailable("No billable model request"),
         },
         "grounded_structured_outputs": unavailable(
-            "Not executed; requires explicit --live and API credentials"
+            "No new extraction in this invocation; see recorded_evidence_evaluation"
         ),
-        "ungrounded_free_form": unavailable("No live free-form baseline executed"),
+        "ungrounded_free_form": unavailable(
+            "No new extraction in this invocation; see recorded_evidence_evaluation"
+        ),
+        "recorded_evidence_evaluation": recorded_evidence or unavailable(evidence_reason),
+        "friction_proxy": unavailable(
+            "Matched manual and agent browser interaction counts have not been measured"
+        ),
+        "prose_only_agent_baseline": unavailable(
+            "No prose-only assistant run on the same twelve scenarios was supplied"
+        ),
         "agent_output_evaluation": (
             agent_benchmark.model_dump(mode="json")
             if agent_benchmark is not None
@@ -352,12 +376,15 @@ def main() -> None:
     except RuntimeError as failure:
         parser.exit(2, str(failure) + "\n")
     args.output.write_text(json.dumps(result, indent=2) + "\n")
+    if args.output.resolve() == ROOT / "eval/results.json":
+        (ROOT / "eval/SCORECARD.md").write_text(render_scorecard(result))
     print(
         json.dumps(
             {
                 "output": str(args.output),
                 "baseline": result["regex_keyword_baseline"]["metrics"],
                 "live": result["grounded_structured_outputs"].get("available", False),
+                "recorded_evidence": result["recorded_evidence_evaluation"]["available"],
                 "agent": result["agent_output_evaluation"].get("available", False),
             },
             indent=2,
