@@ -13,6 +13,7 @@ from app.contracts.evidence import (
 )
 
 type RankingPriority = Literal["weight_g", "price_minor", "max_output_w", "review_reliability"]
+type ExclusionReason = Literal["over_budget", "below_min_output"]
 type ActiveTab = Literal["specs", "reviews"]
 DEFAULT_ACTIVE_TAB: ActiveTab = "specs"
 
@@ -63,6 +64,8 @@ class Recommendation(_SessionModel):
     ranked_item_keys: list[str]
     excluded_item_keys: list[str]
     uncertain_item_keys: list[str]
+    exclusion_reasons: dict[str, ExclusionReason]
+    uncertain_fields: dict[str, list[str]]
     limitations: list[str]
 
 

@@ -1,7 +1,7 @@
 """Own deterministic comparison filtering and explainable lexicographic ranking."""
 
 from app.contracts.evidence import ComparisonEvidence
-from app.contracts.session import Preferences, RankingPriority, Recommendation
+from app.contracts.session import ExclusionReason, Preferences, RankingPriority, Recommendation
 
 OBJECTIVE_PRIORITY_DIRECTIONS: dict[RankingPriority, int] = {
     "weight_g": 1,
@@ -56,26 +56,33 @@ def rank_comparison(
 ) -> Recommendation:
     """Apply hard constraints, separate uncertainty, and rank comparable candidates."""
     item_keys = _item_keys(evidence)
-    excluded_item_keys: set[str] = set()
-    uncertain_item_keys: set[str] = set()
+    exclusion_reasons: dict[str, ExclusionReason] = {}
+    uncertain_fields: dict[str, list[str]] = {}
     limitations: list[str] = []
+
+    def record_uncertainty(item_key: str, field_key: str) -> bool:
+        fields = uncertain_fields.setdefault(item_key, [])
+        if field_key in fields:
+            return False
+        fields.append(field_key)
+        return True
 
     for item_key in item_keys:
         if (
             preferences.max_price_minor is not None
             and _price_minor(evidence, item_key) > preferences.max_price_minor
         ):
-            excluded_item_keys.add(item_key)
+            exclusion_reasons[item_key] = "over_budget"
             continue
         if preferences.min_output_w is not None:
             max_output_w = _supported_number(evidence, item_key, "max_output_w")
             if max_output_w is None:
-                uncertain_item_keys.add(item_key)
-                limitations.append(
-                    f"{item_key} has no supported max_output_w value and cannot be verified."
-                )
+                if record_uncertainty(item_key, "max_output_w"):
+                    limitations.append(
+                        f"{item_key} has no supported max_output_w value and cannot be verified."
+                    )
             elif max_output_w < preferences.min_output_w:
-                excluded_item_keys.add(item_key)
+                exclusion_reasons[item_key] = "below_min_output"
 
     objective_priorities = [
         priority for priority in preferences.priorities if priority != "review_reliability"
@@ -85,7 +92,7 @@ def rank_comparison(
             "Review reliability is explanatory evidence, not an objective ranking score."
         )
 
-    eligible_item_keys = [item_key for item_key in item_keys if item_key not in excluded_item_keys]
+    eligible_item_keys = [item_key for item_key in item_keys if item_key not in exclusion_reasons]
     priority_values: dict[str, list[int | float]] = {
         item_key: [] for item_key in eligible_item_keys
     }
@@ -94,15 +101,15 @@ def rank_comparison(
         for item_key in eligible_item_keys:
             value = _priority_value(evidence, item_key, priority)
             if value is None:
-                uncertain_item_keys.add(item_key)
-                limitations.append(
-                    f"{item_key} has no supported {priority} value and remains uncertain."
-                )
+                if record_uncertainty(item_key, priority):
+                    limitations.append(
+                        f"{item_key} has no supported {priority} value and remains uncertain."
+                    )
             else:
                 priority_values[item_key].append(value * direction)
 
     comparable_item_keys = [
-        item_key for item_key in eligible_item_keys if item_key not in uncertain_item_keys
+        item_key for item_key in eligible_item_keys if item_key not in uncertain_fields
     ]
     ranked_item_keys = (
         sorted(comparable_item_keys, key=lambda item_key: tuple(priority_values[item_key]))
@@ -121,7 +128,9 @@ def rank_comparison(
     return Recommendation(
         item_key=recommended_item_key,
         ranked_item_keys=ranked_item_keys,
-        excluded_item_keys=[key for key in item_keys if key in excluded_item_keys],
-        uncertain_item_keys=[key for key in item_keys if key in uncertain_item_keys],
+        excluded_item_keys=[key for key in item_keys if key in exclusion_reasons],
+        uncertain_item_keys=[key for key in item_keys if key in uncertain_fields],
+        exclusion_reasons=exclusion_reasons,
+        uncertain_fields=uncertain_fields,
         limitations=limitations,
     )
