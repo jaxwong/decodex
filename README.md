@@ -75,7 +75,9 @@ forgets in-memory sessions when it does; Luna then offers to build the compariso
 - Host A has one comparison implementation: `@luna/widget` on `#/Compare`. Its search,
   product page, cart and checkout render Luna's backend catalog; storefront text is never
   treated as trusted evidence. Checkout is a demo: cash on delivery only, nothing is charged.
-- Docker/Render deployment and public smoke proof are not implemented.
+- The single image is implemented and verified locally: `docker build -t luna-demo .`, then
+  `docker run --env-file .env -p 8080:8080 luna-demo` serves Host A at `/`, Host B at `/minimal/`
+  and the API at `/api`. A public deployment and its smoke proof do not exist yet.
 - `npm install` currently reports dependency audit findings; no automatic or breaking audit fix
   has been applied.
 

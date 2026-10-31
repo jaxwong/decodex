@@ -4,6 +4,16 @@ This file records implemented Luna milestones. The implementation spec remains t
 
 ## 31 October 2026
 
+### Implemented on `feat/deploy-render`
+
+- One image now serves both hosts and the API from one origin: multi-stage `Dockerfile`, allowlist
+  `.dockerignore` and `render.yaml`. `LUNA_STATIC_ROOT`, set only in the image, mounts the static
+  root last, so `/api/*` always wins and a wrong path crashes at startup.
+- Host B builds with relative assets, so it runs under `/minimal/`.
+- `LUNA_CATALOG_PROVIDER` is left out of `render.yaml` because no code reads it.
+- Verified on the built image only: both hosts completed one real text turn, revision 0 to 1. No
+  public deployment or public smoke proof exists yet.
+
 ### Implemented on `feat/buyer-seller-separation`
 
 - Seller Centre is its own product: a `SellerNav` layout (Seller Centre wordmark, "Demo seller ·

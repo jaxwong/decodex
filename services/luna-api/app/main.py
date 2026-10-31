@@ -3,6 +3,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from openai import AsyncOpenAI
 
 from app.decision.comparisons import BuildComparisonEvidence
@@ -115,6 +116,11 @@ def create_app(
     app.include_router(listings_router)
     app.include_router(seller_replies_router)
     app.include_router(comparisons_router)
+    # Set only in the deployed image, whose Dockerfile lays out Host A at the root and Host B
+    # under minimal/. Mounted last so /api/* always wins; a wrong path crashes at startup.
+    static_root = os.environ.get("LUNA_STATIC_ROOT")
+    if static_root is not None:
+        app.mount("/", StaticFiles(directory=static_root, html=True), name="hosts")
     return app
 
 

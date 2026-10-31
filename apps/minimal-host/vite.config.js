@@ -5,6 +5,8 @@ import process from 'node:process';
 const apiTarget = process.env.LUNA_API_PROXY_TARGET || 'http://127.0.0.1:8000';
 
 export default defineConfig({
+  // Relative asset paths let the deployed image serve this host under /minimal/.
+  base: './',
   plugins: [react()],
   server: {
     proxy: {

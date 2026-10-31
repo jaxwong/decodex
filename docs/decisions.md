@@ -48,7 +48,7 @@ flowchart TD
 | D-10 | Accepted | Use stable typed HTTP errors and one error boundary |
 | D-11 | Accepted | Separate deterministic tests from explicitly paid evaluation artifacts |
 | D-12 | Accepted | Keep evidence and agent paid request budgets separate |
-| D-13 | Planned, not implemented | Serve both hosts and API from one Docker image and origin |
+| D-13 | Implemented locally, not deployed | Serve both hosts and API from one Docker image and origin |
 | D-14 | Rejected and removed | Browser-owned OpenAI keys and independent browser ranking |
 | D-15 | Accepted for demo | Project seller listing gaps from current authorized session state |
 | D-16 | Accepted and implemented | Use one widget package, two host adapters and one root npm lock |
@@ -196,15 +196,15 @@ measurement.
 
 ## D-13 — One-origin demo deployment
 
-**Status:** Planned, not implemented.
+**Status:** Implemented and verified locally; not deployed.
 
-**Decision:** Build both frontend hosts, copy them into one FastAPI image, serve Host B under
-`/minimal`, mount Host A last at `/`, and call relative `/api` routes.
+**Decision:** Build both frontend hosts into one FastAPI image's static root, with Host B in its
+`minimal/` directory, mount that root last at `/`, and call relative `/api` routes.
 
 **Why:** One service is the smallest deployable demo and removes CORS and split configuration.
 
-**Consequences:** Both build outputs and cross-host E2E now exist. Docker/deployment still needs
-an explicit approved implementation and public smoke proof; frontend/backend readiness alone is
+**Consequences:** `LUNA_STATIC_ROOT` is set only in the image, so local development stays API-only.
+The public deployment and its smoke proof are still outstanding; frontend/backend readiness alone is
 not deployment readiness.
 
 ## D-14 — Browser-owned model access is rejected
