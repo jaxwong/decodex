@@ -64,3 +64,36 @@ gpt_live_session=passed (gpt-live-1)
 max_external_calls=2
 exit 0
 ```
+
+## B infrastructure: API Make targets — 31 October 2026
+
+**Outcome:** Added a root Makefile with runnable B-owned targets for API dependency sync, formatting, linting, type checking, unit tests, local development and the bounded OpenAI capability smoke.
+
+**Files changed:**
+
+- `Makefile`
+- `services/luna-api/README.md`
+- `docs/codex-build-log/B.md`
+
+**Boundary:** The default `make` target runs the complete API gate. Aggregate `test`, `e2e` and `demo` targets are not defined yet because the root npm workspace, browser-test command and local orchestration script do not exist. B will add those targets only after C publishes their real command names; the Makefile does not silently skip missing frontend work.
+
+**Verification:**
+
+```text
+UV_CACHE_DIR=/tmp/decodex-uv-cache make api-sync
+Checked 40 packages in 6ms
+exit 0
+
+UV_CACHE_DIR=/tmp/decodex-uv-cache make
+15 files already formatted
+All checks passed!
+Success: no issues found in 14 source files
+14 passed in 0.37s
+exit 0
+
+make --dry-run api-dev
+exit 0
+
+make --dry-run api-capability-smoke
+exit 0
+```
