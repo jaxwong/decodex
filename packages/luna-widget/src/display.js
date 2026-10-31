@@ -48,6 +48,12 @@ export function exclusionLabel(reason) {
   return EXCLUSION_LABELS[reason];
 }
 
+// The API stores a simulated seller's answer as variant text under this location segment.
+export const isSellerReply = record => record.source_location?.includes('/seller_replies/') ?? false;
+
+export const evidenceLabel = record =>
+  isSellerReply(record) ? 'Confirmed by seller' : sourceLabel(record.source_type);
+
 export function sourceLabel(sourceType) {
   if (!SOURCE_LABELS[sourceType]) throw new TypeError(`Unknown evidence source type ${sourceType}`);
   return SOURCE_LABELS[sourceType];

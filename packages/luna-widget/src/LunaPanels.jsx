@@ -1,8 +1,8 @@
 import { Fragment, useEffect, useId, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
-  PRICE_FIELD, citationSource, conflictText, disputeText, factValueText, fieldLabel, itemName, money,
-  readableLimitation, reviewDispute, sourceLabel,
+  PRICE_FIELD, citationSource, conflictText, disputeText, evidenceLabel, factValueText, fieldLabel,
+  isSellerReply, itemName, money, readableLimitation, reviewDispute,
 } from './display.js';
 
 // The API ranks against max_output_w when the shopper sets min_output_w.
@@ -20,7 +20,13 @@ function describeCell(evidence, item, fieldKey) {
   }
   const fact = factFor(evidence, item.item_key, fieldKey);
   if (fact.status === 'supported') {
-    return { status: 'supported', text: factValueText(fact), fact, dispute: reviewDispute(evidence, fact) };
+    return {
+      status: 'supported',
+      text: factValueText(fact),
+      fact,
+      dispute: reviewDispute(evidence, fact),
+      isSellerConfirmed: fact.evidence_ids.some(evidenceId => isSellerReply(evidence.evidence[evidenceId])),
+    };
   }
   if (fact.status === 'conflicting') return { status: 'conflicting', text: conflictText(fact), fact };
   return { status: fact.status, text: null, fact };
@@ -112,6 +118,10 @@ function CellContent({ cell }) {
     <span className="luna-value">{cell.text}</span>
     <span className="luna-dispute-marker"><WarningIcon/>{disputeText(cell.dispute)}</span>
   </>;
+  if (cell.isSellerConfirmed) return <>
+    <span className="luna-value">{cell.text}</span>
+    <span className="luna-seller-confirmed">Confirmed by seller</span>
+  </>;
   if (cell.status === 'price' || cell.status === 'supported') return <span className="luna-value">{cell.text}</span>;
   if (cell.status === 'missing') return <>
     <span className="luna-value is-missing">Not stated</span>
@@ -132,7 +142,8 @@ const cellSpokenText = cell => ({
   missing: 'Not stated',
   conflicting: `Listing disagrees, ${cell.text}`,
   unresolved: 'Couldn’t verify',
-}[cell.status] || (cell.dispute ? `${cell.text}, ${disputeText(cell.dispute).toLowerCase()}` : cell.text));
+}[cell.status] || (cell.dispute ? `${cell.text}, ${disputeText(cell.dispute).toLowerCase()}`
+  : cell.isSellerConfirmed ? `${cell.text}, confirmed by seller` : cell.text));
 
 function cellClassName(cell) {
   if (cell.status === 'conflicting') return 'luna-cell is-conflict';
@@ -142,7 +153,7 @@ function cellClassName(cell) {
 function productSource(record) {
   return {
     evidenceId: record.id,
-    label: sourceLabel(record.source_type),
+    label: evidenceLabel(record),
     text: record.source_text,
     location: record.source_location,
   };
@@ -201,7 +212,7 @@ function productSnapshot(evidence, item) {
   };
 }
 
-export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing }) {
+export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing, onAskSeller }) {
   const [differencesOnly, setDifferencesOnly] = useState(true);
   const { evidence, recommendation, preferences } = comparison;
   const schemaFields = evidence.schema_fields;
@@ -295,6 +306,11 @@ export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing })
                       onClick={() => onOpenCell({ itemKey: item.item_key, fieldKey })}>
                       <CellContent cell={cell}/>
                     </button>
+                    {cell.status === 'missing' && <button type="button" className="luna-ask-seller"
+                      aria-label={`Ask the seller about ${label} for ${itemName(item)}`}
+                      onClick={() => onAskSeller({ itemKey: item.item_key, fieldKey })}>
+                      Ask seller
+                    </button>}
                   </td>;
                 })}
               </tr>;
@@ -324,6 +340,7 @@ ComparisonTable.propTypes = {
   comparison: PropTypes.object.isRequired,
   onOpenCell: PropTypes.func.isRequired,
   onNavigateToListing: PropTypes.func.isRequired,
+  onAskSeller: PropTypes.func.isRequired,
 };
 
 // A cited ID points either at a listing fact (open that table cell) or at a quote
@@ -350,6 +367,9 @@ function cellExplanation(cell, label) {
       + `${reviewCount} of the ${analyzedReviews} reviews analysed for this product report otherwise. `
       + 'Luna can’t verify the true figure. This is a count among reviews analysed, not a defect rate.';
   }
+  if (cell.isSellerConfirmed) {
+    return 'The seller answered a buyer’s question with this value. Luna reads the answer like listing text and uses it to rank.';
+  }
   if (cell.status === 'supported') {
     return cell.fact.evidence_ids.length > 1
       ? `Found in ${cell.fact.evidence_ids.length} places in the listing.` : 'Read from the seller’s listing.';
@@ -371,6 +391,7 @@ const CELL_STATUS = {
   unresolved: ['none', 'Couldn’t verify'],
 };
 const DISPUTED_STATUS = ['warn', 'From the listing · disputed in reviews'];
+const SELLER_CONFIRMED_STATUS = ['ok', 'Confirmed by seller'];
 
 export function SourcePanel({ comparison, target, onClose, onAsk }) {
   const titleId = useId();
@@ -388,7 +409,7 @@ export function SourcePanel({ comparison, target, onClose, onAsk }) {
   if (resolved.source) {
     const { kind, record } = resolved.source;
     title = itemName(item);
-    subtitle = kind === 'review' ? `Customer review · ${record.review_id}` : sourceLabel(record.source_type);
+    subtitle = kind === 'review' ? `Customer review · ${record.review_id}` : evidenceLabel(record);
     body = <>
       <div className="luna-quote">
         <p>“{kind === 'review' ? record.excerpt : record.source_text}”</p>
@@ -400,7 +421,8 @@ export function SourcePanel({ comparison, target, onClose, onAsk }) {
   } else {
     const label = fieldLabel(evidence.schema_fields, resolved.fieldKey);
     const cell = describeCell(evidence, item, resolved.fieldKey);
-    const [tone, statusText] = cell.dispute ? DISPUTED_STATUS : CELL_STATUS[cell.status];
+    const [tone, statusText] = cell.dispute ? DISPUTED_STATUS
+      : cell.isSellerConfirmed ? SELLER_CONFIRMED_STATUS : CELL_STATUS[cell.status];
     const quotes = (cell.fact?.evidence_ids || []).map(id => citationSource(evidence, id).record);
     title = `${label} · ${item.title}`;
     subtitle = item.variant_label;
@@ -424,7 +446,7 @@ export function SourcePanel({ comparison, target, onClose, onAsk }) {
       {cell.status === 'conflicting' && <p className="luna-panel-lead">The seller gives different values: {cell.text}.</p>}
       {cell.dispute && <h4 className="luna-panel-section">Seller claim</h4>}
       {quotes.map(record => <div key={record.id} className="luna-quote">
-        <span className="luna-quote-from">{sourceLabel(record.source_type)}</span>
+        <span className="luna-quote-from">{evidenceLabel(record)}</span>
         <p>{highlightValue(record.source_text)}</p>
       </div>)}
       {cell.dispute && <section aria-label="Disputed in analysed reviews">

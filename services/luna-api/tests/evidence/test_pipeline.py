@@ -92,6 +92,66 @@ def test_missing_weight_abstains() -> None:
     assert weight.status == "missing" and weight.value is None and weight.evidence_ids == []
 
 
+def test_seller_reply_becomes_cited_fact_in_a_new_snapshot() -> None:
+    provider = MockCatalogProvider()
+    selections = [SELECTIONS[0], SELECTIONS[2]]
+    before_version = run(provider.get_snapshot_version("listingC"))
+    before = comparison(selections=selections, provider=provider)
+    assert fact(before, "listingC:87w", "weight_g").status == "missing"
+
+    run(provider.add_seller_reply("listingC", "87w", "weight_g", "Weight: 198 g"))
+
+    assert run(provider.get_snapshot_version("listingC")) != before_version
+    assert fact(before, "listingC:87w", "weight_g").status == "missing"
+    after = comparison(selections=selections, provider=provider)
+    weight = fact(after, "listingC:87w", "weight_g")
+    assert weight.status == "supported" and weight.value == 198
+    [source] = [after.evidence[evidence_id] for evidence_id in weight.evidence_ids]
+    assert source.source_location == "variants/87w/seller_replies/0"
+    assert source.source_text == "Weight: 198 g" and source.variant_id == "87w"
+    # Sibling variants never inherit another variant's answer.
+    sibling = comparison(
+        selections=[SELECTIONS[0], ComparisonSelection(listing_id="listingC", variant_id="100w")],
+        provider=provider,
+    )
+    assert fact(sibling, "listingC:100w", "weight_g").status == "missing"
+
+
+def test_seller_reply_disagreeing_with_listing_is_a_conflict() -> None:
+    provider = MockCatalogProvider()
+    run(provider.add_seller_reply("listingA", "100w", "weight_g", "Weight: 400 g"))
+    weight = fact(comparison(provider=provider), "listingA:100w", "weight_g")
+    assert weight.status == "conflicting"
+    assert set(weight.conflicting_values) == {"400", "420"}
+
+
+@pytest.mark.parametrize(
+    ("listing_id", "variant_id", "code"),
+    [
+        ("listingZ", "87w", "unknown_listing"),
+        ("listingC", "999w", "unknown_variant"),
+    ],
+)
+def test_seller_reply_rejects_unknown_identities(
+    listing_id: str, variant_id: str, code: str
+) -> None:
+    with pytest.raises(CatalogError) as failure:
+        run(
+            MockCatalogProvider().add_seller_reply(
+                listing_id, variant_id, "weight_g", "Weight: 1 g"
+            )
+        )
+    assert failure.value.catalog_code == code
+
+
+def test_second_seller_reply_for_one_field_is_rejected() -> None:
+    provider = MockCatalogProvider()
+    run(provider.add_seller_reply("listingC", "87w", "weight_g", "Weight: 198 g"))
+    with pytest.raises(CatalogError) as failure:
+        run(provider.add_seller_reply("listingC", "87w", "weight_g", "Weight: 199 g"))
+    assert failure.value.catalog_code == "seller_reply_exists"
+
+
 @pytest.mark.parametrize(
     "listing_id,variant_id,code",
     [("missing", "100w", "unknown_listing"), ("listingA", "fake", "unknown_variant")],

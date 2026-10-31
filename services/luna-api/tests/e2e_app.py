@@ -1,25 +1,51 @@
-"""Expose a deterministic test-only Luna API for both browser host journeys."""
+"""Expose a deterministic test-only Luna API for both browser host journeys.
 
+Evidence goes through the real EvidenceBuilder with the deterministic extraction double, so
+provider changes such as a simulated seller reply reach the next comparison as they would live.
+"""
+
+import asyncio
 import json
 from typing import Any, cast
 
-from eval.fixtures import build_sample_evidence, load_sample_evidence
 from openai.types.responses import Response
 
+from app.evidence import EvidenceBuilder
+from app.evidence.index import build_evidence_index
 from app.main import create_app
 from app.providers import MockCatalogProvider
+from tests.evidence.fakes import FakeModelClient
 
-E2E_CITATION_ID = next(
-    evidence.id
-    for evidence in load_sample_evidence().evidence.values()
-    if evidence.item_key == "listingB:65w"
-    and evidence.source_location == "variants/65w/shipping_minor"
-)
-E2E_DISPUTED_CAPACITY = next(
-    fact
-    for fact in load_sample_evidence().facts_by_item["listingB:65w"]
-    if fact.field_key == "capacity_mah"
-)
+CATALOG_PROVIDER = MockCatalogProvider()
+REFERENCE_DATA_PREFIX = "Untrusted comparison reference data"
+
+
+def _breeze_shipping_evidence_id() -> str:
+    listing = asyncio.run(CATALOG_PROVIDER.get_listing("listingB"))
+    variant = asyncio.run(CATALOG_PROVIDER.get_variant("listingB", "65w"))
+    if listing is None or variant is None:
+        raise RuntimeError("E2E fixture must contain listingB:65w")
+    return next(
+        evidence.id
+        for evidence in build_evidence_index(listing, variant).values()
+        if evidence.source_location == "variants/65w/shipping_minor"
+    )
+
+
+E2E_CITATION_ID = _breeze_shipping_evidence_id()
+
+
+def _comparison_snapshot(model_input: list[dict[str, Any]]) -> dict[str, Any]:
+    """Read the snapshot the text agent sends, so citations match the built evidence.
+
+    The serialized snapshot omits server-only recommendation fields, so it stays plain JSON.
+    """
+    reference = next(
+        str(message["content"])
+        for message in model_input
+        if str(message["content"]).startswith(REFERENCE_DATA_PREFIX)
+    )
+    return cast(dict[str, Any], json.loads(reference.split("\n", 1)[1]))
 
 
 def _answer_response(response_id: str, *, answer: str, cited_ids: list[str]) -> Response:
@@ -74,6 +100,12 @@ async def create_scripted_response(**request: Any) -> Response:
 
     model_input = cast(list[dict[str, Any]], request["input"])
     if "claim" in str(model_input[-1]["content"]).lower():
+        breeze = next(
+            item
+            for item in _comparison_snapshot(model_input)["items"]
+            if item["item_key"] == "listingB:65w"
+        )
+        capacity = next(fact for fact in breeze["facts"] if fact["field_key"] == "capacity_mah")
         return _answer_response(
             "resp_e2e_dispute",
             answer=(
@@ -81,10 +113,7 @@ async def create_scripted_response(**request: Any) -> Response:
                 "report lower real-world capacity, such as charging a phone only twice. "
                 "Luna cannot verify the true figure, so the ranking is unchanged."
             ),
-            cited_ids=[
-                *E2E_DISPUTED_CAPACITY.evidence_ids,
-                *E2E_DISPUTED_CAPACITY.disputing_mention_ids,
-            ],
+            cited_ids=[*capacity["evidence_ids"], *capacity["disputing_mention_ids"]],
         )
 
     tools = cast(list[dict[str, Any]], request["tools"])
@@ -127,8 +156,8 @@ async def create_scripted_response(**request: Any) -> Response:
 
 
 app = create_app(
-    catalog_provider=MockCatalogProvider(),
-    build_evidence=build_sample_evidence,
+    catalog_provider=CATALOG_PROVIDER,
+    build_evidence=EvidenceBuilder(CATALOG_PROVIDER, FakeModelClient()).build,
     create_model_response=create_scripted_response,
     text_model="gpt-6-luna",
 )

@@ -3,16 +3,19 @@ import PropTypes from 'prop-types';
 import { assertHostAdapter, selectionKey, selectionKeys } from './hostAdapter.js';
 import { LiveVoiceControls } from './LiveVoiceControls.jsx';
 import { lunaClient } from './lunaClient.js';
-import { errorText, money } from './display.js';
+import { errorText, isSellerReply, money } from './display.js';
 import {
   ComparisonTable, Conversation, PreferenceChips, SourcePanel, SparkleIcon, UpdateNotice,
 } from './LunaPanels.jsx';
+import { SellerQuestionDialog, SimulatedSellerInbox } from './SellerQuestion.jsx';
 
 const greeting = {
   role: 'assistant',
   text: 'Here’s the side-by-side. Tell me what matters — budget, weight, charging power or reviews — and I’ll rank them and show you why.',
 };
 const suggestions = ['Lowest delivered price', 'Lightest first', 'What do reviews say?'];
+
+const newConversationId = () => `luna_${crypto.randomUUID().replaceAll('-', '')}`;
 
 // Comparison request items, in catalog order, for the picked `listing:variant` keys.
 function comparisonItems(listings, keys) {
@@ -33,7 +36,11 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState(null);
   const [sourceTarget, setSourceTarget] = useState(null);
-  const conversationId = useRef(`luna_${crypto.randomUUID().replaceAll('-', '')}`);
+  // A server-drafted seller question: confirmed by the buyer, then answered in the simulated inbox.
+  const [sellerDraft, setSellerDraft] = useState(null);
+  // The seller's answer is stored, but the comparison that cites it has not been built yet.
+  const [pendingSellerReply, setPendingSellerReply] = useState(null);
+  const conversationId = useRef(newConversationId());
   const generation = useRef(0);
   const inputRef = useRef(null);
   const selectedItems = useMemo(() => comparisonItems(catalog, selection), [catalog, selection]);
@@ -62,6 +69,8 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
         setMessages([]);
         setNotice(null);
         setSourceTarget(null);
+        setSellerDraft(null);
+        setPendingSellerReply(null);
         const hostKeys = selectionKeys(hostAdapter.getCurrentSelections());
         const availableKeys = new Set(listings.flatMap(listing => listing.variants
           .map(variant => `${listing.listing_id}:${variant.variant_id}`)));
@@ -141,6 +150,8 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
     setComparison(null);
     setNotice(null);
     setSourceTarget(null);
+    setSellerDraft(null);
+    setPendingSellerReply(null);
     setMessages([]);
     try {
       await renewSession();
@@ -207,6 +218,73 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
     } finally { setBusy(false); }
   }
 
+  async function askSeller({ itemKey, fieldKey }) {
+    if (!comparison || !session || busy) return;
+    const item = comparison.evidence.items.find(candidate => candidate.item_key === itemKey);
+    setBusy(true);
+    setError('');
+    try {
+      const drafted = await lunaClient.draftSellerQuestion(
+        apiBaseUrl, session.token, item.listing_id, item.variant_id, fieldKey,
+      );
+      setSellerDraft({ ...drafted, item, isInInbox: false });
+    } catch (err) {
+      if (err?.status === 401) await recoverLostComparison();
+      else showError(err);
+    } finally { setBusy(false); }
+  }
+
+  // New evidence is the one case that needs a new comparison: re-extract the same exact variants.
+  // The new comparison id starts a new conversation, and its preferences start empty.
+  async function rebuildWithSellerAnswer(reply) {
+    const hadNeeds = comparison.preferences.max_price_minor !== null
+      || comparison.preferences.min_output_w !== null || comparison.preferences.priorities.length > 0;
+    const rebuilt = await lunaClient.createComparison(apiBaseUrl, session.token, comparison.evidence.items
+      .map(item => ({ listing_id: item.listing_id, variant_id: item.variant_id })));
+    const replySource = Object.values(rebuilt.evidence.evidence).find(record =>
+      record.item_key === `${reply.listing_id}:${reply.variant_id}`
+      && isSellerReply(record) && record.source_text === reply.text);
+    if (!replySource) throw new TypeError(`Rebuilt comparison does not cite seller reply ${reply.text}`);
+    conversationId.current = newConversationId();
+    setComparison(rebuilt);
+    setNotice(null);
+    setSourceTarget(null);
+    setPendingSellerReply(null);
+    setMessages([greeting, {
+      role: 'assistant',
+      text: `The seller answered “${reply.text}”. I rebuilt the comparison with that answer as a cited source.`
+        + (hadNeeds ? ' Your earlier needs were cleared with it, so tell me what matters again.' : ''),
+      citations: [replySource.id],
+    }]);
+  }
+
+  async function sendSellerAnswer(answer) {
+    if (!sellerDraft || !session || busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      const reply = await lunaClient.sendSellerReply(apiBaseUrl, session.token,
+        sellerDraft.listing_id, sellerDraft.variant_id, sellerDraft.field_key, answer);
+      setSellerDraft(null);
+      setPendingSellerReply(reply);
+      await rebuildWithSellerAnswer(reply);
+    } catch (err) {
+      if (err?.status === 401) await recoverLostComparison();
+      else showError(err);
+    } finally { setBusy(false); }
+  }
+
+  async function retryRebuild() {
+    if (!pendingSellerReply || busy) return;
+    setBusy(true);
+    setError('');
+    try { await rebuildWithSellerAnswer(pendingSellerReply); }
+    catch (err) {
+      if (err?.status === 401) await recoverLostComparison();
+      else showError(err);
+    } finally { setBusy(false); }
+  }
+
   function draftQuestion(text) {
     setSourceTarget(null);
     setInput(text);
@@ -228,7 +306,8 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
 
     {error && <div role="alert" className="luna-alert">
       <span>{error}</span>
-      {comparison && <button type="button" onClick={refreshComparison} disabled={busy} className="luna-link">Refresh comparison</button>}
+      {comparison && !pendingSellerReply && <button type="button" onClick={refreshComparison} disabled={busy} className="luna-link">Refresh comparison</button>}
+      {pendingSellerReply && <button type="button" onClick={retryRebuild} disabled={busy} className="luna-link">Rebuild with seller answer</button>}
     </div>}
 
     <div className="luna-body">
@@ -267,8 +346,12 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
           <PreferenceChips preferences={comparison.preferences} currency={evidence.items[0].currency}
             schemaFields={evidence.schema_fields} onChange={() => draftQuestion('Change my needs: ')}/>
           {notice && <UpdateNotice uiPatch={notice} preferences={comparison.preferences} evidence={evidence}/>}
-          <ComparisonTable comparison={comparison} onOpenCell={setSourceTarget}
-            onNavigateToListing={hostAdapter.navigateToListing}/>
+          {sellerDraft?.isInInbox
+            ? <SimulatedSellerInbox draft={sellerDraft} busy={busy} onAnswer={sendSellerAnswer}
+              field={evidence.schema_fields.find(field => field.field_key === sellerDraft.field_key)}
+              onBack={() => setSellerDraft(null)}/>
+            : <ComparisonTable comparison={comparison} onOpenCell={setSourceTarget}
+              onNavigateToListing={hostAdapter.navigateToListing} onAskSeller={askSeller}/>}
         </div>
         <aside aria-label="Ask Luna" className="luna-chat">
           <h3 className="luna-chat-title">Ask Luna</h3>
@@ -297,6 +380,8 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
 
     {sourceTarget && comparison && <SourcePanel key={JSON.stringify(sourceTarget)} comparison={comparison}
       target={sourceTarget} onClose={() => setSourceTarget(null)} onAsk={draftQuestion}/>}
+    {sellerDraft && !sellerDraft.isInInbox && <SellerQuestionDialog draft={sellerDraft} busy={busy}
+      onSend={() => setSellerDraft(draft => ({ ...draft, isInInbox: true }))} onCancel={() => setSellerDraft(null)}/>}
   </section>;
 }
 
