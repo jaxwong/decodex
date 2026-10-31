@@ -6,7 +6,7 @@ export const PRICE_FIELD = 'price_minor';
 // Keys the API uses outside schema_fields (price lives on the item; review reliability
 // is a ranking priority, not a listing field).
 const NON_SCHEMA_LABELS = {
-  [PRICE_FIELD]: 'Price',
+  [PRICE_FIELD]: 'Delivered price',
   review_reliability: 'Review reliability',
 };
 

@@ -2,6 +2,7 @@
 
 No marketplace access. Labels are never included in extraction request payloads.
 """
+import hashlib
 import json
 from pathlib import Path
 
@@ -13,9 +14,22 @@ FIELDS = {
     'included_cable': ('Included cable', None), 'warranty_months': ('Warranty', 'months'),
 }
 
+# Listed checkout assumptions are intentionally different enough to reverse the
+# selected demo variants' price order. They are fixed fixture data, not estimates.
+LANDED_PRICE_COMPONENTS = {
+    'listingA': {'shipping_minor': 1500, 'shop_voucher_minor': 0},
+    'listingB': {'shipping_minor': 1700, 'shop_voucher_minor': 500},
+    'listingC': {'shipping_minor': 300, 'shop_voucher_minor': 1000},
+}
+
 
 def write(name, value):
     (ROOT / name).write_text(json.dumps(value, indent=2) + '\n')
+
+
+def source_id(item_key, location, text):
+    digest = hashlib.sha256((location + '\0' + text).encode()).hexdigest()[:20]
+    return f'{item_key}:source:{digest}'
 
 
 def generate():
@@ -37,8 +51,14 @@ def generate():
             ]
             if index == 2:
                 attributes = [(k, t) for k, t in attributes if k != 'weight_g']
-            variant = {'variant_id': vid, 'label': f'{power}W synthetic SKU', 'price_minor': 5900 + index * 1000 + power,
-                       'currency': 'SGD', 'attributes': [{'field_key': k, 'text': t} for k, t in attributes]}
+            variant = {
+                'variant_id': vid,
+                'label': f'{power}W synthetic SKU',
+                'price_minor': 5900 + index * 1000 + power,
+                **LANDED_PRICE_COMPONENTS[lid],
+                'currency': 'SGD',
+                'attributes': [{'field_key': k, 'text': t} for k, t in attributes],
+            }
             variants.append(variant)
             normalized_values = dict(zip(FIELDS, values))
             labels['source_claims'][f'{lid}:{vid}'] = {
@@ -99,9 +119,39 @@ def generate():
         variant = listing['variants'][0]
         lid, vid = listing['listing_id'], variant['variant_id']
         key = f'{lid}:{vid}'
-        result['items'].append({'listing_id': lid, 'variant_id': vid, 'item_key': key, 'title': listing['title'],
-                                'variant_label': variant['label'], 'price_minor': variant['price_minor'], 'currency': 'SGD',
-                                'snapshot_version': 'synthetic-handoff-v1', 'synthetic': True})
+        result['items'].append({
+            'listing_id': lid,
+            'variant_id': vid,
+            'item_key': key,
+            'title': listing['title'],
+            'variant_label': variant['label'],
+            'price_minor': variant['price_minor'],
+            'shop_voucher_minor': variant['shop_voucher_minor'],
+            'shipping_minor': variant['shipping_minor'],
+            'landed_price_minor': (
+                variant['price_minor'] - variant['shop_voucher_minor'] + variant['shipping_minor']
+            ),
+            'currency': 'SGD',
+            'snapshot_version': 'synthetic-handoff-v1',
+            'synthetic': True,
+        })
+        for field, source_label in [
+            ('price_minor', 'List price'),
+            ('shop_voucher_minor', 'Shop voucher'),
+            ('shipping_minor', 'Shipping'),
+        ]:
+            location = f'variants/{vid}/{field}'
+            source_text = f"{source_label}: {variant['currency']} {variant[field] / 100:.2f}"
+            sid = source_id(key, location, source_text)
+            result['evidence'][sid] = dict(
+                id=sid,
+                item_key=key,
+                source_type='variant',
+                source_text=source_text,
+                source_location=location,
+                variant_id=vid,
+                review_id=None,
+            )
         facts = []
         for field, label in labels['items'][key].items():
             source_ids = []

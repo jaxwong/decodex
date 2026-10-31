@@ -9,7 +9,12 @@ from openai.types.responses import Response
 from app.main import create_app
 from app.providers import MockCatalogProvider
 
-E2E_CITATION_ID = next(iter(load_sample_evidence().review_mentions))
+E2E_CITATION_ID = next(
+    evidence.id
+    for evidence in load_sample_evidence().evidence.values()
+    if evidence.item_key == "listingB:65w"
+    and evidence.source_location == "variants/65w/shipping_minor"
+)
 
 
 def _model_response(response_id: str, output: list[dict[str, object]]) -> Response:
@@ -45,7 +50,9 @@ async def create_scripted_response(**request: Any) -> Response:
                             "text": json.dumps(
                                 {
                                     "answer": (
-                                        "Preferences applied by the deterministic test model."
+                                        "Budget applied to delivered prices; items over the "
+                                        "delivered limit are excluded. Breeze is SGD 81.65 "
+                                        "delivered; its listed shipping line is cited."
                                     ),
                                     "cited_ids": [E2E_CITATION_ID],
                                 }

@@ -15,7 +15,9 @@ function factFor(evidence, itemKey, fieldKey) {
 }
 
 function describeCell(evidence, item, fieldKey) {
-  if (fieldKey === PRICE_FIELD) return { status: 'price', text: money(item.price_minor, item.currency) };
+  if (fieldKey === PRICE_FIELD) {
+    return { status: 'price', text: money(item.landed_price_minor, item.currency) };
+  }
   const fact = factFor(evidence, item.item_key, fieldKey);
   if (fact.status === 'supported') return { status: 'supported', text: factValueText(fact), fact };
   if (fact.status === 'conflicting') return { status: 'conflicting', text: conflictText(fact), fact };
@@ -154,6 +156,11 @@ export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing, o
     .map(text => readableLimitation(text, evidence.items, schemaFields));
 
   return <section aria-label="Comparison" className="luna-compare">
+    <div className="luna-landed-callout">
+      <strong>Sticker prices can mislead.</strong>
+      <span>Luna ranks and filters by the delivered total.</span>
+      <small>Assumes listed shipping and shop voucher.</small>
+    </div>
     <div className="luna-compare-tools">
       <label className="luna-toggle">
         <input type="checkbox" checked={differencesOnly} onChange={event => setDifferencesOnly(event.target.checked)}/>
@@ -174,7 +181,12 @@ export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing, o
                 {status && <span className={`luna-badge luna-badge-${status.tone}`}>{status.label}</span>}
                 <span className="luna-product-title">{item.title}</span>
                 <span className="luna-product-variant">{item.variant_label}</span>
-                <span className="luna-product-price">{money(item.price_minor, item.currency)}</span>
+                <span className="luna-product-list-price">
+                  List <s>{money(item.price_minor, item.currency)}</s>
+                </span>
+                <span className="luna-product-price">
+                  Delivered {money(item.landed_price_minor, item.currency)}
+                </span>
                 <span className="luna-product-actions">
                   <button type="button" className="luna-link" onClick={() => onNavigateToListing({
                     listingId: item.listing_id,
@@ -260,7 +272,7 @@ function resolveTarget(evidence, target) {
 function cellExplanation(cell, label) {
   const field = label.toLowerCase();
   if (cell.status === 'price') {
-    return 'This is the price of the exact variant you picked, read from the listing. Luna never estimates prices.';
+    return 'Luna uses this delivered total for price ranking and budget checks. It is calculated only from the listed components shown above.';
   }
   if (cell.status === 'supported') {
     return cell.fact.evidence_ids.length > 1
@@ -276,7 +288,7 @@ function cellExplanation(cell, label) {
 }
 
 const CELL_STATUS = {
-  price: ['ok', 'From the listing'],
+  price: ['ok', 'Listed checkout assumptions'],
   supported: ['ok', 'From the listing'],
   missing: ['none', 'Not stated'],
   conflicting: ['warn', 'Listing disagrees with itself'],
@@ -321,6 +333,15 @@ export function SourcePanel({ comparison, target, onClose, onAsk }) {
       <p className={`luna-panel-value${cell.text && cell.status !== 'conflicting' ? '' : ' is-missing'}`}>
         {cell.status === 'conflicting' ? 'Unclear' : cell.text || 'No value'}
       </p>
+      {cell.status === 'price' && <div className="luna-price-breakdown">
+        <dl>
+          <div><dt>List price</dt><dd>{money(item.price_minor, item.currency)}</dd></div>
+          <div><dt>Shop voucher</dt><dd>− {money(item.shop_voucher_minor, item.currency)}</dd></div>
+          <div><dt>Shipping</dt><dd>+ {money(item.shipping_minor, item.currency)}</dd></div>
+          <div className="luna-price-total"><dt>Delivered total</dt><dd>{money(item.landed_price_minor, item.currency)}</dd></div>
+        </dl>
+        <p>Assumes listed shipping and shop voucher.</p>
+      </div>}
       {cell.status === 'conflicting' && <p className="luna-panel-lead">The seller gives different values: {cell.text}.</p>}
       {quotes.map(record => <div key={record.id} className="luna-quote">
         <span className="luna-quote-from">{sourceLabel(record.source_type)}</span>

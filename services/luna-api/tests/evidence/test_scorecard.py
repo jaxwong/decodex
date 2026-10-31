@@ -1,6 +1,7 @@
 """A4 report integration is offline; recorded failures and run history stay visible."""
 
 import asyncio
+import hashlib
 import json
 from importlib.metadata import version
 from pathlib import Path
@@ -25,6 +26,36 @@ def recorded_inputs() -> tuple[dict[str, Any], dict[str, Any], list[ComparisonSe
         ComparisonSelection(listing_id=key.rsplit(":", 1)[0], variant_id=key.rsplit(":", 1)[1])
         for key in labels["items"]
     ]
+    return recorded, labels, selections
+
+
+def currentized_recorded_inputs() -> tuple[
+    dict[str, Any], dict[str, Any], list[ComparisonSelection]
+]:
+    """Upgrade a test-only copy; never rewrite or promote the paid artifact."""
+    recorded, labels, selections = recorded_inputs()
+    listings = json.loads((ROOT / "data/listings.json").read_text())["listings"]
+    variants = {
+        f"{listing['listing_id']}:{variant['variant_id']}": variant
+        for listing in listings
+        for variant in listing["variants"]
+    }
+    recorded["conditions"]["source_sha256"] = {
+        name: hashlib.sha256((ROOT / "data" / name).read_bytes()).hexdigest()
+        for name in scorecard.SOURCE_NAMES
+    }
+    comparisons = [
+        recorded["live_run"]["smoke"]["comparison"],
+        recorded["grounded_structured_outputs"]["prediction"],
+    ]
+    for comparison in comparisons:
+        for item in comparison["items"]:
+            variant = variants[item["item_key"]]
+            item["shop_voucher_minor"] = variant["shop_voucher_minor"]
+            item["shipping_minor"] = variant["shipping_minor"]
+            item["landed_price_minor"] = (
+                item["price_minor"] - variant["shop_voucher_minor"] + variant["shipping_minor"]
+            )
     return recorded, labels, selections
 
 
@@ -68,11 +99,10 @@ def test_scorecard_includes_recorded_evidence_and_partial_agent(
     monkeypatch.setattr(evaluation_run, "load_agent_benchmark", lambda: partial_handoff)
     result = asyncio.run(evaluation_run.evaluate())
     evidence = result["recorded_evidence_evaluation"]
-    assert evidence["available"] is True
-    assert (
-        evidence["grounded_structured_outputs"]["metrics"]
-        == json.loads(live_before)["grounded_structured_outputs"]["metrics"]
-    )
+    assert evidence == {
+        "available": False,
+        "reason": "Recorded evidence source/label hashes are stale",
+    }
     agent = result["agent_output_evaluation"]
     assert agent["available"] is True and agent["status"] == "partial"
     assert agent["metrics"]["scenario_success"]["numerator"] == 10
@@ -102,7 +132,7 @@ def test_scorecard_includes_recorded_evidence_and_partial_agent(
 def test_recorded_evidence_rejects_stale_or_inconsistent_artifacts(
     tmp_path: Path, damage: str
 ) -> None:
-    recorded, labels, selections = recorded_inputs()
+    recorded, labels, selections = currentized_recorded_inputs()
     grounded = recorded["grounded_structured_outputs"]
     if damage == "sources":
         recorded["conditions"]["source_sha256"]["reviews.json"] = "changed"
@@ -125,7 +155,7 @@ def test_recorded_evidence_rejects_stale_or_inconsistent_artifacts(
 def test_code_fingerprint_distinguishes_current_and_historical_runs(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    recorded, labels, selections = recorded_inputs()
+    recorded, labels, selections = currentized_recorded_inputs()
     recorded["live_run"].update(
         implementation_sha256=scorecard.implementation_sha256(),
         pydantic_version=version("pydantic"),
@@ -141,7 +171,7 @@ def test_code_fingerprint_distinguishes_current_and_historical_runs(
 
 
 def test_legacy_evidence_is_not_claimed_as_current_runtime(tmp_path: Path) -> None:
-    recorded, labels, selections = recorded_inputs()
+    recorded, labels, selections = currentized_recorded_inputs()
     recorded["live_run"].pop("implementation_sha256", None)
     measured = load_copy(labels, selections, save_copy(tmp_path, recorded))
     assert measured is not None and measured["implementation_status"] == "not_recorded"
@@ -149,7 +179,7 @@ def test_legacy_evidence_is_not_claimed_as_current_runtime(tmp_path: Path) -> No
 
 
 def test_partial_recorded_predictions_are_not_promoted_to_success(tmp_path: Path) -> None:
-    recorded, labels, selections = recorded_inputs()
+    recorded, labels, selections = currentized_recorded_inputs()
     recorded["live_run"]["status"] = "partial"
     free_form = recorded["ungrounded_free_form"]
     free_form["outputs"]["listingA:100w"]["status"] = "invalid_output"
@@ -174,12 +204,11 @@ def test_offline_scorecard_never_constructs_a_model_client(
     monkeypatch.setattr(evaluation_run, "AsyncOpenAI", reject_network_client)
     monkeypatch.setattr(evaluation_run, "load_agent_benchmark", lambda: partial_handoff)
     result = asyncio.run(evaluation_run.evaluate())
-    result["recorded_evidence_evaluation"]["current_implementation_verified"] = False
-    result["recorded_evidence_evaluation"]["implementation_status"] = "not_recorded"
     text = scorecard.render_scorecard(result)
     assert "**partial**" in text and "10/12" in text
     assert "review_query" in text and "no_comparable_winner" in text
-    assert "historical executed run" in text
+    assert "Recorded evidence unavailable" in text
+    assert "source/label hashes are stale" in text
     assert "Server state outcomes do not prove browser" in text
 
 

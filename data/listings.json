@@ -21,6 +21,8 @@
           "variant_id": "100w",
           "label": "100W synthetic SKU",
           "price_minor": 6000,
+          "shipping_minor": 1500,
+          "shop_voucher_minor": 0,
           "currency": "SGD",
           "attributes": [
             {
@@ -61,6 +63,8 @@
           "variant_id": "130w",
           "label": "130W synthetic SKU",
           "price_minor": 6030,
+          "shipping_minor": 1500,
+          "shop_voucher_minor": 0,
           "currency": "SGD",
           "attributes": [
             {
@@ -101,6 +105,8 @@
           "variant_id": "65w",
           "label": "65W synthetic SKU",
           "price_minor": 5965,
+          "shipping_minor": 1500,
+          "shop_voucher_minor": 0,
           "currency": "SGD",
           "attributes": [
             {
@@ -141,6 +147,8 @@
           "variant_id": "30w",
           "label": "30W synthetic SKU",
           "price_minor": 5930,
+          "shipping_minor": 1500,
+          "shop_voucher_minor": 0,
           "currency": "SGD",
           "attributes": [
             {
@@ -199,6 +207,8 @@
           "variant_id": "65w",
           "label": "65W synthetic SKU",
           "price_minor": 6965,
+          "shipping_minor": 1700,
+          "shop_voucher_minor": 500,
           "currency": "SGD",
           "attributes": [
             {
@@ -239,6 +249,8 @@
           "variant_id": "100w",
           "label": "100W synthetic SKU",
           "price_minor": 7000,
+          "shipping_minor": 1700,
+          "shop_voucher_minor": 500,
           "currency": "SGD",
           "attributes": [
             {
@@ -279,6 +291,8 @@
           "variant_id": "130w",
           "label": "130W synthetic SKU",
           "price_minor": 7030,
+          "shipping_minor": 1700,
+          "shop_voucher_minor": 500,
           "currency": "SGD",
           "attributes": [
             {
@@ -319,6 +333,8 @@
           "variant_id": "45w",
           "label": "45W synthetic SKU",
           "price_minor": 6945,
+          "shipping_minor": 1700,
+          "shop_voucher_minor": 500,
           "currency": "SGD",
           "attributes": [
             {
@@ -393,6 +409,8 @@
           "variant_id": "87w",
           "label": "87W synthetic SKU",
           "price_minor": 7987,
+          "shipping_minor": 300,
+          "shop_voucher_minor": 1000,
           "currency": "SGD",
           "attributes": [
             {
@@ -429,6 +447,8 @@
           "variant_id": "100w",
           "label": "100W synthetic SKU",
           "price_minor": 8000,
+          "shipping_minor": 300,
+          "shop_voucher_minor": 1000,
           "currency": "SGD",
           "attributes": [
             {
@@ -465,6 +485,8 @@
           "variant_id": "130w",
           "label": "130W synthetic SKU",
           "price_minor": 8030,
+          "shipping_minor": 300,
+          "shop_voucher_minor": 1000,
           "currency": "SGD",
           "attributes": [
             {
@@ -501,6 +523,8 @@
           "variant_id": "65w",
           "label": "65W synthetic SKU",
           "price_minor": 7965,
+          "shipping_minor": 300,
+          "shop_voucher_minor": 1000,
           "currency": "SGD",
           "attributes": [
             {

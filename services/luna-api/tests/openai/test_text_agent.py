@@ -174,7 +174,8 @@ def test_agent_executes_one_mutation_and_returns_only_valid_citations(
         assert result.cited_ids == [evidence_id]
         assert result.ui_patch is not None
         assert result.ui_patch.new_revision == 1
-        assert result.recommendation.item_key == "listingB:65w"
+        assert result.recommendation.item_key == "listingA:100w"
+        assert result.recommendation.excluded_item_keys == ["listingB:65w"]
         assert require_comparison(session_state, comparison_id).revision == 1
         assert len(provider_requests) == 2
         assert provider_requests[0]["model"] == "gpt-6-luna"
@@ -323,7 +324,7 @@ def test_correction_uses_bounded_history_and_changes_same_comparison() -> None:
         assert first.ui_patch is None
         assert correction.ui_patch is not None
         assert correction.ui_patch.new_revision == 1
-        assert correction.recommendation.item_key == "listingA:100w"
+        assert correction.recommendation.item_key == "listingC:87w"
         second_turn_input = captured_requests[1]["input"]
         assert second_turn_input[0] == {"role": "user", "content": "Pick the best."}
         assert second_turn_input[1] == {

@@ -115,6 +115,8 @@ class MockCatalogProvider:
                         variant_id=v["variant_id"],
                         label=v["label"],
                         price_minor=v["price_minor"],
+                        shop_voucher_minor=v["shop_voucher_minor"],
+                        shipping_minor=v["shipping_minor"],
                         currency=v["currency"],
                     )
                     for v in listing["variants"]

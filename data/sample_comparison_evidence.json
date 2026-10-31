@@ -7,6 +7,9 @@
       "title": "SYNTHETIC Atlas power bank family",
       "variant_label": "100W synthetic SKU",
       "price_minor": 6000,
+      "shop_voucher_minor": 0,
+      "shipping_minor": 1500,
+      "landed_price_minor": 7500,
       "currency": "SGD",
       "snapshot_version": "synthetic-handoff-v1",
       "synthetic": true
@@ -18,6 +21,9 @@
       "title": "SYNTHETIC Breeze power bank family",
       "variant_label": "65W synthetic SKU",
       "price_minor": 6965,
+      "shop_voucher_minor": 500,
+      "shipping_minor": 1700,
+      "landed_price_minor": 8165,
       "currency": "SGD",
       "snapshot_version": "synthetic-handoff-v1",
       "synthetic": true
@@ -29,6 +35,9 @@
       "title": "SYNTHETIC Comet power bank family",
       "variant_label": "87W synthetic SKU",
       "price_minor": 7987,
+      "shop_voucher_minor": 1000,
+      "shipping_minor": 300,
+      "landed_price_minor": 7287,
       "currency": "SGD",
       "snapshot_version": "synthetic-handoff-v1",
       "synthetic": true
@@ -327,6 +336,33 @@
     ]
   },
   "evidence": {
+    "listingA:100w:source:95ab9c68351d4d9b73ad": {
+      "id": "listingA:100w:source:95ab9c68351d4d9b73ad",
+      "item_key": "listingA:100w",
+      "source_type": "variant",
+      "source_text": "List price: SGD 60.00",
+      "source_location": "variants/100w/price_minor",
+      "variant_id": "100w",
+      "review_id": null
+    },
+    "listingA:100w:source:4522d71d5baa15951cd1": {
+      "id": "listingA:100w:source:4522d71d5baa15951cd1",
+      "item_key": "listingA:100w",
+      "source_type": "variant",
+      "source_text": "Shop voucher: SGD 0.00",
+      "source_location": "variants/100w/shop_voucher_minor",
+      "variant_id": "100w",
+      "review_id": null
+    },
+    "listingA:100w:source:e2c9a6688f63a2f2fcaa": {
+      "id": "listingA:100w:source:e2c9a6688f63a2f2fcaa",
+      "item_key": "listingA:100w",
+      "source_type": "variant",
+      "source_text": "Shipping: SGD 15.00",
+      "source_location": "variants/100w/shipping_minor",
+      "variant_id": "100w",
+      "review_id": null
+    },
     "listingA:100w:attribute:0": {
       "id": "listingA:100w:attribute:0",
       "item_key": "listingA:100w",
@@ -525,6 +561,33 @@
       "variant_id": "100w",
       "review_id": "listingA-r14"
     },
+    "listingB:65w:source:a745074b4dd1ceba20aa": {
+      "id": "listingB:65w:source:a745074b4dd1ceba20aa",
+      "item_key": "listingB:65w",
+      "source_type": "variant",
+      "source_text": "List price: SGD 69.65",
+      "source_location": "variants/65w/price_minor",
+      "variant_id": "65w",
+      "review_id": null
+    },
+    "listingB:65w:source:0f6f1b6ac7dcb21f2df3": {
+      "id": "listingB:65w:source:0f6f1b6ac7dcb21f2df3",
+      "item_key": "listingB:65w",
+      "source_type": "variant",
+      "source_text": "Shop voucher: SGD 5.00",
+      "source_location": "variants/65w/shop_voucher_minor",
+      "variant_id": "65w",
+      "review_id": null
+    },
+    "listingB:65w:source:152bfda928f885768384": {
+      "id": "listingB:65w:source:152bfda928f885768384",
+      "item_key": "listingB:65w",
+      "source_type": "variant",
+      "source_text": "Shipping: SGD 17.00",
+      "source_location": "variants/65w/shipping_minor",
+      "variant_id": "65w",
+      "review_id": null
+    },
     "listingB:65w:attribute:0": {
       "id": "listingB:65w:attribute:0",
       "item_key": "listingB:65w",
@@ -722,6 +785,33 @@
       "source_location": "reviews/listingB-r14",
       "variant_id": "65w",
       "review_id": "listingB-r14"
+    },
+    "listingC:87w:source:2315d17daaaec8998cea": {
+      "id": "listingC:87w:source:2315d17daaaec8998cea",
+      "item_key": "listingC:87w",
+      "source_type": "variant",
+      "source_text": "List price: SGD 79.87",
+      "source_location": "variants/87w/price_minor",
+      "variant_id": "87w",
+      "review_id": null
+    },
+    "listingC:87w:source:6d894c4d6863b3ba49db": {
+      "id": "listingC:87w:source:6d894c4d6863b3ba49db",
+      "item_key": "listingC:87w",
+      "source_type": "variant",
+      "source_text": "Shop voucher: SGD 10.00",
+      "source_location": "variants/87w/shop_voucher_minor",
+      "variant_id": "87w",
+      "review_id": null
+    },
+    "listingC:87w:source:2cf72ee445e93be745fa": {
+      "id": "listingC:87w:source:2cf72ee445e93be745fa",
+      "item_key": "listingC:87w",
+      "source_type": "variant",
+      "source_text": "Shipping: SGD 3.00",
+      "source_location": "variants/87w/shipping_minor",
+      "variant_id": "87w",
+      "review_id": null
     },
     "listingC:87w:attribute:0": {
       "id": "listingC:87w:attribute:0",

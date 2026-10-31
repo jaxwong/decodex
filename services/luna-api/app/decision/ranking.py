@@ -14,9 +14,9 @@ def _item_keys(evidence: ComparisonEvidence) -> list[str]:
     return [item.item_key for item in evidence.items]
 
 
-def _price_minor(evidence: ComparisonEvidence, item_key: str) -> int:
+def _landed_price_minor(evidence: ComparisonEvidence, item_key: str) -> int:
     item = next(item for item in evidence.items if item.item_key == item_key)
-    return item.price_minor
+    return item.landed_price_minor
 
 
 def _supported_number(
@@ -44,7 +44,7 @@ def _priority_value(
     priority: RankingPriority,
 ) -> int | float | None:
     if priority == "price_minor":
-        return _price_minor(evidence, item_key)
+        return _landed_price_minor(evidence, item_key)
     if priority == "review_reliability":
         return None
     return _supported_number(evidence, item_key, priority)
@@ -70,7 +70,7 @@ def rank_comparison(
     for item_key in item_keys:
         if (
             preferences.max_price_minor is not None
-            and _price_minor(evidence, item_key) > preferences.max_price_minor
+            and _landed_price_minor(evidence, item_key) > preferences.max_price_minor
         ):
             exclusion_reasons[item_key] = "over_budget"
             continue

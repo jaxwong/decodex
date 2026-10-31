@@ -80,6 +80,11 @@ class EvidenceBuilder:
             "title": listing["title"],
             "variant_label": variant["label"],
             "price_minor": variant["price_minor"],
+            "shop_voucher_minor": variant["shop_voucher_minor"],
+            "shipping_minor": variant["shipping_minor"],
+            "landed_price_minor": (
+                variant["price_minor"] - variant["shop_voucher_minor"] + variant["shipping_minor"]
+            ),
             "currency": variant["currency"],
             "snapshot_version": version,
             "synthetic": listing.get("synthetic", False),

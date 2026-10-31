@@ -60,6 +60,8 @@ require cited_ids from stored evidence or review mentions. Review mentions conta
 mention ID and a review ID; cite only the mention ID, never the review ID. If no ranking
 preference exists, ask one concise high-information question instead of choosing a universal
 winner.
+Budget constraints apply to landed_price_minor, which includes the listed shipping and shop voucher.
+Use price_evidence_ids with inspect_evidence when explaining a delivered-price exclusion.
 """
 
 TRUSTED_INSTRUCTIONS = EVIDENCE_POLICY + (

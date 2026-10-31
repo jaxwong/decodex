@@ -24,8 +24,10 @@ snapshot = ComparisonEvidence.model_validate_json(
 Item identity is `listing_id + ':' + variant_id`. Demo selections are
 `listingA:100w`, `listingB:65w`, `listingC:87w`. All twelve SKUs are returned by the
 catalog. Items contain `listing_id`, `variant_id`, `item_key`, `title`,
-`variant_label`, integer `price_minor`, `currency='SGD'`, `snapshot_version`,
-`synthetic`. Schema rows contain `field_key`, `label`, `unit`. Do not derive
+`variant_label`, integer `price_minor`, `shop_voucher_minor`, `shipping_minor`,
+validated `landed_price_minor`, `currency='SGD'`, `snapshot_version`, `synthetic`.
+The evidence builder is the sole runtime owner of `price - voucher + shipping`.
+Schema rows contain `field_key`, `label`, `unit`. Do not derive
 frontend types independently; generate from B's eventual OpenAPI wrapper.
 
 ## Public function and dependency injection
@@ -68,6 +70,8 @@ of one listing. Invalid identities fail before any model work.
 `list_listings(query)` returns public cards with `id`/`listing_id`, `title`,
 `image_url=None` (no inherited assets), `preview`, `synthetic`, and variant metadata
 (`id`/`variant_id`, `label`, `price_minor`, `currency`); raw claims stay server-side.
+Catalog variant metadata also includes the listed `shop_voucher_minor` and
+`shipping_minor`; it does not assert personalised checkout eligibility.
 `get_listing`/`get_variant` return defensive copies or `None` on unknown IDs.
 Snapshot/review methods raise `CatalogError` for unknown IDs. Review pages contain
 `reviews`, `next_cursor`, `snapshot_version`. Requesting a variant returns exact
