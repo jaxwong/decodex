@@ -16,8 +16,9 @@ B/C can load `data/sample_comparison_evidence.json` at the repository root:
 ```python
 from pathlib import Path
 from app.contracts.evidence import ComparisonEvidence
+
 snapshot = ComparisonEvidence.model_validate_json(
-    Path('data/sample_comparison_evidence.json').read_text()
+    Path("data/sample_comparison_evidence.json").read_text()
 )
 ```
 
@@ -38,13 +39,13 @@ from app.evidence import OpenAIModelClient
 from app.providers import provider_factory
 
 selections = [
-    {'listing_id': 'listingA', 'variant_id': '100w'},
-    {'listing_id': 'listingB', 'variant_id': '65w'},
-    {'listing_id': 'listingC', 'variant_id': '87w'},
+    {"listing_id": "listingA", "variant_id": "100w"},
+    {"listing_id": "listingB", "variant_id": "65w"},
+    {"listing_id": "listingC", "variant_id": "87w"},
 ]
 
 # Inside B's asynchronous route/service:
-with evidence_dependencies(provider_factory({'provider': 'mock'}), OpenAIModelClient()):
+with evidence_dependencies(provider_factory({"provider": "mock"}), OpenAIModelClient()):
     evidence = await build_comparison_evidence(selections)
 ```
 
@@ -110,32 +111,36 @@ the listing's snapshot. Only the `mock` factory is implemented.
 
 ## Verification and integration prerequisites
 
-No Python project/dependency configuration existed in the handoff. Those files,
-root Makefile, routes and deployment belong to B and were left untouched. Verified
-locally with Python 3.12.10, pydantic 2.14.2, pytest 9.2.0 and openai 3.42.0. The
-installed SDK's strict schema serialization and parser were exercised with a mock
-HTTP transport. B must add/pin shared dependencies and complete live capability
-smoke before claiming runtime readiness.
+The shared Python project, `uv.lock` and root Makefile now belong to B. Use that
+locked environment rather than a separate dependency installation. The A2 quality
+review passed formatting, lint, strict typing and 101 combined A/B tests using
+temporary root import-path overrides. B-owned configuration still needs to add
+the repository root to pytest's `pythonpath` and mypy's `mypy_path` before the
+plain Make target can import the root `eval` package.
+
+The installed SDK's strict schema serialization and parser were exercised with a
+mock HTTP transport. These checks do not prove real evidence extraction or live
+A/B integration.
 
 Standalone reproduction from the repository root:
 
 ```bash
-python3 -m venv /tmp/luna-evidence-venv
-/tmp/luna-evidence-venv/bin/pip install pydantic==2.14.2 pytest==9.2.0 openai==3.42.0
-PYTHONPATH=services/luna-api:. /tmp/luna-evidence-venv/bin/python -m pytest services/luna-api/tests/evidence -q
-PYTHONPATH=services/luna-api:. /tmp/luna-evidence-venv/bin/python -m eval.run
+make api-sync
+# Temporary verification until the shared root import paths are configured:
+PYTHONPATH="$PWD" MYPYPATH="$PWD" make api-test
+PYTHONPATH=services/luna-api:. services/luna-api/.venv/bin/python -m eval.run
 ```
 
 Separate real-API pathways, requiring a server-side key and available model access:
 
 ```bash
-PYTHONPATH=services/luna-api /tmp/luna-evidence-venv/bin/python services/luna-api/tests/evidence/live_smoke.py --live
-PYTHONPATH=services/luna-api:. /tmp/luna-evidence-venv/bin/python -m eval.run --live --output eval/live-results.json
+PYTHONPATH=services/luna-api services/luna-api/.venv/bin/python services/luna-api/tests/evidence/live_smoke.py --live
+PYTHONPATH=services/luna-api:. services/luna-api/.venv/bin/python -m eval.run --live --output eval/live-results.json
 ```
 
-The live pathway is never run by ordinary pytest. Neither the API, B's agent,
-C's hosts, browser E2E nor deployment has been exercised on this feature branch.
-B still needs to wrap/store `ComparisonEvidence`; C needs to render that wrapper.
+The live pathway is never run by ordinary pytest. This A2 review did not run live
+model requests, browser E2E or deployment. B still needs to wrap/store
+`ComparisonEvidence`; C needs to render that wrapper.
 Fixture access on the pushed branch is the A1 handoff; no direct messages to
 teammates or unverified B/C compatibility claims were made.
 
