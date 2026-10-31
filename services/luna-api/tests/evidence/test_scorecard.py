@@ -11,7 +11,7 @@ import pytest
 from eval import run as evaluation_run
 from eval import scorecard
 from eval.agent import AgentBenchmarkReport
-from eval.metrics import score
+from eval.metrics import REVIEW_METRIC_PREFIXES, score
 
 from app.contracts.evidence import ComparisonSelection
 from app.providers import MockCatalogProvider
@@ -56,6 +56,17 @@ def currentized_recorded_inputs() -> tuple[
             item["landed_price_minor"] = (
                 item["price_minor"] - variant["shop_voucher_minor"] + variant["shipping_minor"]
             )
+    # Later fixture labels and metric rows change scores, not the recorded predictions.
+    recorded["grounded_structured_outputs"]["metrics"] = score(
+        recorded["grounded_structured_outputs"]["prediction"], labels, selections
+    )
+    recorded["ungrounded_free_form"]["metrics"] = {
+        k: v
+        for k, v in score(
+            recorded["ungrounded_free_form"]["prediction"], labels, selections
+        ).items()
+        if not k.startswith(REVIEW_METRIC_PREFIXES)
+    }
     return recorded, labels, selections
 
 
@@ -188,7 +199,7 @@ def test_partial_recorded_predictions_are_not_promoted_to_success(tmp_path: Path
     free_form["metrics"] = {
         k: v
         for k, v in score(free_form["prediction"], labels, selections).items()
-        if not k.startswith("review_")
+        if not k.startswith(REVIEW_METRIC_PREFIXES)
     }
     measured = load_copy(labels, selections, save_copy(tmp_path, recorded))
     assert measured is not None and measured["status"] == "partial"

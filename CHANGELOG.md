@@ -4,6 +4,23 @@ This file records implemented Luna milestones. The implementation spec remains t
 
 ## 31 October 2026
 
+### Implemented on `feat/review-disputed-claims`
+
+- Added `Fact.disputing_mention_ids` (default empty) for Proposal 2. A disputed claim stays
+  `supported` with its value; the contract rejects disputes on unsupported facts and unknown or
+  wrong-item mentions. Ranking reads only status and value, so disputes never reorder items.
+- Review extraction can flag a mention that reports an experienced value contradicting a listed
+  field. The builder attaches a dispute only when at least `DISPUTE_MIN_REVIEWS = 2` distinct
+  analysed exact-SKU reviews contradict a supported claim; one review never raises the marker.
+- Added two synthetic `listingB:65w` reviews that contradict its 20 Ah capacity claim, ground-truth
+  dispute labels, a disputed capacity fact in the sample handoff, and dispute precision/recall rows.
+- Text and Live agents share one policy rule: cite the claim and its disputing mentions, say Luna
+  cannot verify the true figure, and describe only a count among reviews analysed.
+- The shared widget shows "Disputed in N of M reviews analysed" on the cell, keeps that row out of
+  the "Same on all" collapse, and opens the existing drawer with the seller source and each
+  disputing review excerpt with its review ID. Both hosts' browser flows cover it.
+- Paid evaluation artifacts were not rerun; grounded dispute metrics stay unavailable.
+
 ### Implemented on `feat/true-landed-price`
 
 - Added listed shop-voucher and shipping components to every synthetic variant and one validated

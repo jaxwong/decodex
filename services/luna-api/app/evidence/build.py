@@ -19,7 +19,13 @@ from app.providers import CatalogError, CatalogProvider
 
 from .index import build_evidence_index
 from .model import ExtractionError, ModelClient, ReviewCandidates, SpecCandidates
-from .reviews import aggregate_reviews, review_batches, review_evidence, validate_review_mentions
+from .reviews import (
+    aggregate_reviews,
+    attach_disputes,
+    review_batches,
+    review_evidence,
+    validate_review_mentions,
+)
 from .schema import SCHEMA_FIELDS
 from .validate import unresolved_facts, validate_facts
 
@@ -112,6 +118,7 @@ class EvidenceBuilder:
             item["analysis_error"] = type(failure).__name__
         reviews: list[dict[str, Any]] = []
         mentions: dict[str, ReviewMention] = {}
+        disputes: dict[str, set[str]] = {}
         analyzed_ids: set[str] = set()
         review_status, rejected_count = "completed", 0
         try:
@@ -149,11 +156,20 @@ class EvidenceBuilder:
                     variant["variant_id"],
                 )
                 mentions.update(validated.mentions)
+                for field_key, mention_ids in validated.disputes.items():
+                    disputes.setdefault(field_key, set()).update(mention_ids)
                 rejected_count += validated.rejected_count
                 analyzed_ids.update(r["review_id"] for r in batch)
             except (ExtractionError, TimeoutError, ValidationError) as failure:
                 logger.warning("Review batch unavailable for %s (%s)", key, type(failure).__name__)
                 review_status = "unresolved"
+        facts = attach_disputes(facts, disputes, mentions)
+        if any(fact.disputing_mention_ids for fact in facts):
+            logger.info(
+                "Review disputes attached for %s fields=%s",
+                key,
+                sorted(f.field_key for f in facts if f.disputing_mention_ids),
+            )
         item["review_status"] = review_status
         item["review_coverage"] = {
             "exact_reviews_analyzed": len(analyzed_ids),

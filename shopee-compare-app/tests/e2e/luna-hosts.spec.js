@@ -80,6 +80,30 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await page.keyboard.press('Escape');
   await expect(sourcePanel).toHaveCount(0);
 
+  const disputeMarkers = page.locator('.luna-dispute-marker');
+  await expect(disputeMarkers).toHaveCount(1);
+  const disputedCapacity = page.getByRole('button', {
+    name: /^Capacity for SYNTHETIC Breeze .*: 20,000 mAh, disputed in 2 of 16 reviews analysed$/,
+  });
+  await expect(disputedCapacity).toContainText('Disputed in 2 of 16 reviews analysed');
+  await disputedCapacity.click();
+  await expect(sourcePanel.getByText('From the listing · disputed in reviews')).toBeVisible();
+  await expect(sourcePanel.getByText('Capacity: 20 Ah')).toBeVisible();
+  const reviewQuotes = sourcePanel.getByRole('region', { name: 'Disputed in analysed reviews' });
+  await expect(reviewQuotes.getByText('Customer review · listingB-r19')).toBeVisible();
+  await expect(reviewQuotes.getByText('“Charges my phone twice, nowhere near 20000mAh”')).toBeVisible();
+  await expect(reviewQuotes.getByText('Customer review · listingB-r20')).toBeVisible();
+  await expect(sourcePanel.getByText(/count among reviews analysed, not a defect rate/)).toBeVisible();
+  await sourcePanel.getByRole('button', { name: 'Ask Luna about this' }).click();
+  await expect(page.getByLabel('Message Luna'))
+    .toHaveValue('Is the capacity claim for SYNTHETIC Breeze power bank family · 65W synthetic SKU reliable?');
+  await page.getByRole('button', { name: 'Send' }).click();
+  await expect(page.getByText(/Luna cannot verify the true figure/)).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Source: .*review: “Charges my phone twice/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Source: .*review: “Only two phone charges/ })).toBeVisible();
+  await expect(widget).toHaveAttribute('data-revision', '0');
+  await expect(disputedCapacity).toContainText('20,000 mAh');
+
   await page.getByLabel('Message Luna').fill(
     'Under S$80, at least 65W, prioritize portability.',
   );
@@ -91,7 +115,8 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await expect(page.getByRole('columnheader').filter({ hasText: 'SYNTHETIC Breeze' }))
     .toContainText('Doesn’t fit your needs');
   await expect(page.getByRole('status').filter({ hasText: 'Updated to match your needs.' })).toBeVisible();
-  await page.getByRole('button', { name: /^Source: / }).first().click();
+  // The disputed-capacity answer above also has sources; the budget answer is the latest.
+  await page.getByRole('button', { name: /^Source: / }).last().click();
   await expect(sourcePanel.getByText('Variant details')).toBeVisible();
   await expect(sourcePanel.getByText('Shipping: SGD 17.00')).toBeVisible();
   await sourcePanel.getByRole('button', { name: 'Close', exact: true }).click();

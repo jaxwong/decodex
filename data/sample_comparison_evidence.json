@@ -95,7 +95,8 @@
         "evidence_ids": [
           "listingA:100w:attribute:0"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "max_output_w",
@@ -105,7 +106,8 @@
         "evidence_ids": [
           "listingA:100w:attribute:1"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "usb_c_ports",
@@ -115,7 +117,8 @@
         "evidence_ids": [
           "listingA:100w:attribute:2"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "weight_g",
@@ -125,7 +128,8 @@
         "evidence_ids": [
           "listingA:100w:attribute:3"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "max_input_w",
@@ -135,7 +139,8 @@
         "evidence_ids": [
           "listingA:100w:attribute:4"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "pd_supported",
@@ -145,7 +150,8 @@
         "evidence_ids": [
           "listingA:100w:attribute:5"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "included_cable",
@@ -155,7 +161,8 @@
         "evidence_ids": [
           "listingA:100w:attribute:6"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "warranty_months",
@@ -165,7 +172,8 @@
         "evidence_ids": [
           "listingA:100w:attribute:7"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       }
     ],
     "listingB:65w": [
@@ -177,7 +185,11 @@
         "evidence_ids": [
           "listingB:65w:attribute:0"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": [
+          "listingB:65w:mention:listingB-r19:0",
+          "listingB:65w:mention:listingB-r20:0"
+        ]
       },
       {
         "field_key": "max_output_w",
@@ -187,7 +199,8 @@
         "evidence_ids": [
           "listingB:65w:attribute:1"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "usb_c_ports",
@@ -197,7 +210,8 @@
         "evidence_ids": [
           "listingB:65w:attribute:2"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "weight_g",
@@ -207,7 +221,8 @@
         "evidence_ids": [
           "listingB:65w:attribute:3"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "max_input_w",
@@ -217,7 +232,8 @@
         "evidence_ids": [
           "listingB:65w:attribute:4"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "pd_supported",
@@ -227,7 +243,8 @@
         "evidence_ids": [
           "listingB:65w:attribute:5"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "included_cable",
@@ -237,7 +254,8 @@
         "evidence_ids": [
           "listingB:65w:attribute:6"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "warranty_months",
@@ -247,7 +265,8 @@
         "evidence_ids": [
           "listingB:65w:attribute:7"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       }
     ],
     "listingC:87w": [
@@ -259,7 +278,8 @@
         "evidence_ids": [
           "listingC:87w:attribute:0"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "max_output_w",
@@ -269,7 +289,8 @@
         "evidence_ids": [
           "listingC:87w:attribute:1"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "usb_c_ports",
@@ -279,7 +300,8 @@
         "evidence_ids": [
           "listingC:87w:attribute:2"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "weight_g",
@@ -287,7 +309,8 @@
         "value": null,
         "unit": "g",
         "evidence_ids": [],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "max_input_w",
@@ -297,7 +320,8 @@
         "evidence_ids": [
           "listingC:87w:attribute:3"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "pd_supported",
@@ -307,7 +331,8 @@
         "evidence_ids": [
           "listingC:87w:attribute:4"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "included_cable",
@@ -317,7 +342,8 @@
         "evidence_ids": [
           "listingC:87w:attribute:5"
         ],
-        "conflicting_values": []
+        "conflicting_values": [],
+        "disputing_mention_ids": []
       },
       {
         "field_key": "warranty_months",
@@ -331,7 +357,8 @@
         "conflicting_values": [
           "12",
           "24"
-        ]
+        ],
+        "disputing_mention_ids": []
       }
     ]
   },
@@ -786,6 +813,24 @@
       "variant_id": "65w",
       "review_id": "listingB-r14"
     },
+    "listingB:65w:review:listingB-r19": {
+      "id": "listingB:65w:review:listingB-r19",
+      "item_key": "listingB:65w",
+      "source_type": "review",
+      "source_text": "Charges my phone twice, nowhere near 20000mAh.",
+      "source_location": "reviews/listingB-r19",
+      "variant_id": "65w",
+      "review_id": "listingB-r19"
+    },
+    "listingB:65w:review:listingB-r20": {
+      "id": "listingB:65w:review:listingB-r20",
+      "item_key": "listingB:65w",
+      "source_type": "review",
+      "source_text": "Only two phone charges per fill, not the 20000mAh claimed.",
+      "source_location": "reviews/listingB-r20",
+      "variant_id": "65w",
+      "review_id": "listingB-r20"
+    },
     "listingC:87w:source:2315d17daaaec8998cea": {
       "id": "listingC:87w:source:2315d17daaaec8998cea",
       "item_key": "listingC:87w",
@@ -1091,7 +1136,7 @@
     {
       "item_key": "listingB:65w",
       "aspect": "heat",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingB:65w:mention:listingB-r01:0",
         "listingB:65w:mention:listingB-r02:0",
@@ -1106,7 +1151,7 @@
     {
       "item_key": "listingB:65w",
       "aspect": "portability",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingB:65w:mention:listingB-r03:0",
         "listingB:65w:mention:listingB-r04:0"
@@ -1118,20 +1163,22 @@
     {
       "item_key": "listingB:65w",
       "aspect": "charging",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingB:65w:mention:listingB-r05:0",
         "listingB:65w:mention:listingB-r06:0",
-        "listingB:65w:mention:listingB-r11:0"
+        "listingB:65w:mention:listingB-r11:0",
+        "listingB:65w:mention:listingB-r19:0",
+        "listingB:65w:mention:listingB-r20:0"
       ],
       "positive_count": 2,
-      "negative_count": 1,
+      "negative_count": 3,
       "neutral_count": 0
     },
     {
       "item_key": "listingB:65w",
       "aspect": "reliability",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingB:65w:mention:listingB-r07:0",
         "listingB:65w:mention:listingB-r08:0"
@@ -1143,7 +1190,7 @@
     {
       "item_key": "listingB:65w",
       "aspect": "value",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingB:65w:mention:listingB-r09:0",
         "listingB:65w:mention:listingB-r10:0"
@@ -1155,7 +1202,7 @@
     {
       "item_key": "listingB:65w",
       "aspect": "other",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingB:65w:mention:listingB-r13:0"
       ],
@@ -1479,6 +1526,22 @@
       "aspect": "other",
       "sentiment": "neutral",
       "excerpt": "case is blue"
+    },
+    "listingB:65w:mention:listingB-r19:0": {
+      "id": "listingB:65w:mention:listingB-r19:0",
+      "item_key": "listingB:65w",
+      "review_id": "listingB-r19",
+      "aspect": "charging",
+      "sentiment": "negative",
+      "excerpt": "Charges my phone twice, nowhere near 20000mAh"
+    },
+    "listingB:65w:mention:listingB-r20:0": {
+      "id": "listingB:65w:mention:listingB-r20:0",
+      "item_key": "listingB:65w",
+      "review_id": "listingB-r20",
+      "aspect": "charging",
+      "sentiment": "negative",
+      "excerpt": "Only two phone charges per fill, not the 20000mAh claimed"
     },
     "listingC:87w:mention:listingC-r01:0": {
       "id": "listingC:87w:mention:listingC-r01:0",

@@ -87,9 +87,12 @@ network call. Do not add the standalone smoke to this combined run under the sam
 
 The scorer loads `data/ground_truth.json` only after inference finishes. Neither
 baseline nor model receives labels. Sources cover twelve variants, eight fields
-(96 labelled cells) and 54 fabricated reviews, six of which have unknown variants.
-The 48 known-variant reviews yield 51 labelled unique aspect/sentiment support
+(96 labelled cells) and 56 fabricated reviews, six of which have unknown variants.
+The 50 known-variant reviews yield 53 labelled unique aspect/sentiment support
 units; three known-variant reviews contain speculation and no supported mentions.
+Two reviews on `listingB:65w` (`listingB-r19`, `listingB-r20`) report charging a phone
+twice and are labelled in `ground_truth.json` `disputes` as contradicting that SKU's
+consistent 20 Ah capacity claim.
 Labels and sources are generated reproducibly by `data/generate_fixtures.py`.
 They were authored together as synthetic cases, with no independent human
 adjudication or production data. This tests implementation behavior, not general
@@ -108,7 +111,18 @@ JSON null. Definitions:
 | Contradiction recall | Conflicts preserving both alternatives in the exact normalized format / 4 contradictory cells |
 | Variant leakage rate | Wrong selected output matching a known sibling's output / 12 max-output cells |
 | Review mention precision | Correct unique item/review/aspect/sentiment units with literal excerpts containing a labelled supporting span / emitted unique units |
-| Review mention recall | Same correct review units / 51 labelled units for selected exact SKUs |
+| Review mention recall | Same correct review units / 53 labelled units for selected exact SKUs |
+| Dispute precision | Emitted disputed (item, field) claims whose every disputing mention comes from a labelled disputing review / emitted disputed claims |
+| Dispute recall | Same matched disputed claims / 1 labelled disputed claim |
+
+A dispute attaches only when at least `DISPUTE_MIN_REVIEWS = 2` distinct analysed
+exact-SKU reviews contradict a **supported** seller claim (`app/evidence/schema.py`).
+One review never raises the marker. The claim keeps its status and value, so ranking
+is unchanged; the marker is explanation, not a measured fact, and describes a count
+among reviews analysed, not a defect rate. The keyword baseline emits no disputes,
+so its precision is unavailable (0/0) rather than zero. The recorded paid evidence run
+predates the disputing reviews, so grounded dispute metrics stay unavailable until an
+authorized rerun.
 
 Regex baseline processes description before selected attributes, takes the first
 labelled value, ignores variant scope, performs no unit conversion and does not

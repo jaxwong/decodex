@@ -15,6 +15,32 @@ E2E_CITATION_ID = next(
     if evidence.item_key == "listingB:65w"
     and evidence.source_location == "variants/65w/shipping_minor"
 )
+E2E_DISPUTED_CAPACITY = next(
+    fact
+    for fact in load_sample_evidence().facts_by_item["listingB:65w"]
+    if fact.field_key == "capacity_mah"
+)
+
+
+def _answer_response(response_id: str, *, answer: str, cited_ids: list[str]) -> Response:
+    return _model_response(
+        response_id,
+        [
+            {
+                "id": f"msg_{response_id}",
+                "type": "message",
+                "status": "completed",
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "output_text",
+                        "text": json.dumps({"answer": answer, "cited_ids": cited_ids}),
+                        "annotations": [],
+                    }
+                ],
+            }
+        ],
+    )
 
 
 def _model_response(response_id: str, output: list[dict[str, object]]) -> Response:
@@ -34,33 +60,30 @@ def _model_response(response_id: str, output: list[dict[str, object]]) -> Respon
 
 
 async def create_scripted_response(**request: Any) -> Response:
-    """Apply one fixture-bound preference mutation, then return a cited answer."""
+    """Answer a disputed-claim question read-only, or apply one preference mutation."""
     if request.get("previous_response_id") is not None:
-        return _model_response(
+        return _answer_response(
             "resp_e2e_answer",
-            [
-                {
-                    "id": "msg_e2e_answer",
-                    "type": "message",
-                    "status": "completed",
-                    "role": "assistant",
-                    "content": [
-                        {
-                            "type": "output_text",
-                            "text": json.dumps(
-                                {
-                                    "answer": (
-                                        "Budget applied to delivered prices; items over the "
-                                        "delivered limit are excluded. Breeze is SGD 81.65 "
-                                        "delivered; its listed shipping line is cited."
-                                    ),
-                                    "cited_ids": [E2E_CITATION_ID],
-                                }
-                            ),
-                            "annotations": [],
-                        }
-                    ],
-                }
+            answer=(
+                "Budget applied to delivered prices; items over the "
+                "delivered limit are excluded. Breeze is SGD 81.65 "
+                "delivered; its listed shipping line is cited."
+            ),
+            cited_ids=[E2E_CITATION_ID],
+        )
+
+    model_input = cast(list[dict[str, Any]], request["input"])
+    if "claim" in str(model_input[-1]["content"]).lower():
+        return _answer_response(
+            "resp_e2e_dispute",
+            answer=(
+                "The seller states 20,000 mAh for Breeze 65W. 2 of the 16 reviews analysed "
+                "report lower real-world capacity, such as charging a phone only twice. "
+                "Luna cannot verify the true figure, so the ranking is unchanged."
+            ),
+            cited_ids=[
+                *E2E_DISPUTED_CAPACITY.evidence_ids,
+                *E2E_DISPUTED_CAPACITY.disputing_mention_ids,
             ],
         )
 

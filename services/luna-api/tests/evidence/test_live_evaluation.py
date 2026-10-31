@@ -68,7 +68,10 @@ class OfflineResponses:
         # the fake, and these test scores are never written as model measurements.
         evidence = {s["id"]: Evidence.model_validate(s) for s in source["seller_evidence"]}
         facts = validate_facts(candidates, evidence, source["item_key"], source["variant_id"])
-        return envelope(json.dumps({"facts": [f.model_dump() for f in facts]}))
+        # Free-form output is specifications only; review disputes are outside its shape.
+        return envelope(
+            json.dumps({"facts": [f.model_dump(exclude={"disputing_mention_ids"}) for f in facts]})
+        )
 
 
 def test_smoke_checks_prescribed_acceptance_cases() -> None:
@@ -163,6 +166,7 @@ def test_full_live_runner_offline_transport(monkeypatch: pytest.MonkeyPatch) -> 
     assert report["grounded_structured_outputs"]["tokens"]["complete"] is True
     assert report["ungrounded_free_form"]["tokens"]["complete"] is True
     assert "review_mention_recall" not in report["ungrounded_free_form"]["metrics"]
+    assert "dispute_recall" not in report["ungrounded_free_form"]["metrics"]
     assert report["grounded_structured_outputs"]["comparison_latency_ms"]["sample_count"] == 3
     assert report["grounded_structured_outputs"]["response_models"] == ["gpt-6-luna"]
     assert report["ungrounded_free_form"]["response_models"] == ["gpt-6-luna"]

@@ -56,6 +56,28 @@ export function factValueText(fact) {
 
 export const conflictText = fact => withUnit(fact.conflicting_values.join(' vs '), fact.unit);
 
+// The API decides when analysed reviews dispute a seller claim; this only looks up the
+// cited mentions and the item's analysed-review count so the marker can name its sample.
+export function reviewDispute(evidence, fact) {
+  if (fact.disputing_mention_ids.length === 0) return null;
+  const mentions = fact.disputing_mention_ids.map(mentionId => {
+    const mention = evidence.review_mentions[mentionId];
+    if (!mention) throw new TypeError(`Disputing mention ${mentionId} is not in comparison review mentions`);
+    return mention;
+  });
+  const itemKey = mentions[0].item_key;
+  const summary = evidence.review_summaries.find(candidate => candidate.item_key === itemKey);
+  if (!summary) throw new TypeError(`Comparison evidence has no review summary for ${itemKey}`);
+  return {
+    mentions,
+    reviewCount: new Set(mentions.map(mention => mention.review_id)).size,
+    analyzedReviews: summary.analyzed_reviews,
+  };
+}
+
+export const disputeText = dispute =>
+  `Disputed in ${dispute.reviewCount} of ${dispute.analyzedReviews} reviews analysed`;
+
 // Limitations are server-written sentences that name items and fields by key.
 export function readableLimitation(text, items, schemaFields) {
   let readable = text;

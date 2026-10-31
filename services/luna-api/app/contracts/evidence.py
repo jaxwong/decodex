@@ -122,6 +122,9 @@ class Fact(_EvidenceModel):
     unit: str | None = None
     evidence_ids: list[str] = Field(default_factory=list)
     conflicting_values: list[str] = Field(default_factory=list)
+    # Review mentions that contradict a consistent seller claim. The claim stays supported
+    # with its value; ranking reads only status and value, so a dispute never reorders.
+    disputing_mention_ids: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def check_status(self) -> Self:
@@ -133,6 +136,8 @@ class Fact(_EvidenceModel):
             len(set(self.conflicting_values)) < 2 or len(set(self.evidence_ids)) < 2
         ):
             raise ValueError("Conflicts must preserve two values and sources")
+        if self.disputing_mention_ids and self.status != "supported":
+            raise ValueError("Only supported facts can be disputed")
         return self
 
 
@@ -189,6 +194,10 @@ class ComparisonEvidence(_EvidenceModel):
                         or source.source_type in ("review", "external", "image")
                     ):
                         raise ValueError("Fact source must apply to the exact selected variant")
+                for mention_id in fact.disputing_mention_ids:
+                    mention = self.review_mentions.get(mention_id)
+                    if mention is None or mention.item_key != key:
+                        raise ValueError("Unknown or wrong-item disputing mention")
         for key, source in self.evidence.items():
             if source.id != key or source.item_key not in items:
                 raise ValueError("Invalid evidence index")

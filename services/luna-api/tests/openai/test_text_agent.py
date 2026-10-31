@@ -335,6 +335,51 @@ def test_correction_uses_bounded_history_and_changes_same_comparison() -> None:
     asyncio.run(scenario())
 
 
+def test_disputed_claim_answer_cites_claim_and_reviews_without_changing_ranking() -> None:
+    async def scenario() -> None:
+        session_state, comparison_id = await create_comparison_state()
+        before = require_comparison(session_state, comparison_id)
+        capacity = next(
+            fact
+            for fact in before.evidence.facts_by_item["listingB:65w"]
+            if fact.field_key == "capacity_mah"
+        )
+        cited_ids = [*capacity.evidence_ids, *capacity.disputing_mention_ids]
+        requests: list[dict[str, Any]] = []
+
+        async def create_response(**request: Any) -> Response:
+            requests.append(request)
+            return answer_response(
+                "resp_dispute",
+                answer=(
+                    "The seller states 20,000 mAh. Two of the 16 reviews analysed report lower "
+                    "real-world capacity. Luna cannot verify the true figure."
+                ),
+                cited_ids=cited_ids,
+            )
+
+        response = await run_luna(
+            session_state,
+            comparison_id=comparison_id,
+            conversation_id="conv-dispute",
+            message="Is B's capacity claim reliable?",
+            expected_revision=0,
+            create_response=create_response,
+            model="gpt-6-luna",
+        )
+
+        assert "disputing_mention_ids" in requests[0]["instructions"]
+        assert "listingB:65w:mention:listingB-r19:0" in json.dumps(requests[0]["input"])
+        assert response.cited_ids == cited_ids
+        assert len(capacity.disputing_mention_ids) == 2
+        assert response.ui_patch is None
+        after = require_comparison(session_state, comparison_id)
+        assert after.revision == 0
+        assert after.recommendation == before.recommendation == response.recommendation
+
+    asyncio.run(scenario())
+
+
 def test_agent_rejects_unsupported_citation_without_recording_history() -> None:
     async def scenario() -> None:
         session_state, comparison_id = await create_comparison_state()

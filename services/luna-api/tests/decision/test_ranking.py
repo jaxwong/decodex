@@ -29,6 +29,29 @@ def test_ranking_applies_hard_constraints_before_priorities() -> None:
     assert recommendation.uncertain_fields == {"listingC:87w": ["weight_g"]}
 
 
+@pytest.mark.parametrize(
+    "preferences",
+    [
+        Preferences(priorities=["max_output_w", "price_minor"]),
+        Preferences(max_price_minor=9000, priorities=["weight_g", "price_minor"]),
+        Preferences(priorities=["review_reliability"]),
+    ],
+)
+def test_review_disputes_never_change_ranking(preferences: Preferences) -> None:
+    disputed = load_sample_evidence()
+    assert any(f.disputing_mention_ids for facts in disputed.facts_by_item.values() for f in facts)
+    undisputed = disputed.model_copy(
+        update={
+            "facts_by_item": {
+                key: [f.model_copy(update={"disputing_mention_ids": []}) for f in facts]
+                for key, facts in disputed.facts_by_item.items()
+            }
+        }
+    )
+
+    assert rank_comparison(disputed, preferences) == rank_comparison(undisputed, preferences)
+
+
 def test_ranking_does_not_guess_missing_weight() -> None:
     recommendation = rank_comparison(
         load_sample_evidence(),

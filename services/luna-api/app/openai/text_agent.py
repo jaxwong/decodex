@@ -62,6 +62,10 @@ preference exists, ask one concise high-information question instead of choosing
 winner.
 Budget constraints apply to landed_price_minor, which includes the listed shipping and shop voucher.
 Use price_evidence_ids with inspect_evidence when explaining a delivered-price exclusion.
+A fact with disputing_mention_ids is a seller claim that analysed reviews contradict. Say so,
+cite the fact's evidence_ids and those mention IDs, and say Luna cannot verify the true figure.
+Describe it only as a count among the reviews analysed, never as a defect rate or fraud, and
+never change or drop the value.
 """
 
 TRUSTED_INSTRUCTIONS = EVIDENCE_POLICY + (

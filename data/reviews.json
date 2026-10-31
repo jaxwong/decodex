@@ -326,6 +326,24 @@
       "source": "fixture"
     },
     {
+      "review_id": "listingB-r19",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "rating": 3,
+      "text": "Charges my phone twice, nowhere near 20000mAh.",
+      "created_at": null,
+      "source": "fixture"
+    },
+    {
+      "review_id": "listingB-r20",
+      "listing_id": "listingB",
+      "variant_id": "65w",
+      "rating": 3,
+      "text": "Only two phone charges per fill, not the 20000mAh claimed.",
+      "created_at": null,
+      "source": "fixture"
+    },
+    {
       "review_id": "listingC-r01",
       "listing_id": "listingC",
       "variant_id": "87w",

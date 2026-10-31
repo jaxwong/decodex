@@ -14,7 +14,9 @@ All data and labels are synthetic; these results do not establish production qua
 | Exact normalized conflict recall | 0/4 | Unavailable | Unavailable |
 | Variant leakage | 9/12 | Unavailable | Unavailable |
 | Review precision | 51/54 | Unavailable | Unavailable |
-| Review recall | 51/51 | Unavailable | Unavailable |
+| Review recall | 51/53 | Unavailable | Unavailable |
+| Dispute precision | Unavailable | Unavailable | Unavailable |
+| Dispute recall | 0/1 | Unavailable | Unavailable |
 
 Recorded evidence unavailable: Recorded evidence source/label hashes are stale.
 
