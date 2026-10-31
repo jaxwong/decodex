@@ -1,233 +1,954 @@
-.luna-widget,
-.luna-widget * {
+/* The widget owns all of its styling: hosts load no utility framework for it, and every
+   rule is scoped under .luna-widget so host resets cannot reach in and widget rules cannot leak out. */
+
+.luna-widget {
+  --luna-ink: #1c1d21;
+  --luna-muted: #575b61;
+  --luna-line: #e5e1da;
+  --luna-line-soft: #efece7;
+  --luna-panel: #faf9f7;
+  --luna-accent: #c2410c;
+  --luna-accent-strong: #9a3412;
+  --luna-accent-soft: #fff3ea;
+  --luna-accent-line: #f4c7aa;
+  --luna-warn-ink: #7c4a03;
+  --luna-warn-bg: #fff5dc;
+  --luna-warn-line: #ebcb83;
+  --luna-ok-ink: #14532d;
+  --luna-ok-bg: #e6f4ea;
+  --luna-info-bg: #eef2f6;
+  --luna-danger-ink: #b91c1c;
+  --luna-danger-bg: #fef2f2;
+  margin: 16px 0;
+  padding: 20px;
+  border: 1px solid var(--luna-line);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--luna-ink);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.luna-widget *,
+.luna-widget *::before,
+.luna-widget *::after {
   box-sizing: border-box;
 }
 
-.luna-widget {
-  margin: 16px 0;
-  padding: 16px;
-  border: 1px solid #ffedd5;
-  border-radius: 12px;
-  background: #fff;
-  color: #1f2937;
-  font-family: Inter, system-ui, sans-serif;
-  line-height: 1.4;
+.luna-widget :where(h2, h3, h4, p, ul) {
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  font-weight: inherit;
 }
 
-.luna-widget header,
-.luna-widget .flex {
-  display: flex;
-}
-
-.luna-widget header,
-.luna-widget .justify-between {
-  justify-content: space-between;
-}
-
-.luna-widget .items-start {
-  align-items: flex-start;
-}
-
-.luna-widget .items-center {
-  align-items: center;
-}
-
-.luna-widget .flex-wrap {
-  flex-wrap: wrap;
-}
-
-.luna-widget .flex-1 {
-  flex: 1 1 0%;
-}
-
-.luna-widget .grid {
-  display: grid;
-}
-
-.luna-widget .gap-1,
-.luna-widget .gap-2,
-.luna-widget .gap-3 {
-  gap: 8px;
-}
-
-.luna-widget .space-y-1 > * + * {
-  margin-top: 4px;
-}
-
-.luna-widget .space-y-3 > * + *,
-.luna-widget .space-y-4 > * + *,
-.luna-widget .space-y-5 > * + * {
-  margin-top: 12px;
-}
-
-.luna-widget .p-2,
-.luna-widget .p-3 {
-  padding: 12px;
-}
-
-.luna-widget .p-4 {
-  padding: 16px;
-}
-
-.luna-widget .px-3,
-.luna-widget .px-4 {
-  padding-right: 12px;
-  padding-left: 12px;
-}
-
-.luna-widget .py-1,
-.luna-widget .py-2 {
-  padding-top: 8px;
-  padding-bottom: 8px;
-}
-
-.luna-widget .my-1,
-.luna-widget .my-3 {
-  margin-top: 8px;
-  margin-bottom: 8px;
-}
-
-.luna-widget .mb-1,
-.luna-widget .mb-2,
-.luna-widget .mb-3,
-.luna-widget .mb-4,
-.luna-widget .mb-5 {
-  margin-bottom: 12px;
-}
-
-.luna-widget .mt-1,
-.luna-widget .mt-2,
-.luna-widget .mt-3 {
-  margin-top: 8px;
-}
-
-.luna-widget .w-full {
-  width: 100%;
-}
-
-.luna-widget .min-w-0 {
-  min-width: 0;
-}
-
-.luna-widget .max-h-64,
-.luna-widget .max-h-72 {
-  max-height: 288px;
-}
-
-.luna-widget .overflow-y-auto {
-  overflow-y: auto;
-}
-
-.luna-widget .rounded,
-.luna-widget .rounded-lg,
-.luna-widget .rounded-xl,
-.luna-widget .rounded-full {
-  border-radius: 10px;
-}
-
-.luna-widget .border,
-.luna-widget .border-b,
-.luna-widget .border-t-0 {
-  border: 1px solid #e5e7eb;
-}
-
-.luna-widget .bg-gray-50 {
-  background: #f9fafb;
-}
-
-.luna-widget .bg-orange-50 {
-  background: #fff7ed;
-}
-
-.luna-widget .bg-orange-600 {
-  background: #ea580c;
-}
-
-.luna-widget .bg-red-50 {
-  background: #fef2f2;
-}
-
-.luna-widget .bg-white {
-  background: #fff;
-}
-
-.luna-widget .text-white {
-  color: #fff;
-}
-
-.luna-widget .text-gray-400,
-.luna-widget .text-gray-500 {
-  color: #6b7280;
-}
-
-.luna-widget .text-orange-600,
-.luna-widget .text-orange-700 {
-  color: #c2410c;
-}
-
-.luna-widget .text-red-700 {
-  color: #b91c1c;
-}
-
-.luna-widget .text-amber-700,
-.luna-widget .text-amber-800 {
-  color: #92400e;
-}
-
-.luna-widget .text-xs {
-  font-size: 12px;
-}
-
-.luna-widget .text-sm {
-  font-size: 14px;
-}
-
-.luna-widget .text-xl {
-  font-size: 20px;
-}
-
-.luna-widget .font-medium,
-.luna-widget .font-semibold,
-.luna-widget .font-bold {
-  font-weight: 600;
-}
-
-.luna-widget button,
-.luna-widget input {
+.luna-widget :where(button, input) {
+  margin: 0;
   font: inherit;
+  color: inherit;
 }
 
-.luna-widget button {
+.luna-widget :where(button) {
   cursor: pointer;
 }
 
-.luna-widget button:disabled,
-.luna-widget input:disabled {
+.luna-widget :where(button:disabled, input:disabled) {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.55;
 }
 
-.luna-widget input[type='text'],
-.luna-widget input:not([type]) {
-  min-height: 40px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+.luna-widget svg {
+  display: inline-block;
+  flex: none;
+  vertical-align: -2px;
 }
 
-.luna-widget .underline {
+.luna-widget :focus-visible {
+  outline: 2px solid var(--luna-accent);
+  outline-offset: 2px;
+}
+
+.luna-widget .luna-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- shared controls ---------- */
+
+.luna-widget .luna-muted {
+  color: var(--luna-muted);
+  font-size: 13px;
+}
+
+.luna-widget .luna-link {
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  color: var(--luna-accent);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.luna-widget .luna-link:hover:not(:disabled) {
+  color: var(--luna-accent-strong);
   text-decoration: underline;
 }
 
-.luna-widget .whitespace-pre-wrap {
+.luna-widget .luna-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--luna-accent);
+  border-radius: 10px;
+  background: var(--luna-accent);
+  color: #fff;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.luna-widget .luna-button:hover:not(:disabled) {
+  border-color: var(--luna-accent-strong);
+  background: var(--luna-accent-strong);
+}
+
+.luna-widget .luna-button-secondary {
+  border-color: var(--luna-line);
+  background: #fff;
+  color: var(--luna-ink);
+}
+
+.luna-widget .luna-button-secondary:hover:not(:disabled) {
+  border-color: #cfcac1;
+  background: var(--luna-panel);
+}
+
+.luna-widget .luna-button-danger {
+  border-color: #fecaca;
+  background: #fff;
+  color: var(--luna-danger-ink);
+}
+
+.luna-widget .luna-button-danger:hover:not(:disabled) {
+  border-color: var(--luna-danger-ink);
+  background: var(--luna-danger-bg);
+}
+
+.luna-widget .luna-button-small {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+
+/* ---------- header and alerts ---------- */
+
+.luna-widget .luna-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 16px;
+}
+
+.luna-widget .luna-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--luna-accent);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.luna-widget .luna-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.luna-widget .luna-demo-pill {
+  padding: 2px 8px;
+  border: 1px solid var(--luna-line);
+  border-radius: 999px;
+  color: var(--luna-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.luna-widget .luna-close {
+  margin-left: auto;
+}
+
+.luna-widget .luna-alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: var(--luna-danger-bg);
+  color: var(--luna-danger-ink);
+}
+
+/* ---------- product picker ---------- */
+
+.luna-widget .luna-body {
+  container-type: inline-size;
+}
+
+.luna-widget .luna-section-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.luna-widget .luna-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.luna-widget .luna-picker-card {
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--luna-line);
+  border-radius: 12px;
+}
+
+.luna-widget .luna-picker-title {
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.luna-widget .luna-picker-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  cursor: pointer;
+}
+
+.luna-widget .luna-picker-option input,
+.luna-widget .luna-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--luna-accent);
+}
+
+.luna-widget .luna-picker-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--luna-line-soft);
+  background: #fff;
+}
+
+/* ---------- comparison layout ---------- */
+
+.luna-widget .luna-layout {
+  display: grid;
+  gap: 20px;
+}
+
+.luna-widget .luna-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+@container (min-width: 860px) {
+  .luna-widget .luna-layout {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    align-items: start;
+  }
+
+  .luna-widget .luna-chat {
+    position: sticky;
+    top: 16px;
+  }
+}
+
+@container (max-width: 520px) {
+  .luna-widget .luna-col-label {
+    width: 96px;
+  }
+
+  .luna-widget .luna-table .luna-corner,
+  .luna-widget .luna-table .luna-row-label {
+    padding: 10px 8px;
+    font-size: 12.5px;
+  }
+}
+
+.luna-widget .luna-needs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.luna-widget .luna-needs-label {
+  margin-right: 2px;
+  color: var(--luna-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.luna-widget .luna-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--luna-line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.luna-widget .luna-chip-rank {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--luna-ink);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.luna-widget .luna-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--luna-info-bg);
+  font-size: 13.5px;
+}
+
+.luna-widget .luna-notice svg {
+  margin-top: 2px;
+  color: #334155;
+}
+
+/* ---------- comparison table ---------- */
+
+.luna-widget .luna-compare {
+  overflow: hidden;
+  border: 1px solid var(--luna-line);
+  border-radius: 12px;
+}
+
+.luna-widget .luna-compare-tools {
+  display: flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--luna-line);
+  background: var(--luna-panel);
+}
+
+.luna-widget .luna-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.luna-widget .luna-table-scroll {
+  overflow-x: auto;
+}
+
+.luna-widget .luna-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+.luna-widget .luna-col-label {
+  width: 130px;
+}
+
+.luna-widget .luna-table th,
+.luna-widget .luna-table td {
+  padding: 0;
+  font-weight: inherit;
+  text-align: left;
+  vertical-align: top;
+}
+
+.luna-widget .luna-table .luna-corner,
+.luna-widget .luna-table .luna-product {
+  padding: 14px 12px 12px;
+  border-bottom: 1px solid var(--luna-line);
+}
+
+.luna-widget .luna-table .luna-corner,
+.luna-widget .luna-table .luna-row-label {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--luna-panel);
+}
+
+.luna-widget .luna-table .is-top {
+  background: var(--luna-accent-soft);
+}
+
+.luna-widget .luna-table .luna-product.is-top {
+  box-shadow: inset 0 3px 0 var(--luna-accent);
+}
+
+.luna-widget .luna-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  margin-bottom: 8px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #ece9e3;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.luna-widget .luna-badge-top {
+  background: var(--luna-accent);
+  color: #fff;
+}
+
+.luna-widget .luna-badge-warn {
+  background: var(--luna-warn-bg);
+  box-shadow: inset 0 0 0 1px var(--luna-warn-line);
+  color: var(--luna-warn-ink);
+}
+
+.luna-widget .luna-badge-out {
+  color: var(--luna-muted);
+}
+
+.luna-widget .luna-product-title {
+  display: block;
+  font-weight: 600;
+}
+
+.luna-widget .luna-product-variant {
+  display: block;
+  color: var(--luna-muted);
+  font-size: 12.5px;
+}
+
+.luna-widget .luna-product-price {
+  display: block;
+  margin-top: 6px;
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.luna-widget .luna-product-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
+  margin-top: 4px;
+}
+
+.luna-widget .luna-table .is-out .luna-product-title,
+.luna-widget .luna-table .is-out .luna-product-price {
+  color: var(--luna-muted);
+}
+
+.luna-widget .luna-table .luna-group th {
+  padding: 14px 12px 6px;
+  border-bottom: 1px solid var(--luna-line-soft);
+  color: var(--luna-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.luna-widget .luna-table .luna-row-label {
+  padding: 12px;
+  border-bottom: 1px solid var(--luna-line-soft);
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.luna-widget .luna-row-hint {
+  display: block;
+  margin-top: 2px;
+  color: var(--luna-accent);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.luna-widget .luna-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--luna-line-soft);
+}
+
+.luna-widget .luna-cell {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+}
+
+.luna-widget .luna-cell:hover {
+  border-color: var(--luna-line);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.luna-widget .luna-cell.is-conflict {
+  border-color: var(--luna-warn-line);
+  background: var(--luna-warn-bg);
+}
+
+.luna-widget .luna-value {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.luna-widget .luna-value.is-missing {
+  color: var(--luna-muted);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.luna-widget .luna-value.is-conflict {
+  color: var(--luna-warn-ink);
+}
+
+.luna-widget .luna-cell-note {
+  display: block;
+  margin-top: 2px;
+  color: var(--luna-muted);
+  font-size: 12px;
+}
+
+.luna-widget .luna-table .luna-same td {
+  padding: 10px 12px;
+}
+
+.luna-widget .luna-same-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.luna-widget .luna-pill {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--luna-line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12.5px;
+}
+
+.luna-widget .luna-pill:hover {
+  border-color: var(--luna-accent-line);
+  color: var(--luna-accent);
+}
+
+.luna-widget .luna-notes {
+  padding: 10px 14px;
+  border-top: 1px solid var(--luna-line);
+  background: var(--luna-panel);
+  font-size: 13px;
+}
+
+.luna-widget .luna-notes ul {
+  margin-top: 4px;
+  padding-left: 18px;
+  list-style: disc;
+}
+
+/* ---------- chat ---------- */
+
+.luna-widget .luna-chat {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--luna-line);
+  border-radius: 12px;
+  background: var(--luna-panel);
+}
+
+.luna-widget .luna-chat-title {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--luna-line);
+  font-weight: 600;
+}
+
+.luna-widget .luna-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 420px;
+  padding: 14px;
+  overflow-y: auto;
+}
+
+.luna-widget .luna-message {
+  max-width: 92%;
+}
+
+.luna-widget .luna-message p {
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13.5px;
   white-space: pre-wrap;
 }
 
-@media (min-width: 768px) {
-  .luna-widget .md\:grid-cols-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.luna-widget .luna-message.is-assistant {
+  align-self: flex-start;
+}
 
-  .luna-widget .md\:p-6 {
-    padding: 24px;
-  }
+.luna-widget .luna-message.is-assistant p {
+  border: 1px solid var(--luna-line);
+  border-top-left-radius: 4px;
+  background: #fff;
+}
+
+.luna-widget .luna-message.is-user {
+  align-self: flex-end;
+}
+
+.luna-widget .luna-message.is-user p {
+  border-top-right-radius: 4px;
+  background: var(--luna-accent);
+  color: #fff;
+}
+
+.luna-widget .luna-citations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.luna-widget .luna-citations-label {
+  width: 100%;
+  color: var(--luna-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.luna-widget .luna-citation {
+  max-width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  overflow: hidden;
+  border: 1px solid var(--luna-line);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 12px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.luna-widget .luna-citation:hover {
+  border-color: var(--luna-accent-line);
+  color: var(--luna-accent);
+}
+
+.luna-widget .luna-typing {
+  color: var(--luna-muted);
+  font-size: 12.5px;
+}
+
+.luna-widget .luna-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 14px 12px;
+}
+
+.luna-widget .luna-suggestion {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--luna-accent-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--luna-accent);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.luna-widget .luna-suggestion:hover:not(:disabled) {
+  background: var(--luna-accent-soft);
+}
+
+.luna-widget .luna-composer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--luna-line);
+}
+
+.luna-widget .luna-composer input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid #cfcac1;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.luna-widget .luna-voice {
+  padding: 12px 14px;
+  border-top: 1px solid var(--luna-line);
+}
+
+.luna-widget .luna-voice-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.luna-widget .luna-voice-error {
+  margin-top: 8px;
+  color: var(--luna-danger-ink);
+  font-size: 12.5px;
+}
+
+.luna-widget .luna-captions {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12.5px;
+}
+
+/* ---------- seller view ---------- */
+
+.luna-widget .luna-seller {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--luna-line);
+  border-radius: 12px;
+}
+
+.luna-widget .luna-seller-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.luna-widget .luna-seller h3 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.luna-widget .luna-seller h4 {
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.luna-widget .luna-seller-banner {
+  padding: 10px 12px;
+  border: 1px solid var(--luna-accent-line);
+  border-radius: 10px;
+  background: var(--luna-accent-soft);
+  font-size: 12.5px;
+}
+
+.luna-widget .luna-seller-row {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--luna-line-soft);
+  font-size: 13px;
+}
+
+.luna-widget .luna-seller-row-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* ---------- source panel ---------- */
+
+.luna-widget .luna-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(28, 29, 33, 0.32);
+}
+
+.luna-widget .luna-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(420px, 100%);
+  height: 100%;
+  background: #fff;
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.12);
+}
+
+.luna-widget .luna-panel-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--luna-line);
+}
+
+.luna-widget .luna-panel-head h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.luna-widget .luna-panel-sub {
+  display: block;
+  margin-top: 2px;
+  color: var(--luna-muted);
+  font-size: 12.5px;
+}
+
+.luna-widget .luna-icon-button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  margin-left: auto;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.luna-widget .luna-icon-button:hover {
+  background: var(--luna-panel);
+}
+
+.luna-widget .luna-panel-body {
+  flex: 1;
+  padding: 18px 20px;
+  overflow-y: auto;
+}
+
+.luna-widget .luna-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.luna-widget .luna-status-ok {
+  background: var(--luna-ok-bg);
+  color: var(--luna-ok-ink);
+}
+
+.luna-widget .luna-status-warn {
+  background: var(--luna-warn-bg);
+  color: var(--luna-warn-ink);
+}
+
+.luna-widget .luna-status-none {
+  background: #ece9e3;
+  color: var(--luna-muted);
+}
+
+.luna-widget .luna-panel-value {
+  margin: 10px 0 2px;
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.luna-widget .luna-panel-value.is-missing {
+  color: var(--luna-muted);
+  font-style: italic;
+  font-weight: 600;
+}
+
+.luna-widget .luna-panel-lead {
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.luna-widget .luna-quote {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--luna-line);
+  border-radius: 10px;
+  background: var(--luna-panel);
+}
+
+.luna-widget .luna-quote-from {
+  color: var(--luna-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.luna-widget .luna-quote p {
+  margin-top: 4px;
+}
+
+.luna-widget .luna-quote mark {
+  padding: 0 2px;
+  border-radius: 3px;
+  background: #fde7a7;
+  color: inherit;
+}
+
+.luna-widget .luna-panel-explain {
+  margin-top: 16px;
+  font-size: 13.5px;
+}
+
+.luna-widget .luna-panel-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--luna-line);
 }

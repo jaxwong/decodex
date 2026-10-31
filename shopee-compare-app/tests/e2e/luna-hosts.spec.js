@@ -33,7 +33,10 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   });
 
   await openLuna(page, testInfo.project.name);
-  await expect(page.getByText('Evidence-backed · backend-connected demo catalog')).toBeVisible();
+  const widget = page.getByRole('region', { name: 'Luna shopping assistant' });
+  const needs = page.getByRole('region', { name: 'Your needs' });
+  const sourcePanel = page.getByRole('dialog');
+  await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toBeVisible();
   const firstVariant = page.getByRole('checkbox', { name: '100W synthetic SKU · SGD 60.00' });
   if (testInfo.project.name === 'host-b-chromium') {
     await expect(firstVariant).toBeVisible();
@@ -44,46 +47,54 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   }
   await page.getByRole('checkbox', { name: '65W synthetic SKU · SGD 69.65' }).check();
   await page.getByRole('checkbox', { name: '87W synthetic SKU · SGD 79.87' }).check();
-  await page.getByRole('button', { name: 'Compare 3 variants' }).click();
+  await page.getByRole('button', { name: 'Compare 3 products' }).click();
 
-  await expect(page.getByText('Comparison · Revision 0')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Comparison results' })).toBeVisible();
+  await expect(widget).toHaveAttribute('data-revision', '0');
+  await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
+  await page.getByRole('button', { name: /^Warranty for SYNTHETIC Comet .*: Listing disagrees, 12 vs 24 months$/ }).click();
+  await expect(sourcePanel.getByText('Listing disagrees with itself')).toBeVisible();
+  await expect(sourcePanel.getByText('Warranty: 1 year')).toBeVisible();
+  await expect(sourcePanel.getByText('Warranty: 24 months')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(sourcePanel).toHaveCount(0);
 
   await page.getByLabel('Message Luna').fill(
     'Under S$80, at least 65W, prioritize portability.',
   );
   await page.getByRole('button', { name: 'Send' }).click();
 
-  await expect(page.getByText('Comparison · Revision 1')).toBeVisible();
+  await expect(widget).toHaveAttribute('data-revision', '1');
   await expect(page.getByText('Preferences applied by the deterministic test model.')).toBeVisible();
-  await expect(page.getByText('Budget ≤ SGD 80.00')).toBeVisible();
-  await page.getByRole('button', { name: /Evidence, conflicting claims & sources/ }).click();
-  await expect(page.getByRole('heading', { name: "Cited in Luna's latest answer" })).toBeVisible();
-  await expect(page.getByText('Source details unavailable')).toHaveCount(0);
-  await expect(page.getByText(/Sources:/).first()).toBeVisible();
-  await page.getByRole('button', { name: /Evidence, conflicting claims & sources/ }).click();
+  await expect(needs.getByText('Up to SGD 80.00')).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'Updated to match your needs.' })).toBeVisible();
+  await page.getByRole('button', { name: /^Source: / }).first().click();
+  await expect(sourcePanel.getByText('Customer review')).toBeVisible();
+  await expect(sourcePanel.getByText(/review mention about/)).toBeVisible();
+  await sourcePanel.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(sourcePanel).toHaveCount(0);
 
   await page.getByLabel('Message Luna').fill('Actually price first.');
   await page.getByRole('button', { name: 'Send' }).click();
-  await expect(page.getByText('Comparison · Revision 2')).toBeVisible();
-  await expect(page.getByText('Priority: Price Minor')).toBeVisible();
+  await expect(widget).toHaveAttribute('data-revision', '2');
+  await expect(needs.getByText('Priority 1: Price')).toBeVisible();
 
   await page.getByLabel('Message Luna').fill('Set my budget to S$70 and keep price first.');
   await page.getByRole('button', { name: 'Send' }).click();
-  await expect(page.getByText('Comparison · Revision 3')).toBeVisible();
-  await expect(page.getByText('Budget ≤ SGD 70.00')).toBeVisible();
+  await expect(widget).toHaveAttribute('data-revision', '3');
+  await expect(needs.getByText('Up to SGD 70.00')).toBeVisible();
   await page.getByRole('button', { name: 'Seller view' }).click();
-  await expect(page.getByRole('heading', { name: 'Demo seller view' })).toBeVisible();
-  await expect(page.getByText('Counts cover comparisons in this demo session only.')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Evidence gaps' })).toBeVisible();
-  await expect(page.getByText('Weight G', { exact: true })).toBeVisible();
-  await expect(page.getByText('Warranty Months', { exact: true })).toBeVisible();
-  await expect(page.getByText('Over Budget: 1')).toBeVisible();
-  await page.getByRole('button', { name: 'Open evidence for Warranty Months' }).click();
-  await expect(page.getByRole('button', { name: /Evidence, conflicting claims & sources/ }))
-    .toHaveAttribute('aria-expanded', 'true');
-  await expect(page.getByRole('heading', { name: "Cited in Luna's latest answer" })).toBeVisible();
-  await expect(page.getByText(/Sources:/).first()).toBeVisible();
+  const sellerView = page.getByRole('region', { name: 'Demo seller view' });
+  await expect(sellerView.getByRole('heading', { name: 'Demo seller view' })).toBeVisible();
+  await expect(sellerView.getByText('Counts cover comparisons in this demo session only.')).toBeVisible();
+  await expect(sellerView.getByRole('heading', { name: 'Evidence gaps' })).toBeVisible();
+  await expect(sellerView.getByText('Weight', { exact: true })).toBeVisible();
+  await expect(sellerView.getByText('Warranty', { exact: true })).toBeVisible();
+  await expect(sellerView.getByText('Over budget: 1')).toBeVisible();
+  await sellerView.getByRole('button', { name: 'Open evidence for Warranty' }).click();
+  await expect(sourcePanel.getByRole('heading', { name: /^Warranty · SYNTHETIC Comet/ })).toBeVisible();
+  await expect(sourcePanel.getByText('Warranty: 24 months')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(sourcePanel).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Start', exact: true }).click();
   await expect(page.getByText('Microphone permission was denied. Text chat remains available.')).toBeVisible();
@@ -188,12 +199,12 @@ test('Live WebRTC UI waits for readiness, captions, mute, and graceful close', a
   });
 
   await openLuna(page, testInfo.project.name);
-  await expect(page.getByText('Evidence-backed · backend-connected demo catalog')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toBeVisible();
   await page.getByRole('checkbox', { name: '100W synthetic SKU · SGD 60.00' }).check();
   await page.getByRole('checkbox', { name: '65W synthetic SKU · SGD 69.65' }).check();
   await page.getByRole('checkbox', { name: '87W synthetic SKU · SGD 79.87' }).check();
-  await page.getByRole('button', { name: 'Compare 3 variants' }).click();
-  await expect(page.getByText('Comparison · Revision 0')).toBeVisible();
+  await page.getByRole('button', { name: 'Compare 3 products' }).click();
+  await expect(page.getByRole('region', { name: 'Luna shopping assistant' })).toHaveAttribute('data-revision', '0');
 
   const voiceControls = page.locator('section[aria-label="Luna Live voice"]');
   await voiceControls.getByRole('button', { name: 'Start', exact: true }).click();

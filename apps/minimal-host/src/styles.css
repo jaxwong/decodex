@@ -58,10 +58,3 @@ main {
   color: #244f66;
   cursor: pointer;
 }
-
-/* The package uses utility class names supplied by Host A's Tailwind build. */
-.catalog + section {
-  padding: 20px;
-  border: 1px solid #b7c6ce;
-  background: white;
-}

@@ -38,6 +38,24 @@ This file records implemented Luna milestones. The implementation spec remains t
 - Added root/package integration READMEs and updated architecture, invariants, decisions, user
   stories and the implementation spec to match the current tree.
 
+### Implemented on `feat/luna-comparison-ui`
+
+- Replaced the widget's recommendation cards and collapsed evidence list with one side-by-side
+  comparison table: products as columns (top match first and tinted), server `focused_fields`
+  first, identical specs folded into one "Same on all" row, and plain-language cell states.
+- Tapping a cell, a citation chip under a Luna reply, or a seller-view gap opens one source panel
+  with the seller's exact quoted text. It replaces the collapsed evidence list; no second drawer
+  or data path was added.
+- Field labels and units now come from the comparison's `schema_fields` through one
+  `display.js` owner, replacing two label helpers (one of which never capitalized).
+- Chat sits beside the table on wide containers, suggestions send immediately, and a banner
+  announces revisions that carry a matching `ui_patch`.
+- The widget now owns one complete stylesheet. Host B's `.catalog + section` workaround for
+  missing widget styles was removed.
+- Not done: per-row "best" tags and per-card ranking reasons. Both need the API to expose what
+  it already computes (`exclusion_reasons`, `uncertain_fields`) instead of copying ranking rules
+  into the browser.
+
 ### Implemented on `feat/seller-gap-view`
 
 - Added one `SellerGapReport` view to `@luna/widget`; neither host owns a parallel seller

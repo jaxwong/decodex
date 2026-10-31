@@ -208,20 +208,20 @@ export function LiveVoiceControls({
   }
 
   const isActive = ['connecting', 'connected', 'stopping'].includes(status);
-  return <section aria-label="Luna Live voice" className="border border-orange-100 rounded-xl p-3">
-    <div className="flex flex-wrap items-center gap-2">
-      <strong className="text-sm">Voice</strong>
-      <span role="status" className="text-xs text-gray-500">{status}</span>
+  return <section aria-label="Luna Live voice" className="luna-voice">
+    <div className="luna-voice-row">
+      <strong>Voice</strong>
+      <span role="status" className="luna-muted">{status}</span>
       {!isActive && <button type="button" onClick={start} disabled={disabled}
-        className="text-xs bg-orange-600 text-white rounded px-3 py-2 disabled:opacity-50">Start</button>}
+        className="luna-button luna-button-small">Start</button>}
       {isActive && <button type="button" onClick={toggleMute} disabled={status !== 'connected'}
-        className="text-xs border rounded px-3 py-2 disabled:opacity-50">{isMuted ? 'Unmute' : 'Mute'}</button>}
+        className="luna-button luna-button-small luna-button-secondary">{isMuted ? 'Unmute' : 'Mute'}</button>}
       {isActive && <button type="button" onClick={stop} disabled={status === 'stopping'}
-        className="text-xs border border-red-200 text-red-700 rounded px-3 py-2 disabled:opacity-50">Stop</button>}
+        className="luna-button luna-button-small luna-button-danger">Stop</button>}
     </div>
-    {error && <p role="alert" className="text-xs text-red-700 mt-2">{error}</p>}
-    {(captions.user || captions.assistant) && <div aria-label="Provisional voice captions" className="bg-gray-50 rounded p-2 mt-2 text-xs">
-      <p className="text-gray-500 mb-1">Provisional captions</p>
+    {error && <p role="alert" className="luna-voice-error">{error}</p>}
+    {(captions.user || captions.assistant) && <div aria-label="Provisional voice captions" className="luna-captions">
+      <p className="luna-muted">Provisional captions</p>
       {captions.user && <p><strong>You:</strong> {captions.user}</p>}
       {captions.assistant && <p><strong>Luna:</strong> {captions.assistant}</p>}
     </div>}
