@@ -164,6 +164,24 @@
       "source": "fixture"
     },
     {
+      "review_id": "listingA-r19",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "rating": 3,
+      "text": "S\u1ea1c nhanh nh\u01b0ng n\u00f3ng kinh kh\u1ee7ng.",
+      "created_at": null,
+      "source": "fixture"
+    },
+    {
+      "review_id": "listingA-r20",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "rating": 3,
+      "text": "Gets hot when fast charging la, but charges my laptop ok.",
+      "created_at": null,
+      "source": "fixture"
+    },
+    {
       "review_id": "listingB-r01",
       "listing_id": "listingB",
       "variant_id": "65w",
@@ -339,7 +357,7 @@
       "listing_id": "listingB",
       "variant_id": "65w",
       "rating": 2,
-      "text": "Only two phone charges per fill, not the 20000mAh claimed.",
+      "text": "Ch\u1ec9 s\u1ea1c \u0111\u1ea7y \u0111i\u1ec7n tho\u1ea1i \u0111\u01b0\u1ee3c hai l\u1ea7n, kh\u00f4ng \u0111\u01b0\u1ee3c 20000mAh nh\u01b0 qu\u1ea3ng c\u00e1o.",
       "created_at": null,
       "source": "fixture"
     },
@@ -502,6 +520,24 @@
       "variant_id": null,
       "rating": 2,
       "text": "It gets hot at my desk.",
+      "created_at": null,
+      "source": "fixture"
+    },
+    {
+      "review_id": "listingC-r19",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "rating": 5,
+      "text": "Pin nh\u1ecf g\u1ecdn, nh\u1eb9, b\u1ecf balo mang \u0111i c\u1ea3 ng\u00e0y kh\u00f4ng th\u1ea5y n\u1eb7ng.",
+      "created_at": null,
+      "source": "fixture"
+    },
+    {
+      "review_id": "listingC-r20",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "rating": 2,
+      "text": "D\u00f9ng \u0111\u01b0\u1ee3c m\u1ed9t tu\u1ea7n th\u00ec h\u1ecfng, kh\u00f4ng s\u1ea1c \u0111\u01b0\u1ee3c n\u1eefa.",
       "created_at": null,
       "source": "fixture"
     }

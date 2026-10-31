@@ -103,7 +103,7 @@ def test_storefront_listing_returns_seller_text_and_every_review() -> None:
     assert "Warranty: 1 year" in first_variant["specifications"]
     assert not any(line.startswith("Weight") for line in first_variant["specifications"])
     assert {"text": "Warranty: 24 months", "variant_id": "87w"} in page["description"]
-    assert len(page["reviews"]) == 18
+    assert len(page["reviews"]) == 20
     assert {review["rating"] for review in page["reviews"]} <= {1, 2, 3, 4, 5}
 
 

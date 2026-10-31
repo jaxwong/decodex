@@ -13,8 +13,8 @@ All data and labels are synthetic; these results do not establish production qua
 | Missing recall | 4/4 | Unavailable | Unavailable |
 | Exact normalized conflict recall | 0/4 | Unavailable | Unavailable |
 | Variant leakage | 9/12 | Unavailable | Unavailable |
-| Review precision | 51/54 | Unavailable | Unavailable |
-| Review recall | 51/53 | Unavailable | Unavailable |
+| Review precision | 53/56 | Unavailable | Unavailable |
+| Review recall | 53/59 | Unavailable | Unavailable |
 | Dispute precision | Unavailable | Unavailable | Unavailable |
 | Dispute recall | 0/1 | Unavailable | Unavailable |
 

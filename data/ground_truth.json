@@ -740,6 +740,40 @@
       ]
     },
     {
+      "review_id": "listingA-r19",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": [
+        {
+          "aspect": "charging",
+          "sentiment": "positive",
+          "excerpt": "S\u1ea1c nhanh"
+        },
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "n\u00f3ng kinh kh\u1ee7ng"
+        }
+      ]
+    },
+    {
+      "review_id": "listingA-r20",
+      "listing_id": "listingA",
+      "variant_id": "100w",
+      "mentions": [
+        {
+          "aspect": "heat",
+          "sentiment": "negative",
+          "excerpt": "Gets hot when fast charging"
+        },
+        {
+          "aspect": "charging",
+          "sentiment": "positive",
+          "excerpt": "charges my laptop ok"
+        }
+      ]
+    },
+    {
       "review_id": "listingB-r01",
       "listing_id": "listingB",
       "variant_id": "65w",
@@ -979,7 +1013,7 @@
         {
           "aspect": "charging",
           "sentiment": "negative",
-          "excerpt": "Only two phone charges per fill, not the 20000mAh claimed"
+          "excerpt": "Ch\u1ec9 s\u1ea1c \u0111\u1ea7y \u0111i\u1ec7n tho\u1ea1i \u0111\u01b0\u1ee3c hai l\u1ea7n, kh\u00f4ng \u0111\u01b0\u1ee3c 20000mAh nh\u01b0 qu\u1ea3ng c\u00e1o"
         }
       ]
     },
@@ -1200,6 +1234,30 @@
           "aspect": "heat",
           "sentiment": "negative",
           "excerpt": "gets hot"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r19",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": [
+        {
+          "aspect": "portability",
+          "sentiment": "positive",
+          "excerpt": "nh\u1ecf g\u1ecdn, nh\u1eb9"
+        }
+      ]
+    },
+    {
+      "review_id": "listingC-r20",
+      "listing_id": "listingC",
+      "variant_id": "87w",
+      "mentions": [
+        {
+          "aspect": "reliability",
+          "sentiment": "negative",
+          "excerpt": "D\u00f9ng \u0111\u01b0\u1ee3c m\u1ed9t tu\u1ea7n th\u00ec h\u1ecfng"
         }
       ]
     }

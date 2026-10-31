@@ -588,6 +588,24 @@
       "variant_id": "100w",
       "review_id": "listingA-r14"
     },
+    "listingA:100w:review:listingA-r19": {
+      "id": "listingA:100w:review:listingA-r19",
+      "item_key": "listingA:100w",
+      "source_type": "review",
+      "source_text": "S\u1ea1c nhanh nh\u01b0ng n\u00f3ng kinh kh\u1ee7ng.",
+      "source_location": "reviews/listingA-r19",
+      "variant_id": "100w",
+      "review_id": "listingA-r19"
+    },
+    "listingA:100w:review:listingA-r20": {
+      "id": "listingA:100w:review:listingA-r20",
+      "item_key": "listingA:100w",
+      "source_type": "review",
+      "source_text": "Gets hot when fast charging la, but charges my laptop ok.",
+      "source_location": "reviews/listingA-r20",
+      "variant_id": "100w",
+      "review_id": "listingA-r20"
+    },
     "listingB:65w:source:a745074b4dd1ceba20aa": {
       "id": "listingB:65w:source:a745074b4dd1ceba20aa",
       "item_key": "listingB:65w",
@@ -826,7 +844,7 @@
       "id": "listingB:65w:review:listingB-r20",
       "item_key": "listingB:65w",
       "source_type": "review",
-      "source_text": "Only two phone charges per fill, not the 20000mAh claimed.",
+      "source_text": "Ch\u1ec9 s\u1ea1c \u0111\u1ea7y \u0111i\u1ec7n tho\u1ea1i \u0111\u01b0\u1ee3c hai l\u1ea7n, kh\u00f4ng \u0111\u01b0\u1ee3c 20000mAh nh\u01b0 qu\u1ea3ng c\u00e1o.",
       "source_location": "reviews/listingB-r20",
       "variant_id": "65w",
       "review_id": "listingB-r20"
@@ -1055,28 +1073,48 @@
       "source_location": "reviews/listingC-r14",
       "variant_id": "87w",
       "review_id": "listingC-r14"
+    },
+    "listingC:87w:review:listingC-r19": {
+      "id": "listingC:87w:review:listingC-r19",
+      "item_key": "listingC:87w",
+      "source_type": "review",
+      "source_text": "Pin nh\u1ecf g\u1ecdn, nh\u1eb9, b\u1ecf balo mang \u0111i c\u1ea3 ng\u00e0y kh\u00f4ng th\u1ea5y n\u1eb7ng.",
+      "source_location": "reviews/listingC-r19",
+      "variant_id": "87w",
+      "review_id": "listingC-r19"
+    },
+    "listingC:87w:review:listingC-r20": {
+      "id": "listingC:87w:review:listingC-r20",
+      "item_key": "listingC:87w",
+      "source_type": "review",
+      "source_text": "D\u00f9ng \u0111\u01b0\u1ee3c m\u1ed9t tu\u1ea7n th\u00ec h\u1ecfng, kh\u00f4ng s\u1ea1c \u0111\u01b0\u1ee3c n\u1eefa.",
+      "source_location": "reviews/listingC-r20",
+      "variant_id": "87w",
+      "review_id": "listingC-r20"
     }
   },
   "review_summaries": [
     {
       "item_key": "listingA:100w",
       "aspect": "heat",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingA:100w:mention:listingA-r01:0",
         "listingA:100w:mention:listingA-r02:0",
         "listingA:100w:mention:listingA-r11:1",
         "listingA:100w:mention:listingA-r12:0",
-        "listingA:100w:mention:listingA-r12:1"
+        "listingA:100w:mention:listingA-r12:1",
+        "listingA:100w:mention:listingA-r19:1",
+        "listingA:100w:mention:listingA-r20:0"
       ],
       "positive_count": 2,
-      "negative_count": 3,
+      "negative_count": 5,
       "neutral_count": 0
     },
     {
       "item_key": "listingA:100w",
       "aspect": "portability",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingA:100w:mention:listingA-r03:0",
         "listingA:100w:mention:listingA-r04:0"
@@ -1088,20 +1126,22 @@
     {
       "item_key": "listingA:100w",
       "aspect": "charging",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingA:100w:mention:listingA-r05:0",
         "listingA:100w:mention:listingA-r06:0",
-        "listingA:100w:mention:listingA-r11:0"
+        "listingA:100w:mention:listingA-r11:0",
+        "listingA:100w:mention:listingA-r19:0",
+        "listingA:100w:mention:listingA-r20:1"
       ],
-      "positive_count": 2,
+      "positive_count": 4,
       "negative_count": 1,
       "neutral_count": 0
     },
     {
       "item_key": "listingA:100w",
       "aspect": "reliability",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingA:100w:mention:listingA-r07:0",
         "listingA:100w:mention:listingA-r08:0"
@@ -1113,7 +1153,7 @@
     {
       "item_key": "listingA:100w",
       "aspect": "value",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingA:100w:mention:listingA-r09:0",
         "listingA:100w:mention:listingA-r10:0"
@@ -1125,7 +1165,7 @@
     {
       "item_key": "listingA:100w",
       "aspect": "other",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingA:100w:mention:listingA-r13:0"
       ],
@@ -1213,7 +1253,7 @@
     {
       "item_key": "listingC:87w",
       "aspect": "heat",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingC:87w:mention:listingC-r01:0",
         "listingC:87w:mention:listingC-r02:0",
@@ -1228,19 +1268,20 @@
     {
       "item_key": "listingC:87w",
       "aspect": "portability",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingC:87w:mention:listingC-r03:0",
-        "listingC:87w:mention:listingC-r04:0"
+        "listingC:87w:mention:listingC-r04:0",
+        "listingC:87w:mention:listingC-r19:0"
       ],
-      "positive_count": 1,
+      "positive_count": 2,
       "negative_count": 1,
       "neutral_count": 0
     },
     {
       "item_key": "listingC:87w",
       "aspect": "charging",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingC:87w:mention:listingC-r05:0",
         "listingC:87w:mention:listingC-r06:0",
@@ -1253,19 +1294,20 @@
     {
       "item_key": "listingC:87w",
       "aspect": "reliability",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingC:87w:mention:listingC-r07:0",
-        "listingC:87w:mention:listingC-r08:0"
+        "listingC:87w:mention:listingC-r08:0",
+        "listingC:87w:mention:listingC-r20:0"
       ],
       "positive_count": 1,
-      "negative_count": 1,
+      "negative_count": 2,
       "neutral_count": 0
     },
     {
       "item_key": "listingC:87w",
       "aspect": "value",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingC:87w:mention:listingC-r09:0",
         "listingC:87w:mention:listingC-r10:0"
@@ -1277,7 +1319,7 @@
     {
       "item_key": "listingC:87w",
       "aspect": "other",
-      "analyzed_reviews": 14,
+      "analyzed_reviews": 16,
       "mention_ids": [
         "listingC:87w:mention:listingC-r13:0"
       ],
@@ -1406,6 +1448,38 @@
       "aspect": "other",
       "sentiment": "neutral",
       "excerpt": "case is blue"
+    },
+    "listingA:100w:mention:listingA-r19:0": {
+      "id": "listingA:100w:mention:listingA-r19:0",
+      "item_key": "listingA:100w",
+      "review_id": "listingA-r19",
+      "aspect": "charging",
+      "sentiment": "positive",
+      "excerpt": "S\u1ea1c nhanh"
+    },
+    "listingA:100w:mention:listingA-r19:1": {
+      "id": "listingA:100w:mention:listingA-r19:1",
+      "item_key": "listingA:100w",
+      "review_id": "listingA-r19",
+      "aspect": "heat",
+      "sentiment": "negative",
+      "excerpt": "n\u00f3ng kinh kh\u1ee7ng"
+    },
+    "listingA:100w:mention:listingA-r20:0": {
+      "id": "listingA:100w:mention:listingA-r20:0",
+      "item_key": "listingA:100w",
+      "review_id": "listingA-r20",
+      "aspect": "heat",
+      "sentiment": "negative",
+      "excerpt": "Gets hot when fast charging"
+    },
+    "listingA:100w:mention:listingA-r20:1": {
+      "id": "listingA:100w:mention:listingA-r20:1",
+      "item_key": "listingA:100w",
+      "review_id": "listingA-r20",
+      "aspect": "charging",
+      "sentiment": "positive",
+      "excerpt": "charges my laptop ok"
     },
     "listingB:65w:mention:listingB-r01:0": {
       "id": "listingB:65w:mention:listingB-r01:0",
@@ -1541,7 +1615,7 @@
       "review_id": "listingB-r20",
       "aspect": "charging",
       "sentiment": "negative",
-      "excerpt": "Only two phone charges per fill, not the 20000mAh claimed"
+      "excerpt": "Ch\u1ec9 s\u1ea1c \u0111\u1ea7y \u0111i\u1ec7n tho\u1ea1i \u0111\u01b0\u1ee3c hai l\u1ea7n, kh\u00f4ng \u0111\u01b0\u1ee3c 20000mAh nh\u01b0 qu\u1ea3ng c\u00e1o"
     },
     "listingC:87w:mention:listingC-r01:0": {
       "id": "listingC:87w:mention:listingC-r01:0",
@@ -1662,6 +1736,22 @@
       "aspect": "other",
       "sentiment": "neutral",
       "excerpt": "case is blue"
+    },
+    "listingC:87w:mention:listingC-r19:0": {
+      "id": "listingC:87w:mention:listingC-r19:0",
+      "item_key": "listingC:87w",
+      "review_id": "listingC-r19",
+      "aspect": "portability",
+      "sentiment": "positive",
+      "excerpt": "nh\u1ecf g\u1ecdn, nh\u1eb9"
+    },
+    "listingC:87w:mention:listingC-r20:0": {
+      "id": "listingC:87w:mention:listingC-r20:0",
+      "item_key": "listingC:87w",
+      "review_id": "listingC-r20",
+      "aspect": "reliability",
+      "sentiment": "negative",
+      "excerpt": "D\u00f9ng \u0111\u01b0\u1ee3c m\u1ed9t tu\u1ea7n th\u00ec h\u1ecfng"
     }
   }
 }

@@ -3,13 +3,13 @@
     "synthetic": true,
     "sku_count": 12,
     "field_count": 8,
-    "source_review_count": 56,
+    "source_review_count": 60,
     "label_provenance": "Fabricated fixture labels authored in a separate file; no human adjudication claimed.",
     "labels_supplied_to_extractor": false,
     "source_sha256": {
       "listings.json": "40ff25a4349e70a8b2c32980994cd2e60642e2b7b1761104b429db72e370620a",
-      "reviews.json": "641906c6d717b595ba8f5ff67b550178ce9374489ddb954087560700b0f009ff",
-      "ground_truth.json": "96ec91b4e7fb832740440e8dd7be3cb9bad662d14b195bbf23a23c73297dd09c"
+      "reviews.json": "ffeeec6c1adfbc6f29742433523dcd6a7ad84a9e0b5d782a1536e5791d61f468",
+      "ground_truth.json": "09f2917712bd6bb8ef90e606bba400bbe29d6f7301e53b431cb10e5277cd17a3"
     },
     "limitations": [
       "Synthetic fixtures do not demonstrate production shopping performance.",
@@ -57,14 +57,14 @@
         "denominator": 12
       },
       "review_mention_precision": {
-        "value": 0.9444444444444444,
-        "numerator": 51,
-        "denominator": 54
+        "value": 0.9464285714285714,
+        "numerator": 53,
+        "denominator": 56
       },
       "review_mention_recall": {
-        "value": 0.9622641509433962,
-        "numerator": 51,
-        "denominator": 53
+        "value": 0.8983050847457628,
+        "numerator": 53,
+        "denominator": 59
       },
       "dispute_precision": {
         "value": null,
@@ -77,7 +77,7 @@
         "denominator": 1
       }
     },
-    "observed_corpus_latency_ms": 2.585291978903115,
+    "observed_corpus_latency_ms": 3.7159170024096966,
     "tokens": {
       "available": false,
       "reason": "No model called for deterministic baseline"

@@ -154,6 +154,25 @@ def test_get_review_aspect_returns_counts_and_literal_mentions() -> None:
     assert all(mention.excerpt for mention in result.mentions)
 
 
+def test_heat_aspect_quotes_vietnamese_and_mixed_reviews_in_their_own_words() -> None:
+    session_store, token, comparison_id = create_comparison_state()
+    session_state = require_active_demo_session(session_store, token=token, checked_at=CHECKED_AT)
+
+    result = get_review_aspect(
+        session_state, comparison_id, aspect="heat", item_keys=["listingA:100w"]
+    )
+
+    [summary] = result.summaries
+    assert (summary.negative_count, summary.analyzed_reviews) == (5, 16)
+    negative_excerpts = {
+        (mention.review_id, mention.excerpt)
+        for mention in result.mentions
+        if mention.sentiment == "negative"
+    }
+    assert ("listingA-r19", "nóng kinh khủng") in negative_excerpts
+    assert ("listingA-r20", "Gets hot when fast charging") in negative_excerpts
+
+
 def test_tool_call_rejects_unknown_item() -> None:
     session_store, token, comparison_id = create_comparison_state()
     session_state = require_active_demo_session(session_store, token=token, checked_at=CHECKED_AT)
