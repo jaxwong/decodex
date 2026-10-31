@@ -915,8 +915,10 @@ create a second evidence path, so the widget now projects the existing immutable
 Each specification includes field identity/label, status, display value and every canonical
 evidence record's ID, source label, exact source text and location. Missing/unresolved facts have
 an empty source list and render the explicit abstention “No verified seller source. Luna does
-not guess.” Price remains identified as the trusted selected catalog variant rather than an AI
-claim. Both hosts render the projection independently; neither recomputes facts or citations.
+not guess.” After the landed-price work merged, the same snapshot replaced its old single list
+price with the server-owned list/voucher/shipping/delivered breakdown. The three listed
+components carry exact evidence records and the delivered total is labelled as arithmetic over
+them. Both hosts render the projection independently; neither recomputes facts or citations.
 
 ```text
 make e2e (before fix)
@@ -930,6 +932,17 @@ make e2e
 7 passed, 1 intentional Host B transport skip
 exit 0
 
+make e2e (after landed-price merge, before preview integration)
+2 failed, 5 passed, 1 skipped
+exit 2
+
+focused ESLint (after preview integration)
+exit 0
+
+make e2e (after preview integration)
+7 passed, 1 intentional Host B transport skip
+exit 0
+
 make frontend-build
 Host A: 67 modules transformed
 Host B: 47 modules transformed
@@ -939,10 +952,11 @@ UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
 62 files already formatted
 All checks passed!
 Success: no issues found in 60 source files
-194 passed in 1.31s
+197 passed in 1.32s
 exit 0
 ```
 
-These commands made zero provider calls. Playwright covers eight supported Atlas specs, one
-exact source excerpt/location, Comet's missing weight abstention and both exact warranty-conflict
-excerpts in both hosts.
+These commands made zero provider calls. Playwright covers the delivered total, all three exact
+price-component excerpts/locations, eight supported Atlas specs, an exact specification
+excerpt/location, Comet's missing-weight abstention and both exact warranty-conflict excerpts in
+both hosts.
