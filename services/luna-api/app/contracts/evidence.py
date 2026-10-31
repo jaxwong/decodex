@@ -61,6 +61,40 @@ class CatalogResponse(_EvidenceModel):
     listings: list[CatalogListing]
 
 
+class StorefrontVariant(CatalogVariant):
+    """One exact variant with its specification lines exactly as the seller wrote them."""
+
+    specifications: list[str]
+
+
+class StorefrontDescription(_EvidenceModel):
+    """One seller description paragraph; variant_id is None when it covers every variant."""
+
+    text: str
+    variant_id: str | None
+
+
+class StorefrontReview(_EvidenceModel):
+    """One buyer review as posted; variant_id is None when the buyer's variant is unknown."""
+
+    review_id: str
+    variant_id: str | None
+    rating: int = Field(ge=1, le=5)
+    text: str
+
+
+class StorefrontListing(_EvidenceModel):
+    """A listing page as shoppers see it: seller claims as written, not verified evidence."""
+
+    listing_id: str
+    title: str
+    synthetic: bool
+    image_url: str | None
+    description: list[StorefrontDescription]
+    variants: list[StorefrontVariant]
+    reviews: list[StorefrontReview]
+
+
 class ReviewCoverage(_EvidenceModel):
     """Exact-variant review inclusion and rejection counts for one analyzed item."""
 

@@ -14,6 +14,7 @@ from eval.agent import AgentBenchmarkReport
 from eval.metrics import REVIEW_METRIC_PREFIXES, score
 
 from app.contracts.evidence import ComparisonSelection
+from app.evidence.index import build_evidence_index
 from app.providers import MockCatalogProvider
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -40,6 +41,41 @@ def currentized_recorded_inputs() -> tuple[
         for listing in listings
         for variant in listing["variants"]
     }
+    # Later storefront renames changed title, variant-label and description text. Source IDs
+    # hash their text, so re-point every renamed source to its current ID and text.
+    current_sources = {
+        (source.item_key, source.source_location): source
+        for listing in listings
+        for variant in listing["variants"]
+        for source in build_evidence_index(listing, variant).values()
+    }
+
+    def recorded_comparisons(report: dict[str, Any]) -> list[dict[str, Any]]:
+        return [
+            report["live_run"]["smoke"]["comparison"],
+            report["grounded_structured_outputs"]["prediction"],
+            report["ungrounded_free_form"]["prediction"],
+        ]
+
+    renamed = {}
+    for comparison in recorded_comparisons(recorded):
+        for recorded_id, source in comparison["evidence"].items():
+            current = current_sources.get((source["item_key"], source["source_location"]))
+            if current is not None and current.source_text != source["source_text"]:
+                renamed[recorded_id] = current
+    recorded_text = json.dumps(recorded)
+    for recorded_id, current in renamed.items():
+        recorded_text = recorded_text.replace(recorded_id, current.id)
+    recorded = json.loads(recorded_text)
+    titles = {listing["listing_id"]: listing["title"] for listing in listings}
+    renamed_by_id = {current.id: current for current in renamed.values()}
+    for comparison in recorded_comparisons(recorded):
+        for item in comparison["items"]:
+            item["title"] = titles[item["listing_id"]]
+            item["variant_label"] = variants[item["item_key"]]["label"]
+        for source_id, source in comparison["evidence"].items():
+            if source_id in renamed_by_id:
+                source["source_text"] = renamed_by_id[source_id].source_text
     recorded["conditions"]["source_sha256"] = {
         name: hashlib.sha256((ROOT / "data" / name).read_bytes()).hexdigest()
         for name in scorecard.SOURCE_NAMES

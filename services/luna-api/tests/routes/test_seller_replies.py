@@ -51,9 +51,9 @@ def test_seller_routes_require_active_session() -> None:
 @pytest.mark.parametrize(
     ("field_key", "question"),
     [
-        ("weight_g", "What is the Weight (g) of the 87W synthetic SKU?"),
-        ("max_output_w", "What is the Max output (W) of the 87W synthetic SKU?"),
-        ("pd_supported", "What is the USB PD of the 87W synthetic SKU?"),
+        ("weight_g", "What is the Weight (g) of the 87W model?"),
+        ("max_output_w", "What is the Max output (W) of the 87W model?"),
+        ("pd_supported", "What is the USB PD of the 87W model?"),
     ],
 )
 def test_question_is_a_fixed_template_for_the_exact_variant(field_key: str, question: str) -> None:

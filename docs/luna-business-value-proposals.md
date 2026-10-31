@@ -464,7 +464,7 @@ A-3. `tests/evidence/test_pipeline.py`: after `add_seller_reply(..., "weight_g",
 
 B-1. New `services/luna-api/app/routes/seller_replies.py`, both routes behind `require_demo_session_state`:
 
-- `POST /api/listings/{listing_id}/variants/{variant_id}/questions`, body `{"field_key": FieldKey}`, returns `{"question": str}` built from `SCHEMA_FIELDS` label and unit and the variant label, for example "What is the Weight (g) of the 87W synthetic SKU?". Deterministic template, no model call. An unknown field key fails request validation at the boundary because the body type is the `FieldKey` literal.
+- `POST /api/listings/{listing_id}/variants/{variant_id}/questions`, body `{"field_key": FieldKey}`, returns `{"question": str}` built from `SCHEMA_FIELDS` label and unit and the variant label, for example "What is the Weight (g) of the 87W model?". Deterministic template, no model call. An unknown field key fails request validation at the boundary because the body type is the `FieldKey` literal.
 - `POST /api/listings/{listing_id}/variants/{variant_id}/seller-replies`, body `{"field_key": FieldKey, "text": str}`, returns 201. Before storing, require `extract_source_values(field_key, text)` from `app/evidence/normalize.py` to be non-empty; otherwise return the existing 422 `INVALID_REQUEST`. A reply the pipeline could not parse is therefore never stored.
 - Register the router in `create_app`.
 

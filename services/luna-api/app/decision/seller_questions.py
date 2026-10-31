@@ -29,7 +29,7 @@ class UnreadableSellerReply(InvalidRequest):
 def seller_question(field_key: FieldKey, variant_label: str) -> str:
     unit = UNITS[field_key]
     unit_text = f" ({unit})" if unit else ""
-    return f"What is the {SELLER_FIELD_LABELS[field_key]}{unit_text} of the {variant_label}?"
+    return f"What is the {SELLER_FIELD_LABELS[field_key]}{unit_text} of the {variant_label} model?"
 
 
 def seller_reply_text(field_key: FieldKey, answer: str) -> str:

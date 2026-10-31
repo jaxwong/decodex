@@ -40,13 +40,13 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   if (testInfo.project.name === 'host-b-chromium') {
     await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toBeVisible();
     const firstVariant = page.getByRole('checkbox', {
-      name: /100W synthetic SKU.*List SGD 60\.00.*Shipping \+SGD 15\.00/,
+      name: /100W.*List SGD 60\.00.*Shipping \+SGD 15\.00/,
     });
     await expect(firstVariant).toBeVisible();
-    await page.getByRole('button', { name: 'Select 100W synthetic SKU · SGD 60.00' }).click();
+    await page.getByRole('button', { name: 'Select 100W · SGD 60.00' }).click();
     await expect(firstVariant).toBeChecked();
-    await page.getByRole('checkbox', { name: /65W synthetic SKU.*Shipping \+SGD 17\.00/ }).check();
-    await page.getByRole('checkbox', { name: /87W synthetic SKU.*Shipping \+SGD 3\.00/ }).check();
+    await page.getByRole('checkbox', { name: /65W.*Shipping \+SGD 17\.00/ }).check();
+    await page.getByRole('checkbox', { name: /87W.*Shipping \+SGD 3\.00/ }).check();
     await page.getByRole('button', { name: 'Compare 3 products' }).click();
   }
 
@@ -55,7 +55,7 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await expect(page.getByText('Sticker prices can mislead.')).toBeVisible();
   await expect(page.getByText('Assumes listed shipping and shop voucher.')).toBeVisible();
   await page.getByRole('button', {
-    name: /Delivered price for SYNTHETIC Breeze .*: SGD 81\.65/,
+    name: /Delivered price for Breeze Slim .*: SGD 81\.65/,
   }).click();
   await expect(sourcePanel.getByText('List price')).toBeVisible();
   await expect(sourcePanel.getByText('Shop voucher', { exact: true })).toBeVisible();
@@ -66,8 +66,8 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await sourcePanel.getByRole('button', { name: 'Close', exact: true }).click();
   await page.getByRole('button', { name: 'View product' }).first().click();
   const productView = page.getByRole('region', { name: 'Host product view' });
-  await expect(productView.getByRole('heading', { name: 'SYNTHETIC Atlas power bank family' })).toBeVisible();
-  await expect(productView.getByText('100W synthetic SKU', { exact: true })).toBeVisible();
+  await expect(productView.getByRole('heading', { name: 'Atlas Portable Power Bank' })).toBeVisible();
+  await expect(productView.getByText('100W', { exact: true })).toBeVisible();
   await expect(productView.getByText('Delivered SGD 75.00', { exact: true })).toBeVisible();
   const priceBreakdown = productView.locator('dl[aria-label="Price breakdown"]');
   await expect(priceBreakdown).toContainText('List priceSGD 60.00');
@@ -111,7 +111,7 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await expect(widget).toHaveAttribute('data-revision', '0');
 
   await page.getByRole('button', { name: 'View product' }).last().click();
-  await expect(productView.getByRole('heading', { name: 'SYNTHETIC Comet power bank family' })).toBeVisible();
+  await expect(productView.getByRole('heading', { name: 'Comet Travel Power Bank' })).toBeVisible();
   const cometSpecifications = productView.getByRole('list', { name: 'Product specifications' });
   const cometSpecificationRows = cometSpecifications.locator(':scope > li');
   const missingWeight = cometSpecificationRows.filter({ hasText: 'Weight' });
@@ -125,7 +125,7 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await expect(warrantySources.getByText('Warranty: 24 months', { exact: true })).toBeVisible();
   await productView.getByRole('button', { name: 'Close product view' }).click();
   await expect(productView).toHaveCount(0);
-  await page.getByRole('button', { name: /^Warranty for SYNTHETIC Comet .*: Listing disagrees, 12 vs 24 months$/ }).click();
+  await page.getByRole('button', { name: /^Warranty for Comet Travel .*: Listing disagrees, 12 vs 24 months$/ }).click();
   await expect(sourcePanel.getByText('Listing disagrees with itself')).toBeVisible();
   await expect(sourcePanel.getByText('Warranty: 1 year')).toBeVisible();
   await expect(sourcePanel.getByText('Warranty: 24 months')).toBeVisible();
@@ -135,7 +135,7 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   const disputeMarkers = page.locator('.luna-dispute-marker');
   await expect(disputeMarkers).toHaveCount(1);
   const disputedCapacity = page.getByRole('button', {
-    name: /^Capacity for SYNTHETIC Breeze .*: 20,000 mAh, disputed in 2 of 16 reviews analysed$/,
+    name: /^Capacity for Breeze Slim .*: 20,000 mAh, disputed in 2 of 16 reviews analysed$/,
   });
   await expect(disputedCapacity).toContainText('Disputed in 2 of 16 reviews analysed');
   await disputedCapacity.click();
@@ -148,7 +148,7 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await expect(sourcePanel.getByText(/count among reviews analysed, not a defect rate/)).toBeVisible();
   await sourcePanel.getByRole('button', { name: 'Ask Luna about this' }).click();
   await expect(page.getByLabel('Message Luna'))
-    .toHaveValue('Is the capacity claim for SYNTHETIC Breeze power bank family · 65W synthetic SKU reliable?');
+    .toHaveValue('Is the capacity claim for Breeze Slim Power Bank · 65W reliable?');
   await page.getByRole('button', { name: 'Send' }).click();
   await expect(page.getByText(/Luna cannot verify the true figure/)).toBeVisible();
   await expect(page.getByRole('button', { name: /^Source: .*review: “Charges my phone twice/ })).toBeVisible();
@@ -164,7 +164,7 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await expect(widget).toHaveAttribute('data-revision', '1');
   await expect(page.getByText(/Budget applied to delivered prices/)).toBeVisible();
   await expect(needs.getByText('Up to SGD 80.00')).toBeVisible();
-  await expect(page.getByRole('columnheader').filter({ hasText: 'SYNTHETIC Breeze' }))
+  await expect(page.getByRole('columnheader').filter({ hasText: 'Breeze Slim' }))
     .toContainText('Doesn’t fit your needs');
   await expect(page.getByRole('status').filter({ hasText: 'Updated to match your needs.' })).toBeVisible();
   // The disputed-capacity answer above also has sources; the budget answer is the latest.
@@ -184,7 +184,7 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await expect(widget).toHaveAttribute('data-revision', '3');
   await expect(needs.getByText('Up to SGD 70.00')).toBeVisible();
   // Seller insights belong to Seller Centre; an excluded product shows buyers nothing seller-side.
-  await expect(page.getByRole('columnheader').filter({ hasText: 'SYNTHETIC Comet' })
+  await expect(page.getByRole('columnheader').filter({ hasText: 'Comet Travel' })
     .getByText('Doesn’t fit your needs')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Seller view' })).toHaveCount(0);
 
@@ -200,24 +200,24 @@ test('Host A cart lists catalog variants and compares the ticked ones in Luna', 
   page.on('console', message => {
     if (message.type() === 'error') consoleErrors.push(message.text());
   });
-  const atlas = page.getByRole('checkbox', { name: /100W synthetic SKU.*Shipping \+SGD 15\.00/ });
-  const breeze = page.getByRole('checkbox', { name: /65W synthetic SKU.*Shipping \+SGD 17\.00/ });
-  const comet = page.getByRole('checkbox', { name: /87W synthetic SKU.*Shipping \+SGD 3\.00/ });
+  const atlas = page.getByRole('checkbox', { name: /100W.*Shipping \+SGD 15\.00/ });
+  const breeze = page.getByRole('checkbox', { name: /65W.*Shipping \+SGD 17\.00/ });
+  const comet = page.getByRole('checkbox', { name: /87W.*Shipping \+SGD 3\.00/ });
 
   await page.goto('/#/Cart');
   const cart = page.getByRole('region', { name: 'Cart products' });
   for (const [name, price] of [
-    ['SYNTHETIC Atlas power bank family 100W synthetic SKU', 'SGD 60.00'],
-    ['SYNTHETIC Breeze power bank family 65W synthetic SKU', 'SGD 69.65'],
-    ['SYNTHETIC Comet power bank family 87W synthetic SKU', 'SGD 79.87'],
+    ['Atlas Portable Power Bank 100W', 'SGD 60.00'],
+    ['Breeze Slim Power Bank 65W', 'SGD 69.65'],
+    ['Comet Travel Power Bank 87W', 'SGD 79.87'],
   ]) {
     await expect(cart.getByRole('checkbox', { name: `Select ${name}` })).toBeChecked();
     await expect(cart.locator('article').filter({ hasText: price })).toHaveCount(1);
   }
   await expect(page.getByText('Total (3 items):')).toContainText('SGD 209.52');
 
-  const tickBreeze = cart.getByRole('checkbox', { name: 'Select SYNTHETIC Breeze power bank family 65W synthetic SKU' });
-  const tickComet = cart.getByRole('checkbox', { name: 'Select SYNTHETIC Comet power bank family 87W synthetic SKU' });
+  const tickBreeze = cart.getByRole('checkbox', { name: 'Select Breeze Slim Power Bank 65W' });
+  const tickComet = cart.getByRole('checkbox', { name: 'Select Comet Travel Power Bank 87W' });
 
   // Two or more ticked products are a full comparison, so Luna opens straight on the table.
   await page.getByRole('button', { name: 'Compare now' }).click();
@@ -301,7 +301,7 @@ test('Seller Centre counts an excluded listing from another buyer session', asyn
   await expect(page).toHaveURL(/#\/SellerCentre$/);
   const seller = page.getByRole('region', { name: 'Luna seller insights' });
   await expect(seller.getByText('Demo seller view. There is no seller login')).toBeVisible();
-  await seller.getByRole('button', { name: 'SYNTHETIC Comet power bank family' }).click();
+  await seller.getByRole('button', { name: 'Comet Travel Power Bank' }).click();
   const report = seller.getByRole('region', { name: 'Seller report' });
   await expect(report.getByText(`In ${comparisons} buyer comparison${comparisons === 1 ? '' : 's'}`)).toBeVisible();
   await expect(report.getByText(`Over budget: ${overBudget}`)).toBeVisible();
@@ -309,7 +309,7 @@ test('Seller Centre counts an excluded listing from another buyer session', asyn
   const warrantyText = report.getByRole('list', { name: 'Your listing text for Warranty' });
   await expect(warrantyText.getByText('Warranty: 1 year')).toBeVisible();
   await expect(warrantyText.getByText('Warranty: 24 months')).toBeVisible();
-  await expect(report.getByText('Weight: SYNTHETIC Atlas')).toBeVisible();
+  await expect(report.getByText('Weight: Atlas Portable')).toBeVisible();
   expect(consoleErrors).toEqual([]);
 });
 
@@ -322,19 +322,19 @@ test('a missing value becomes a seller-confirmed source after one simulated sell
     if (message.type() === 'error') consoleErrors.push(message.text());
   });
   const widget = page.getByRole('region', { name: 'Luna shopping assistant' });
-  const cometWeight = /^Weight for SYNTHETIC Comet power bank family · 100W synthetic SKU: /;
+  const cometWeight = /^Weight for Comet Travel Power Bank · 100W: /;
 
   await page.goto('/#/Compare');
-  await page.getByRole('checkbox', { name: /100W synthetic SKU.*Shipping \+SGD 15\.00/ }).check();
-  await page.getByRole('checkbox', { name: /100W synthetic SKU.*Shipping \+SGD 3\.00/ }).check();
+  await page.getByRole('checkbox', { name: /100W.*Shipping \+SGD 15\.00/ }).check();
+  await page.getByRole('checkbox', { name: /100W.*Shipping \+SGD 3\.00/ }).check();
   await page.getByRole('button', { name: 'Compare 2 products' }).click();
   await expect(page.getByRole('button', { name: cometWeight })).toContainText('Not stated');
 
   await page.getByRole('button', {
-    name: 'Ask the seller about Weight for SYNTHETIC Comet power bank family · 100W synthetic SKU',
+    name: 'Ask the seller about Weight for Comet Travel Power Bank · 100W',
   }).click();
   const confirm = page.getByRole('dialog', { name: 'Ask the seller' });
-  await expect(confirm.getByText('“What is the Weight (g) of the 100W synthetic SKU?”')).toBeVisible();
+  await expect(confirm.getByText('“What is the Weight (g) of the 100W model?”')).toBeVisible();
   await confirm.getByRole('button', { name: 'Send to seller' }).click();
 
   const inbox = page.getByRole('region', { name: 'Simulated seller inbox' });
@@ -354,7 +354,7 @@ test('a missing value becomes a seller-confirmed source after one simulated sell
   await expect(inbox).toHaveCount(0);
   await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(widget).toHaveAttribute('data-revision', '0');
-  const answeredWeight = page.getByRole('button', { name: /^Weight for SYNTHETIC Comet .*100W.*: 198 g, confirmed by seller$/ });
+  const answeredWeight = page.getByRole('button', { name: /^Weight for Comet Travel .*100W.*: 198 g, confirmed by seller$/ });
   await expect(answeredWeight).toContainText('Confirmed by seller');
   await expect(page.getByRole('button', { name: /^Ask the seller about Weight/ })).toHaveCount(0);
   await expect(page.getByText(/The seller answered “Weight: 198 g”/)).toBeVisible();
@@ -366,7 +366,7 @@ test('a missing value becomes a seller-confirmed source after one simulated sell
   await expect(sourcePanel.getByText('Weight: 198 g')).toBeVisible();
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: /^Source: .*Weight: 198 g/ }).click();
-  await expect(sourcePanel.getByRole('heading', { name: /^Weight · SYNTHETIC Comet/ })).toBeVisible();
+  await expect(sourcePanel.getByRole('heading', { name: /^Weight · Comet Travel/ })).toBeVisible();
   expect(consoleErrors).toEqual([]);
 });
 
@@ -390,9 +390,9 @@ test('a session the API has forgotten never blocks the shopper', async ({ page }
 
   // Open Luna without cart picks, so the shopper's own Compare press meets the forgotten session.
   await page.goto('/#/Compare');
-  await page.getByRole('checkbox', { name: /100W synthetic SKU.*Shipping \+SGD 15\.00/ }).check();
-  await page.getByRole('checkbox', { name: /65W synthetic SKU.*Shipping \+SGD 17\.00/ }).check();
-  await page.getByRole('checkbox', { name: /87W synthetic SKU.*Shipping \+SGD 3\.00/ }).check();
+  await page.getByRole('checkbox', { name: /100W.*Shipping \+SGD 15\.00/ }).check();
+  await page.getByRole('checkbox', { name: /65W.*Shipping \+SGD 17\.00/ }).check();
+  await page.getByRole('checkbox', { name: /87W.*Shipping \+SGD 3\.00/ }).check();
   // React development mode may run the widget's start-up twice, so count from here.
   const sessionsAtStart = sessionsCreated;
   await page.getByRole('button', { name: 'Compare 3 products' }).click();
@@ -407,9 +407,9 @@ test('a session the API has forgotten never blocks the shopper', async ({ page }
   await expect(page.getByRole('alert')).toHaveText(
     'Luna restarted, so this comparison was cleared. Your products are still picked. Press Compare to build it again.',
   );
-  await expect(page.getByRole('checkbox', { name: /100W synthetic SKU.*Shipping \+SGD 15\.00/ })).toBeChecked();
-  await expect(page.getByRole('checkbox', { name: /65W synthetic SKU.*Shipping \+SGD 17\.00/ })).toBeChecked();
-  await expect(page.getByRole('checkbox', { name: /87W synthetic SKU.*Shipping \+SGD 3\.00/ })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: /100W.*Shipping \+SGD 15\.00/ })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: /65W.*Shipping \+SGD 17\.00/ })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: /87W.*Shipping \+SGD 3\.00/ })).toBeChecked();
   await expect(page.getByRole('button', { name: 'Compare 3 products' })).toBeEnabled();
   expect(sessionsCreated).toBe(sessionsAtStart + 2);
 });
