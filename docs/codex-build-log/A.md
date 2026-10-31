@@ -351,3 +351,38 @@ access, human user study, production evaluation or deployed integration is claim
   typed, 194 tests passed in 1.29s, exit 0**. Final `make eval` again exited 0 with
   `live=false`, `recorded_evidence=true`, `agent=true`. The original paid artifacts
   remain byte-for-byte unchanged. No additional model request was made.
+
+## Midpoint submission evidence package — 31 October 2026
+
+- Human request: prioritize the midpoint project writeup and demo over additional feature work.
+  Started `feat/a-midpoint-submission-package` from clean main `18eb720` and kept B's runtime,
+  C's frontend and all paid artifacts unchanged.
+- Added `docs/mid-project/` with a judge-facing writeup, text-only demo runbook and measured-claims
+  sheet. The package projects existing implementation evidence; it does not define new product
+  behavior or fill unavailable metrics.
+- Preserved the partial 10/12 agent result, historical status of the recorded evidence run,
+  failed audible G4 result, synthetic-data label, demo-session seller scope and missing
+  deployment/cost/friction measurements.
+- Elevated the inherited Host A licensing issue from spec section 0 to an explicit submission
+  blocker: written author permission plus organizer approval or replacement of the inherited
+  shell/assets is required before public distribution.
+- Current-main verification used for the package made zero provider calls:
+
+  ```text
+  UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+  62 files already formatted; lint passed; 60 sources strictly typed
+  194 passed in 1.62s
+
+  make frontend-build
+  Host A: 71 modules; Host B: 46 modules; exit 0
+
+  make e2e
+  5 passed; 1 intentional duplicate-host skip; exit 0
+
+  UV_CACHE_DIR=/tmp/decodex-uv-cache make eval
+  live=false; recorded_evidence=true; agent=true; exit 0
+  ```
+
+- `make eval` recomputed one deterministic baseline timing. That command-generated one-line diff
+  was restored before editing, so no measured artifact was rewritten by the submission package.
+  No model request, deployment or external message was made.
