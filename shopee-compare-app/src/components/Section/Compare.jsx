@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import LunaWidget from '../../luna/LunaWidget';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCompare } from '../../compare/CompareContext';
 import ProductThumb from '../../compare/ProductThumb';
@@ -18,6 +19,7 @@ function Compare() {
     const [prio, setPrio] = useState([]);
     const [drawer, setDrawer] = useState(null); // {type, i, k}
     const [added, setAdded] = useState(null);
+    const [lunaOpen, setLunaOpen] = useState(false);
 
     useEffect(() => {
         if (!run && !running) { compareItems().length >= 2 ? compareNow() : navigate('/Cart'); }
@@ -103,6 +105,7 @@ function Compare() {
                         <h1 className="text-lg sm:text-xl text-shopee font-medium">Shopee Compare</h1>
                         <span className="text-gray-400 text-sm">({R.length} power banks)</span>
                         <div className="ml-auto flex items-center gap-3">
+                            <button type="button" onClick={() => setLunaOpen(v => !v)} className="text-xs bg-orange-600 text-white px-3 py-2 rounded">✦ {lunaOpen ? 'Hide Luna' : 'Ask Luna'}</button>
                             <span className="text-[11px] bg-orange-50 text-shopee px-2 py-0.5 rounded-sm">{settings.key ? `AI: live (${settings.model})` : 'AI: cached samples'}</span>
                             <button onClick={() => setDrawer({ type: 'settings' })} className="text-xs text-shopee hover:text-shopee2">⚙ Live AI settings</button>
                             <Link to="/Cart" className="text-xs text-shopee hover:text-shopee2">&lt; Back to Cart</Link>
@@ -125,6 +128,7 @@ function Compare() {
                     </div>
                 </div>
 
+                {lunaOpen && <LunaWidget products={R.map(r => ({ id: `${r.lid}:${r.vid}`, name: r.L.short }))} onClose={() => setLunaOpen(false)} />}
                 {/* Run log */}
                 <div className="bg-white rounded-sm shadow-sm mb-3 px-3 sm:px-4 py-2.5 flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500">
                     <span>Run #{run.n}</span>
