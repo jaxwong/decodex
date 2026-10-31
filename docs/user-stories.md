@@ -86,8 +86,9 @@ compares the wrong capacity, colour or power configuration.
 rejected rather than silently replaced by a default or sibling variant.
 
 **Status:** **Browser ready.** The sole comparison view selects exact variants from the API
-catalog in both hosts. Host A's clone cart is presentation-only; a real marketplace adapter
-must provide authorized canonical identities before cart-to-Luna preselection is added.
+catalog in both hosts. Host A's demo cart holds exact catalog variants, and **Compare now**
+opens the ticked ones pre-selected in Luna. A real marketplace cart still needs authorized
+canonical identities.
 
 ### 2. Turn incompatible listings into one table
 

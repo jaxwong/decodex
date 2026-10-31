@@ -4,6 +4,17 @@ This file records implemented Luna milestones. The implementation spec remains t
 
 ## 31 October 2026
 
+### Implemented on `feat/cart-luna-link`
+
+- Linked Host A's cart to the backend catalog. Cart rows are now exact catalog variants (Atlas
+  100W, Breeze 65W, Comet 87W) whose titles and SGD prices come from `/api/catalog`; the clone
+  Anker/UGREEN/Baseus rows, VND prices, strike-through prices and "Saved" line are deleted.
+- **Compare now** passes the ticked cart rows to `#/Compare`, and Luna opens with them already
+  picked. Opening `#/Compare` directly still starts with nothing picked.
+- Replaced the widget host contract's `getCurrentSelection()` with `getCurrentSelections()` (an
+  array of at most four) in the widget, both hosts, the package README and the spec.
+- Added a Host A Playwright test for the cart rows, total, partial and empty preselection.
+
 ### Implemented on `feat/review-disputed-claims`
 
 - Added `Fact.disputing_mention_ids` (default empty) for Proposal 2. A disputed claim stays
@@ -251,5 +262,5 @@ This file records implemented Luna milestones. The implementation spec remains t
 - Keep voice out of the main demo. The one authorized G4 run proved speech/captions/mutation but
   failed audible output; its generation-versus-playback root cause is unverified.
 - Add the single Docker image, Render deployment and public smoke proof.
-- Do not preselect Luna from clone cart IDs. A future real storefront integration must supply an
-  authorized canonical listing/variant mapping rather than an inferred or hardcoded one.
+- A future real storefront cart must supply an authorized canonical listing/variant mapping
+  rather than an inferred or hardcoded one. The demo cart already holds catalog variants.

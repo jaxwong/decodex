@@ -106,7 +106,7 @@ stateDiagram-v2
 | I-52 | Provisional transcript fragments never mutate comparison state. The browser refreshes server-owned state only after confirmed Live lifecycle/backend completion events. | Live event handler and deterministic WebRTC browser test |
 | I-53 | Live is not marked connected before `session.started`, and Stop does not release the transport as successfully finalized before `session.closed`. | `LiveVoiceControls.jsx`, graceful-close Playwright test |
 | I-54 | The seller browser view renders the report response without recounting or reinterpreting decision reasons. It uses the current widget bearer token and the existing evidence panel; neither host owns a second seller implementation. | `SellerGapReport.jsx`, `LunaWidget.jsx`, dual-host Playwright journey |
-| I-55 | Host A has one comparison owner: `@luna/widget`. Its cart state is storefront-only, `src/compare` is absent, and the browser contains no model key field, direct OpenAI request or independent ranking path. | Thin `Compare.jsx` route and Playwright source-boundary assertion |
+| I-55 | Host A has one comparison owner: `@luna/widget`. Its cart holds only canonical catalog IDs and quantities, renders titles and prices from `/api/catalog` and hands ticked IDs to the widget through `getCurrentSelections()`; `src/compare` is absent, and the browser contains no model key field, direct OpenAI request or independent ranking path. | Thin `Compare.jsx` route and Playwright source-boundary assertion |
 | I-56 | A host product view lists the server-owned price breakdown and every `schema_fields` specification from the existing comparison. Every listed price component and supported/conflicting specification retains exact evidence source text and location; delivered total is labelled as arithmetic over its cited components; missing/unresolved values have no invented citation. Opening or closing the view makes no external call and does not change the comparison revision. | `productSnapshot`, two host previews and dual-host Playwright assertions |
 
 ## Ownership invariants
@@ -132,9 +132,9 @@ These are current repository facts, not accepted implementation shortcuts:
    output. G4 failed and voice is excluded from the main demo; generation versus browser
    playback was not isolated and must not be guessed.
 2. The single-origin Docker/deployment shape and public smoke proof are not implemented.
-3. Host A's clone cart IDs have no verified mapping to the trusted backend catalog. The cart is
-   therefore presentation-only and exact variants are chosen inside Luna. A future authorized
-   marketplace integration must supply canonical identities rather than infer or hardcode them.
+3. Host A's demo cart contents are three hardcoded canonical catalog variants; no real
+   marketplace cart is connected. A future authorized marketplace integration must supply
+   canonical identities rather than infer or hardcode a mapping from its own product IDs.
 
 The canonical local text flow is end-to-end tested. These remaining boundaries must still be
 stated in the pitch and deployment report.
