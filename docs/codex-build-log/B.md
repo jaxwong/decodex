@@ -254,3 +254,85 @@ recommendation=listingB:65w
 ```
 
 The local server required the host namespace because the sandbox blocks Uvicorn's reload watcher. The first host-side client command reached comparison creation but the shell expanded `$80` under `set -u` before sending `/ask`; building the request body with `jq` corrected the invocation. No application retry or fallback was added.
+
+## B4: GPT-Live delegation and server-side tool relay — 31 October 2026
+
+**Outcome:** Added an authenticated comparison-bound GPT-Live session endpoint and the single server-side sideband executor. Live Responses delegation reuses B3's exact four strict schemas and `execute_luna_tool`; preference changes commit to the same comparison state before the tool result resumes spoken reasoning.
+
+**Ownership and limits:**
+
+- B owns Live session creation, concise server-composed UI context, sideband attachment, tool execution, and revision-safe mutation. C owns `RTCPeerConnection`, microphone/audio, captions, mute/stop, and polling the existing comparison route.
+- One start operation performs at most one Live create call and one sideband attach with `max_retries=0`. A failed call has no alternate model, transport, or executor.
+- One delegation permits at most three sequential tool calls because `parallel_tool_calls=false`. Raw argument deltas never execute; completed call IDs execute once.
+- `apply_preferences` may run once per delegation. On success the relay commits state, refreshes the delegated tool schema/UI context to the new revision, sends the matching function output, and sends one `response.create` continuation.
+- Expected invalid tool arguments and stale revisions return structured, non-retryable tool results. Provider/protocol failures terminate the relay and are logged once; no partial result is treated as durable before state commit.
+
+**Files changed:**
+
+- `services/luna-api/app/openai/live_agent.py`
+- `services/luna-api/app/openai/text_agent.py`
+- `services/luna-api/app/contracts/session.py`
+- `services/luna-api/app/decision/sessions.py`
+- `services/luna-api/app/routes/comparisons.py`
+- `services/luna-api/app/errors.py`
+- `services/luna-api/tests/openai/test_live_agent.py`
+- `services/luna-api/tests/routes/test_live_sessions.py`
+- `services/luna-api/README.md`
+- `CHANGELOG.md`
+
+**OpenAI contract verification:** Official current Live delegation, server-side controls, and Live prompting documentation plus installed SDK `3.42.0` confirmed `gpt-live-1`, Responses delegation, `<|SpawnThinking|>`, nested `response.event`, completed function-call items, `response.item.create`, `response.create`, and sideband attachment. Production explicitly overrides the SDK sideband's default retries with `max_retries=0`.
+
+**Automated verification:**
+
+```text
+uv --cache-dir /tmp/decodex-uv-cache run --frozen ruff format --check <B4 paths>
+8 files already formatted
+exit 0
+
+uv --cache-dir /tmp/decodex-uv-cache run --frozen ruff check <B4 paths>
+All checks passed!
+exit 0
+
+uv --cache-dir /tmp/decodex-uv-cache run --frozen mypy <B4 paths>
+Success: no issues found in 8 source files
+exit 0
+
+uv --cache-dir /tmp/decodex-uv-cache run --frozen pytest -q
+........................................................................ [ 52%]
+................................................................         [100%]
+136 passed in 0.63s
+exit 0
+```
+
+The aggregate root gate still stops at an inherited evaluation import issue after formatting and lint pass:
+
+```text
+UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+54 files already formatted
+All checks passed!
+tests/evidence/test_evaluation.py:7: error: Cannot find implementation or library stub for module named "eval.metrics"
+tests/evidence/test_evaluation.py:8: error: Cannot find implementation or library stub for module named "eval.run"
+Found 2 errors in 1 file (checked 52 source files)
+exit 2
+```
+
+**Paid local verification:**
+
+```text
+GET /api/health
+HTTP 200, health_ok=true
+
+POST /api/demo-sessions
+HTTP 201, token_present=true
+
+GET /api/catalog
+HTTP 200, catalog_listings=3
+
+POST /api/comparisons
+HTTP 201, evidence_items=3, revision=0
+
+POST /api/comparisons/{comparison_id}/live/session
+HTTP 201, session_id_present=true, transport_type=webrtc, answer_sdp_present=true
+```
+
+This verifies the real provider accepted the delegated session configuration and the API attached its server-side sideband before returning. It does **not** prove microphone audio, a real provider-emitted delegation, spoken output, or the joint visible mutation. Those require C5's browser path, so B4 does not claim the full F5 voice DoD yet.

@@ -1,6 +1,6 @@
-# Luna API — Developer B phases B1–B3
+# Luna API — Developer B phases B1–B4
 
-The service owns the API shell, authenticated demo sessions, canonical comparison state, deterministic ranking, four decision tools, bounded Responses chat, and OpenAI capability checks. A owns immutable marketplace evidence and C owns its frontend projection.
+The service owns the API shell, authenticated demo sessions, canonical comparison state, deterministic ranking, four decision tools, bounded Responses chat, the GPT-Live server sideband, and OpenAI capability checks. A owns immutable marketplace evidence and C owns its frontend projection and WebRTC media.
 
 ## Ownership boundary
 
@@ -63,6 +63,24 @@ curl --fail -X POST \
 
 One text turn makes at most four Responses calls: the initial request plus continuations for at most three tool rounds. SDK retries and parallel tool calls are disabled. Luna can mutate state only through `apply_preferences`; a timeout after that mutation returns the saved revision and tells the client not to repeat the request.
 
+## GPT-Live server boundary
+
+The C-owned browser creates an audio-plus-data WebRTC offer and posts its SDP to:
+
+```text
+POST /api/comparisons/{comparison_id}/live/session
+Authorization: Bearer <demo token>
+Content-Type: application/json
+
+{"sdp":"<browser RTCPeerConnection offer SDP>"}
+```
+
+The response contains only the unchanged provider `session.id`, transport type, and answer SDP. B creates at most one provider session and attaches exactly one server-authenticated sideband, both without retries. The sideband is the only tool executor; the browser owns microphone capture, audio playback, captions, mute/stop controls, and comparison polling.
+
+Each Responses delegation executes only completed function-call items, deduplicates call IDs, permits at most three sequential tool rounds, and sends one continuation after each result. A successful `apply_preferences` is committed before its function output and refreshes the Live tool schema to the new comparison revision. No raw marketplace page text is placed in Live UI context.
+
+The API can verify session creation and sideband attachment without C, but genuine microphone input, spoken output, and a provider-driven tool mutation require C's browser WebRTC path. Do not claim the full voice feature until that joint check passes.
+
 ## Decision tools
 
 B2 exposes exactly four Python tool functions for B3 text and B4 Live delegation:
@@ -80,7 +98,7 @@ Ranking applies budget and minimum-power constraints before lexicographic object
 make api-test
 ```
 
-The B-owned B2–B3 behavior subset is independently runnable without network or API credits:
+The B-owned B2–B4 behavior subset is independently runnable without network or API credits:
 
 ```bash
 cd services/luna-api
