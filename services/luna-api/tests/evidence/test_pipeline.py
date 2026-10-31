@@ -1,6 +1,9 @@
 import asyncio
 import json
+import re
+import shutil
 from collections.abc import Coroutine
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock
@@ -31,6 +34,7 @@ from app.evidence.model import (
 from app.evidence.normalize import normalize_value
 from app.evidence.validate import validate_facts
 from app.providers import CatalogError, CatalogProvider, MockCatalogProvider, provider_factory
+from app.providers.mock import DATA_ROOT
 from tests.evidence.fakes import FakeModelClient
 
 SELECTIONS = [
@@ -664,3 +668,61 @@ def test_duplicate_candidate_fields_are_unresolved() -> None:
         SpecCandidates(facts=[candidate, candidate]), {}, "listingA:100w", "100w"
     )
     assert all(f.status == "unresolved" for f in result)
+
+
+ADDED_REVIEW: dict[str, Any] = {
+    "review_id": "listingA-r99",
+    "listing_id": "listingA",
+    "variant_id": None,
+    "rating": 4,
+    "text": "Sạc nhanh, charges fast.",
+}
+
+
+def fixture_with_review(tmp_path: Path, review: dict[str, Any]) -> Path:
+    """Copy the demo catalog and append one hand-written review, as a fixture editor would."""
+    shutil.copy(DATA_ROOT / "listings.json", tmp_path / "listings.json")
+    data = json.loads((DATA_ROOT / "reviews.json").read_text())
+    data["reviews"].append(review)
+    (tmp_path / "reviews.json").write_text(json.dumps(data, ensure_ascii=False))
+    return tmp_path
+
+
+@pytest.mark.parametrize("variant_id", [None, "100w"])
+def test_added_review_is_served_with_or_without_a_variant(
+    tmp_path: Path, variant_id: str | None
+) -> None:
+    root = fixture_with_review(tmp_path, {**ADDED_REVIEW, "variant_id": variant_id})
+    provider = MockCatalogProvider(root)
+    page = run(provider.get_reviews("listingA", None))
+    added = next(r for r in page["reviews"] if r["review_id"] == "listingA-r99")
+    assert added["variant_id"] == variant_id and len(page["reviews"]) == 21
+    result = comparison(provider=provider)
+    item = next(i for i in result.items if i.item_key == "listingA:100w")
+    assert isinstance(item, AnalyzedComparisonItem)
+    assert item.review_coverage.exact_reviews_analyzed == (17 if variant_id == "100w" else 16)
+
+
+@pytest.mark.parametrize(
+    "damage,problem",
+    [
+        ({"variant_id": ...}, "variant_id"),
+        ({"text": ...}, "text"),
+        ({"review_id": ...}, "review_id"),
+        ({"listing_id": ...}, "listing_id"),
+        ({"rating": ...}, "rating"),
+        ({"rating": "5"}, "rating"),
+        ({"rating": 4.5}, "rating"),
+        ({"rating": 6}, "rating"),
+        ({"listing_id": "listingZ"}, "unknown listing 'listingZ'"),
+        ({"variant_id": "100W"}, "unknown variant '100W'"),
+        ({"review_id": "listingA-r01"}, "duplicate review_id 'listingA-r01'"),
+    ],
+)
+def test_malformed_fixture_review_fails_at_load_not_in_a_request(
+    tmp_path: Path, damage: dict[str, Any], problem: str
+) -> None:
+    """A hand-edited reviews.json row fails start-up by name, never a request with HTTP 500."""
+    review = {k: v for k, v in {**ADDED_REVIEW, **damage}.items() if v is not ...}
+    with pytest.raises(ValueError, match=rf"reviews\.json.*{re.escape(problem)}"):
+        MockCatalogProvider(fixture_with_review(tmp_path, review))
