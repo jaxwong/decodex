@@ -37,7 +37,9 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   const needs = page.getByRole('region', { name: 'Your needs' });
   const sourcePanel = page.getByRole('dialog');
   await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toBeVisible();
-  const firstVariant = page.getByRole('checkbox', { name: '100W synthetic SKU · SGD 60.00' });
+  const firstVariant = page.getByRole('checkbox', {
+    name: /100W synthetic SKU.*List SGD 60\.00.*Shipping \+SGD 15\.00/,
+  });
   if (testInfo.project.name === 'host-b-chromium') {
     await expect(firstVariant).toBeVisible();
     await page.getByRole('button', { name: 'Select 100W synthetic SKU · SGD 60.00' }).click();
@@ -45,12 +47,24 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   } else {
     await firstVariant.check();
   }
-  await page.getByRole('checkbox', { name: '65W synthetic SKU · SGD 69.65' }).check();
-  await page.getByRole('checkbox', { name: '87W synthetic SKU · SGD 79.87' }).check();
+  await page.getByRole('checkbox', { name: /65W synthetic SKU.*Shipping \+SGD 17\.00/ }).check();
+  await page.getByRole('checkbox', { name: /87W synthetic SKU.*Shipping \+SGD 3\.00/ }).check();
   await page.getByRole('button', { name: 'Compare 3 products' }).click();
 
   await expect(widget).toHaveAttribute('data-revision', '0');
   await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
+  await expect(page.getByText('Sticker prices can mislead.')).toBeVisible();
+  await expect(page.getByText('Assumes listed shipping and shop voucher.')).toBeVisible();
+  await page.getByRole('button', {
+    name: /Delivered price for SYNTHETIC Breeze .*: SGD 81\.65/,
+  }).click();
+  await expect(sourcePanel.getByText('List price')).toBeVisible();
+  await expect(sourcePanel.getByText('Shop voucher', { exact: true })).toBeVisible();
+  await expect(sourcePanel.getByText('Shipping', { exact: true })).toBeVisible();
+  await expect(sourcePanel.getByText('Delivered total', { exact: true })).toBeVisible();
+  await expect(sourcePanel.getByText('SGD 69.65')).toBeVisible();
+  await expect(sourcePanel.getByText('SGD 81.65')).toHaveCount(2);
+  await sourcePanel.getByRole('button', { name: 'Close', exact: true }).click();
   await page.getByRole('button', { name: 'View product' }).first().click();
   const productView = page.getByRole('region', { name: 'Host product view' });
   await expect(productView.getByRole('heading', { name: 'SYNTHETIC Atlas power bank family' })).toBeVisible();
@@ -72,25 +86,28 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await page.getByRole('button', { name: 'Send' }).click();
 
   await expect(widget).toHaveAttribute('data-revision', '1');
-  await expect(page.getByText('Preferences applied by the deterministic test model.')).toBeVisible();
+  await expect(page.getByText(/Budget applied to delivered prices/)).toBeVisible();
   await expect(needs.getByText('Up to SGD 80.00')).toBeVisible();
+  await expect(page.getByRole('columnheader').filter({ hasText: 'SYNTHETIC Breeze' }))
+    .toContainText('Doesn’t fit your needs');
   await expect(page.getByRole('status').filter({ hasText: 'Updated to match your needs.' })).toBeVisible();
   await page.getByRole('button', { name: /^Source: / }).first().click();
-  await expect(sourcePanel.getByText('Customer review')).toBeVisible();
-  await expect(sourcePanel.getByText(/review mention about/)).toBeVisible();
+  await expect(sourcePanel.getByText('Variant details')).toBeVisible();
+  await expect(sourcePanel.getByText('Shipping: SGD 17.00')).toBeVisible();
   await sourcePanel.getByRole('button', { name: 'Close', exact: true }).click();
   await expect(sourcePanel).toHaveCount(0);
 
   await page.getByLabel('Message Luna').fill('Actually price first.');
   await page.getByRole('button', { name: 'Send' }).click();
   await expect(widget).toHaveAttribute('data-revision', '2');
-  await expect(needs.getByText('Priority 1: Price')).toBeVisible();
+  await expect(needs.getByText('Priority 1: Delivered price')).toBeVisible();
 
   await page.getByLabel('Message Luna').fill('Set my budget to S$70 and keep price first.');
   await page.getByRole('button', { name: 'Send' }).click();
   await expect(widget).toHaveAttribute('data-revision', '3');
   await expect(needs.getByText('Up to SGD 70.00')).toBeVisible();
-  await page.getByRole('button', { name: 'Seller view' }).click();
+  await page.getByRole('columnheader').filter({ hasText: 'SYNTHETIC Comet' })
+    .getByRole('button', { name: 'Seller view' }).click();
   const sellerView = page.getByRole('region', { name: 'Demo seller view' });
   await expect(sellerView.getByRole('heading', { name: 'Demo seller view' })).toBeVisible();
   await expect(sellerView.getByText('Counts cover comparisons in this demo session only.')).toBeVisible();
@@ -208,9 +225,9 @@ test('Live WebRTC UI waits for readiness, captions, mute, and graceful close', a
 
   await openLuna(page, testInfo.project.name);
   await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toBeVisible();
-  await page.getByRole('checkbox', { name: '100W synthetic SKU · SGD 60.00' }).check();
-  await page.getByRole('checkbox', { name: '65W synthetic SKU · SGD 69.65' }).check();
-  await page.getByRole('checkbox', { name: '87W synthetic SKU · SGD 79.87' }).check();
+  await page.getByRole('checkbox', { name: /100W synthetic SKU.*Shipping \+SGD 15\.00/ }).check();
+  await page.getByRole('checkbox', { name: /65W synthetic SKU.*Shipping \+SGD 17\.00/ }).check();
+  await page.getByRole('checkbox', { name: /87W synthetic SKU.*Shipping \+SGD 3\.00/ }).check();
   await page.getByRole('button', { name: 'Compare 3 products' }).click();
   await expect(page.getByRole('region', { name: 'Luna shopping assistant' })).toHaveAttribute('data-revision', '0');
 

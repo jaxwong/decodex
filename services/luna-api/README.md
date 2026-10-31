@@ -109,7 +109,12 @@ B2 exposes exactly four Python tool functions for B3 text and B4 Live delegation
 - `apply_preferences` is the only mutation; it enforces optimistic revision checks.
 - `inspect_evidence` returns exact sources only for stored evidence IDs.
 
-Ranking applies budget and minimum-power constraints before lexicographic objective priorities. Missing facts remain uncertain, review reliability is not converted into a score, and absent criteria produce no invented winner. Ranking also retains server-only exclusion reasons and uncertain field names for the seller report. Those fields are structurally excluded from existing comparison API and agent serialization.
+Ranking applies budget and minimum-power constraints before lexicographic objective priorities.
+Budget checks and the `price_minor` priority both use the contract-validated delivered total:
+list price minus the listed shop voucher plus listed shipping. Missing facts remain uncertain,
+review reliability is not converted into a score, and absent criteria produce no invented winner.
+Ranking also retains server-only exclusion reasons and uncertain field names for the seller report.
+Those fields are structurally excluded from existing comparison API and agent serialization.
 
 ## Verify
 

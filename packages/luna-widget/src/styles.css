@@ -242,6 +242,17 @@
   cursor: pointer;
 }
 
+.luna-widget .luna-picker-option-copy,
+.luna-widget .luna-picker-option-copy small {
+  display: block;
+}
+
+.luna-widget .luna-picker-option-copy small {
+  margin-top: 2px;
+  color: var(--luna-muted);
+  font-size: 12px;
+}
+
 .luna-widget .luna-picker-option input,
 .luna-widget .luna-toggle input {
   width: 18px;
@@ -372,6 +383,21 @@
   background: var(--luna-panel);
 }
 
+.luna-widget .luna-landed-callout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 8px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--luna-accent-line);
+  background: var(--luna-accent-soft);
+}
+
+.luna-widget .luna-landed-callout small {
+  width: 100%;
+  color: var(--luna-muted);
+}
+
 .luna-widget .luna-toggle {
   display: inline-flex;
   align-items: center;
@@ -472,6 +498,17 @@
   font-size: 17px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+.luna-widget .luna-product-list-price {
+  display: block;
+  margin-top: 6px;
+  color: var(--luna-muted);
+  font-size: 12px;
+}
+
+.luna-widget .luna-product-list-price + .luna-product-price {
+  margin-top: 0;
 }
 
 .luna-widget .luna-product-actions {
@@ -596,6 +633,47 @@
   margin-top: 4px;
   padding-left: 18px;
   list-style: disc;
+}
+
+.luna-widget .luna-price-breakdown {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--luna-line);
+  border-radius: 10px;
+  background: var(--luna-panel);
+}
+
+.luna-widget .luna-price-breakdown dl {
+  margin: 0;
+}
+
+.luna-widget .luna-price-breakdown dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 3px 0;
+}
+
+.luna-widget .luna-price-breakdown dt,
+.luna-widget .luna-price-breakdown dd {
+  margin: 0;
+}
+
+.luna-widget .luna-price-breakdown dd {
+  font-variant-numeric: tabular-nums;
+}
+
+.luna-widget .luna-price-breakdown .luna-price-total {
+  margin-top: 5px;
+  padding-top: 8px;
+  border-top: 1px solid var(--luna-line);
+  font-weight: 700;
+}
+
+.luna-widget .luna-price-breakdown p {
+  margin-top: 10px;
+  color: var(--luna-muted);
+  font-size: 12px;
 }
 
 /* ---------- chat ---------- */

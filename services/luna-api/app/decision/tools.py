@@ -61,6 +61,20 @@ def get_comparison(
             title=item.title,
             variant_label=item.variant_label,
             price_minor=item.price_minor,
+            shop_voucher_minor=item.shop_voucher_minor,
+            shipping_minor=item.shipping_minor,
+            landed_price_minor=item.landed_price_minor,
+            price_evidence_ids=[
+                evidence.id
+                for evidence in comparison.evidence.evidence.values()
+                if evidence.item_key == item.item_key
+                and evidence.source_location
+                in {
+                    f"variants/{item.variant_id}/price_minor",
+                    f"variants/{item.variant_id}/shop_voucher_minor",
+                    f"variants/{item.variant_id}/shipping_minor",
+                }
+            ],
             currency=item.currency,
             facts=comparison.evidence.facts_by_item[item.item_key],
         )

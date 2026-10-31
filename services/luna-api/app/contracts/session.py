@@ -127,6 +127,10 @@ class ComparisonSnapshotItem(_SessionModel):
     title: str
     variant_label: str
     price_minor: int = Field(ge=0)
+    shop_voucher_minor: int = Field(ge=0)
+    shipping_minor: int = Field(ge=0)
+    landed_price_minor: int = Field(ge=0)
+    price_evidence_ids: list[str]
     currency: str
     facts: list[Fact]
 

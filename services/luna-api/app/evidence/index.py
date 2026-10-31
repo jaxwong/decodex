@@ -33,6 +33,17 @@ def build_evidence_index(listing: dict[str, Any], variant: dict[str, Any]) -> di
         f"variants/{variant['variant_id']}/label",
         variant["variant_id"],
     )
+    for field, label in (
+        ("price_minor", "List price"),
+        ("shop_voucher_minor", "Shop voucher"),
+        ("shipping_minor", "Shipping"),
+    ):
+        add(
+            "variant",
+            f"{label}: {variant['currency']} {variant[field] / 100:.2f}",
+            f"variants/{variant['variant_id']}/{field}",
+            variant["variant_id"],
+        )
     for number, attribute in enumerate(variant["attributes"]):
         add(
             "attribute",
