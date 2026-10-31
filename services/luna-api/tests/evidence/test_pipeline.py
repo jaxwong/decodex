@@ -17,6 +17,7 @@ from app.contracts.evidence import (
     Fact,
 )
 from app.evidence import EvidenceBuilder, build_comparison_evidence, evidence_dependencies
+from app.evidence import build as build_module
 from app.evidence.index import build_evidence_index
 from app.evidence.model import (
     CandidateFact,
@@ -57,6 +58,13 @@ def comparison(
 
 def fact(result: ComparisonEvidence, key: str, field: str) -> Fact:
     return next(f for f in result.facts_by_item[key] if f.field_key == field)
+
+
+def statuses(result: ComparisonEvidence) -> list[tuple[str, str]]:
+    """(analysis_status, review_status) per item, in selection order."""
+    items = [i for i in result.items if isinstance(i, AnalyzedComparisonItem)]
+    assert len(items) == len(result.items)
+    return [(i.analysis_status, i.review_status) for i in items]
 
 
 def test_variant_leakage_100w_not_130w() -> None:
@@ -324,11 +332,66 @@ def test_spec_and_review_extraction_overlap_per_item() -> None:
 
     model = HandshakeClient()
     result = comparison(model, [SELECTIONS[0], SELECTIONS[1]])
-    assert [(i.analysis_status, i.review_status) for i in result.items] == [
-        ("completed", "completed")
-    ] * 2
+    assert statuses(result) == [("completed", "completed")] * 2
     assert fact(result, "listingA:100w", "weight_g").value == 420
     assert len(model.spec_requests) == len(model.review_requests) == 2
+
+
+def test_repeated_build_reuses_completed_analyses_without_model_calls() -> None:
+    model = FakeModelClient()
+    builder = EvidenceBuilder(MockCatalogProvider(), model)
+    first = run(builder.build(SELECTIONS))
+    assert len(model.spec_requests) == len(model.review_requests) == 3
+    second = run(builder.build(SELECTIONS))
+    assert len(model.spec_requests) == len(model.review_requests) == 3
+    assert second.model_dump() == first.model_dump()
+
+
+def test_seller_reply_re_extracts_only_the_answered_product() -> None:
+    provider, model = MockCatalogProvider(), FakeModelClient()
+    builder = EvidenceBuilder(provider, model)
+    run(builder.build(SELECTIONS))
+    run(provider.add_seller_reply("listingC", "87w", "weight_g", "Weight: 198 g"))
+    after = run(builder.build(SELECTIONS))
+    assert [r["item_key"] for r in model.spec_requests[3:]] == ["listingC:87w"]
+    assert [r["item_key"] for r in model.review_requests[3:]] == ["listingC:87w"]
+    assert fact(after, "listingC:87w", "weight_g").value == 198
+
+
+@pytest.mark.parametrize("failure", ["specs", "reviews"])
+def test_unresolved_analysis_is_not_cached(failure: str) -> None:
+    model = FakeModelClient()
+    builder = EvidenceBuilder(MockCatalogProvider(), model)
+    if failure == "specs":
+        model.fail_items.add("listingB:65w")
+    else:
+        model.review_failure = True
+    first = run(builder.build(SELECTIONS))
+    model.fail_items.clear()
+    model.review_failure = False
+    second = run(builder.build(SELECTIONS))
+    retried = [r["item_key"] for r in model.spec_requests[3:]]
+    if failure == "specs":
+        assert [analysis for analysis, _ in statuses(first)] == [
+            "completed",
+            "unresolved",
+            "completed",
+        ]
+        assert retried == ["listingB:65w"]
+    else:
+        assert all(review == "unresolved" for _, review in statuses(first))
+        assert retried == ["listingA:100w", "listingB:65w", "listingC:87w"]
+    assert statuses(second) == [("completed", "completed")] * 3
+
+
+def test_analysis_cache_is_bounded_and_evicts_the_oldest(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(build_module, "ANALYSIS_CACHE_LIMIT", 2)
+    model = FakeModelClient()
+    builder = EvidenceBuilder(MockCatalogProvider(), model)
+    run(builder.build(SELECTIONS))
+    run(builder.build(SELECTIONS))
+    # listingA was analysed first and evicted, so only it is extracted again.
+    assert [r["item_key"] for r in model.spec_requests[3:]] == ["listingA:100w"]
 
 
 def test_four_items_at_most_four_spec_requests() -> None:

@@ -34,6 +34,10 @@ from .validate import unresolved_facts, validate_facts
 
 logger = logging.getLogger(__name__)
 
+# Completed analyses kept per builder; the oldest is evicted first. Twelve demo SKUs fit
+# several times over, and one entry is one product's facts, sources and mentions.
+ANALYSIS_CACHE_LIMIT = 64
+
 
 @dataclass(frozen=True)
 class ReviewAnalysis:
@@ -62,6 +66,11 @@ class EvidenceBuilder:
         self.provider = provider
         self.model_client = model_client
         self.timeout_seconds = timeout_seconds
+        # Completed per-product analyses keyed by (listing_id, variant_id, snapshot_version).
+        # Process memory like demo sessions: lost on restart, never shared across workers.
+        # The snapshot version hashes listing text, reviews and seller replies, so a changed
+        # product misses while the other selections keep their analyses.
+        self._analyses: dict[tuple[str, str, str], dict[str, Any]] = {}
 
     async def build(self, selections: Sequence[ComparisonSelection]) -> ComparisonEvidence:
         if not 2 <= len(selections) <= 4:
@@ -80,7 +89,7 @@ class EvidenceBuilder:
                 raise CatalogError("unknown_variant")
             version = await self.provider.get_snapshot_version(selection.listing_id)
             resolved.append((listing, variant, version))
-        analyses = await asyncio.gather(*(self._analyze(*source) for source in resolved))
+        analyses = await asyncio.gather(*(self._analysis(*source) for source in resolved))
         return ComparisonEvidence(
             items=[a["item"] for a in analyses],
             schema_fields=SCHEMA_FIELDS,
@@ -89,6 +98,23 @@ class EvidenceBuilder:
             review_summaries=[summary for a in analyses for summary in a["summaries"]],
             review_mentions={key: value for a in analyses for key, value in a["mentions"].items()},
         )
+
+    async def _analysis(
+        self, listing: dict[str, Any], variant: dict[str, Any], version: str
+    ) -> dict[str, Any]:
+        """Reuse a completed analysis of this exact snapshot; unresolved ones always retry."""
+        cache_key = (listing["listing_id"], variant["variant_id"], version)
+        cached = self._analyses.get(cache_key)
+        if cached is not None:
+            logger.info("Evidence analysis reused for %s:%s snapshot=%s", *cache_key)
+            return cached
+        analysis = await self._analyze(listing, variant, version)
+        item = analysis["item"]
+        if item.analysis_status == "completed" and item.review_status == "completed":
+            self._analyses[cache_key] = analysis
+            while len(self._analyses) > ANALYSIS_CACHE_LIMIT:
+                del self._analyses[next(iter(self._analyses))]
+        return analysis
 
     async def _analyze(
         self, listing: dict[str, Any], variant: dict[str, Any], version: str
