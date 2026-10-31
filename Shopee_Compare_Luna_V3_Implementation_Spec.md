@@ -37,7 +37,7 @@ This document began as the developer handoff and remains the implementation sour
 - **Host A canonical replacement is implemented:** `#/Compare` mounts `@luna/widget` directly;
   the old `src/compare` provider, browser ranking, sample data, panels, API-key UI and direct
   OpenAI request are deleted. The storefront cart holds exact trusted catalog variants and
-  **Compare now** opens its ticked rows pre-selected in Luna; no clone cart ID is mapped.
+  **Compare now** opens Luna straight on its ticked rows' comparison; no clone cart ID is mapped.
 - **Still incomplete:** the single-image runtime, deployment and public smoke proof remain.
   Voice is cut from the main demo because the real G4 check did not pass audible output.
 
@@ -473,7 +473,7 @@ export type HostProduct = Selection & {
 };
 export interface LunaHostAdapter {
   hostId: string;                 // 'shopee-compare-app' / 'minimal-host'
-  getCurrentSelections(): Selection[];  // at most 4; pre-ticked when the widget opens
+  getCurrentSelections(): Selection[];  // at most 4; 2–4 are compared when the widget opens
   onSelectionChange(cb: (s: Selection | null) => void): () => void;
   navigateToListing(product: HostProduct): void;
   requestAddToCart?(selection: Selection): Promise<{ ok: boolean }>;

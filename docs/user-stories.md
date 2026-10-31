@@ -87,8 +87,8 @@ rejected rather than silently replaced by a default or sibling variant.
 
 **Status:** **Browser ready.** The sole comparison view selects exact variants from the API
 catalog in both hosts. Host A's demo cart holds exact catalog variants, and **Compare now**
-opens the ticked ones pre-selected in Luna. A real marketplace cart still needs authorized
-canonical identities.
+with 2–4 ticked opens Luna straight on their comparison. A real marketplace cart still needs
+authorized canonical identities.
 
 ### 2. Turn incompatible listings into one table
 

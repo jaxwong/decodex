@@ -33,7 +33,8 @@ The repository contains three different levels of completion:
 
 Host A, Host B and the API now share one canonical comparison path. Host A's demo cart holds
 exact trusted catalog variants: it renders their titles and prices from `/api/catalog`, and
-**Compare now** hands the ticked listing/variant IDs to Luna, which pre-ticks them. The cart
+**Compare now** hands the ticked listing/variant IDs to Luna, which compares 2–4 of them
+immediately and otherwise shows its picker with them picked. The cart
 never sends product text as evidence. Its three rows are demo contents; a real marketplace cart
 still needs an authorized catalog contract before its identities can be used.
 

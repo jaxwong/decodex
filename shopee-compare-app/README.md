@@ -1,8 +1,8 @@
 # Shopee Compare — Luna Host A
 
 This Vite app is the Shopee-style Host A for the shared `@luna/widget` workspace package.
-The supported flow is: open `#/Cart` → tick 2–4 products → **Compare now** →
-compare → set a constraint that excludes a listing → top-bar **Seller Centre** → choose the
+The supported flow is: open `#/Cart` → tick 2–4 products → **Compare now** (Luna opens on
+their comparison) → set a constraint that excludes a listing → top-bar **Seller Centre** → choose the
 listing to see why buyers dropped it. Luna uses only relative
 `/api` calls; model keys, evidence, ranking and seller counts remain on `services/luna-api`.
 
@@ -10,7 +10,7 @@ Host A has one comparison owner. `src/components/Section/Compare.jsx` is a thin 
 mounts `LunaWidget`; the former `src/compare` provider, browser ranking, sample data, panels and
 direct OpenAI call have been deleted. Cart rows are exact backend catalog variants: the cart
 renders their titles and prices from `/api/catalog` and hands the ticked listing/variant IDs to
-Luna, which pre-ticks them. Cart text is never submitted as evidence.
+Luna, which compares 2–4 of them immediately. Cart text is never submitted as evidence.
 
 ## Run it
 
@@ -22,9 +22,9 @@ make frontend-build
 npm run dev --workspace shopee-compare  # http://localhost:5173/#/Cart
 ```
 
-Open `#/Cart`, tick 2–4 products and press **Compare now**. Luna opens with those variants
-already picked; adjust the picks if you like, then press the compare button for the selected
-count. **View product** opens Host A's exact canonical product preview
+Open `#/Cart`, tick 2–4 products and press **Compare now**. Luna opens straight on their
+comparison table. With fewer than two ticked, Luna shows its picker with the ticked product
+picked so you can add more. **View product** opens Host A's exact canonical product preview
 without unmounting the comparison. It lists all normalized specifications and the exact seller
 source text/location for each supported or conflicting value; missing values explicitly have no
 verified source. The view makes no new API/model call, and the demo does not invent a Shopee URL.

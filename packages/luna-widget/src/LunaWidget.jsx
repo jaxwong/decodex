@@ -14,6 +14,13 @@ const greeting = {
 };
 const suggestions = ['Lowest delivered price', 'Lightest first', 'What do reviews say?'];
 
+// Comparison request items, in catalog order, for the picked `listing:variant` keys.
+function comparisonItems(listings, keys) {
+  return listings.flatMap(listing => listing.variants
+    .filter(variant => keys.includes(`${listing.listing_id}:${variant.variant_id}`))
+    .map(variant => ({ listing_id: listing.listing_id, variant_id: variant.variant_id })));
+}
+
 export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
   const hostAdapter = useMemo(() => assertHostAdapter(adapter), [adapter]);
   const [session, setSession] = useState(null);
@@ -29,9 +36,7 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
   const conversationId = useRef(`luna_${crypto.randomUUID().replaceAll('-', '')}`);
   const generation = useRef(0);
   const inputRef = useRef(null);
-  const selectedItems = useMemo(() => catalog.flatMap(listing =>
-    listing.variants.filter(variant => selection.includes(`${listing.listing_id}:${variant.variant_id}`))
-      .map(variant => ({ listing_id: listing.listing_id, variant_id: variant.variant_id }))), [catalog, selection]);
+  const selectedItems = useMemo(() => comparisonItems(catalog, selection), [catalog, selection]);
 
   function showError(failure) {
     // Keep the API's diagnostic detail for developers; shoppers get plain text.
@@ -61,9 +66,20 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
         const availableKeys = new Set(listings.flatMap(listing => listing.variants
           .map(variant => `${listing.listing_id}:${variant.variant_id}`)));
         const unavailableKeys = hostKeys.filter(key => !availableKeys.has(key));
-        setSelection(hostKeys.filter(key => availableKeys.has(key)));
+        const pickedKeys = hostKeys.filter(key => availableKeys.has(key));
+        setSelection(pickedKeys);
         if (unavailableKeys.length > 0) {
           setError(`Host selection ${unavailableKeys.join(', ')} is unavailable in the Luna catalog.`);
+        } else if (pickedKeys.length >= 2) {
+          // The host already chose a full comparison (Host A's cart), so skip the picker. The
+          // session was issued moments ago in this call, so there is no stale token to renew.
+          // If this fails, the picker stays open with the same picks for a manual Compare.
+          const created = await lunaClient.createComparison(
+            apiBaseUrl, issued.token, comparisonItems(listings, pickedKeys), controller.signal,
+          );
+          if (epoch !== generation.current) return;
+          setComparison(created);
+          setMessages([greeting]);
         }
       } catch (err) {
         if (!controller.signal.aborted) showError(err);
