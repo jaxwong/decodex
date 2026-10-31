@@ -865,3 +865,42 @@ exit 0
 These commands made zero provider calls. The clone cart has no verified marketplace-to-catalog
 identity mapping, so it is explicitly presentation-only instead of inventing IDs. Single-image
 deployment and public smoke proof remain separate work; G4 remains failed for audible output.
+
+## B14: coordinated View product repair — 31 October 2026
+
+This is C-owned frontend scope. The defect was reproduced in both browser hosts before changing
+production code: **View product** called a required adapter with only `listing_id`; Host A then
+rewrote the already-mounted Compare query, which no component read, and showed nothing.
+
+The replacement passes one exact canonical product snapshot through `navigateToListing`.
+Host A and Host B own separate product-preview presentations and close behavior. The widget
+remains mounted, so the test proves revision 0 survives opening and closing the preview. No
+marketplace URL, product record or checkout action is invented.
+
+```text
+make e2e (before fix)
+2 failed, 5 passed, 1 skipped
+exit 2
+
+focused ESLint
+exit 0
+
+make frontend-build
+Host A: 67 modules transformed
+Host B: 47 modules transformed
+exit 0
+
+UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+62 files already formatted
+All checks passed!
+Success: no issues found in 60 source files
+194 passed in 1.36s
+exit 0
+
+make e2e
+7 passed, 1 intentional Host B transport skip
+exit 0
+```
+
+These commands made zero provider calls. An authorized marketplace product-detail URL remains a
+future host integration; the demo preview is explicitly synthetic where applicable.

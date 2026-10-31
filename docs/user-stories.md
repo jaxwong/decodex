@@ -184,19 +184,20 @@ the cited source material remains the same.
 
 ### 6. Continue to the marketplace action
 
-**User story:** As Mai, I want to return to the original listing after deciding so that Luna
-helps me choose without taking over checkout.
+**User story:** As Mai, I want to inspect the exact product after deciding so that Luna helps me
+choose without taking over checkout.
 
-1. Mai opens the recommended listing through the host's normal navigation.
+1. Mai opens the host's product view for the exact listing and variant she compared.
 2. Luna does not add to cart or buy without an explicit user action.
 3. The existing marketplace owns cart, checkout, payment and fulfilment.
 
 **Value:** Luna removes decision work while keeping the buyer in control of the commercial
 action.
 
-**Status:** **Partial.** Recommendation cards call each host's `navigateToListing` adapter.
-Host A currently routes back to its compare shell with the canonical listing ID rather than a
-real authorized product-detail route. Checkout automation is intentionally out of scope.
+**Status:** **Browser ready for the demo boundary.** **View product** passes the exact canonical
+snapshot to each host, which renders and closes its own product preview without resetting the
+comparison. The preview is labelled synthetic where applicable. A real authorized marketplace
+product URL and checkout automation remain intentionally out of scope.
 
 ## The same decision by voice
 

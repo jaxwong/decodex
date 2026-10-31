@@ -20,6 +20,8 @@ relative `/api` routes.
 - Session-scoped seller gap report for excluded listings, including canonical conflict evidence.
 - Text turns with canonical refresh and explicit 401/409 failure text.
 - Independent Host B with a different component tree, layout and adapter.
+- Exact product-snapshot handoff to separate Host A and Host B product previews; closing the
+  preview preserves the comparison revision.
 - GPT-Live browser WebRTC: mic, remote audio, `oai-events`, `session.started`, provisional
   captions, Mute, Stop/`session.closed`, canonical refresh and text fallback.
 - Deterministic same-flow Playwright in both hosts and widget import-boundary test.

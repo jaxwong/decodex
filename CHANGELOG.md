@@ -56,6 +56,22 @@ This file records implemented Luna milestones. The implementation spec remains t
   it already computes (`exclusion_reasons`, `uncertain_fields`) instead of copying ranking rules
   into the browser.
 
+### Implemented on `fix/view-product`
+
+- Fixed **View product**, which previously passed only a listing ID to Host A and rewrote the
+  current Compare query without any component owning it.
+- The shared widget now passes the exact canonical product snapshot to the public host adapter.
+  Host A and Host B each render and close their own product preview; the widget stays mounted,
+  so the comparison revision and conversation are preserved.
+- Demo previews state when data is synthetic and do not invent a Shopee or marketplace URL.
+  A production host can map the canonical listing and variant IDs through its authorized route.
+- Failure-first Playwright reproduced the missing product view in both hosts. Final verification
+  made zero provider calls: focused ESLint passed, both production hosts built (Host A 67
+  modules, Host B 47), all **194 API tests passed**, and Playwright reported **7 passed / 1
+  intentional Host B transport skip**.
+- `npm install` reported the known 15 audit findings (4 moderate, 11 high). No automatic or
+  breaking audit fix was applied.
+
 ### Implemented on `feat/seller-gap-view`
 
 - Added one `SellerGapReport` view to `@luna/widget`; neither host owns a parallel seller

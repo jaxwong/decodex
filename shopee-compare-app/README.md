@@ -22,7 +22,8 @@ npm run dev --workspace shopee-compare  # http://localhost:5173/#/Cart
 ```
 
 Open `#/Cart`, press **Compare now**, choose 2–4 exact variants in Luna, then press the compare
-button for the selected count.
+button for the selected count. **View product** opens Host A's exact canonical product preview
+without unmounting the comparison. The demo does not invent a Shopee product URL.
 
 ## Where the feature lives
 
