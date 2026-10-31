@@ -15,8 +15,9 @@ Each proposal below is written in the same order: what the user or business can 
 
 ## Proposal 1 — Seller Listing Gap Report
 
-**Implementation status:** Developer B steps B-1 through B-5 are complete and tested. Developer
-C steps C-1 through C-6 are not implemented.
+**Implementation status:** Developer B steps B-1 through B-5 are complete and tested. G3 now
+provides the shared widget, independent Host B and dual-host browser harness. Proposal-specific
+Developer C steps C-1 through C-6 are not implemented.
 
 ### Business value, in plain language
 
@@ -171,7 +172,8 @@ C-6. Playwright: after the Story C flow, open `#/Seller/listingC` and assert the
 - A second GET returns identical JSON.
 - **B complete:** the three backend conditions above pass, including a public create → ask →
   gap-report route test.
-- **C pending:** Host A and Host B both render the page from the same response.
+- **C pending:** Host A and Host B render the seller page from the same response. Both hosts now
+  exist and share one widget; the seller-report view itself is not implemented.
 
 ---
 

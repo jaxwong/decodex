@@ -101,6 +101,10 @@ stateDiagram-v2
 |---|---|---|
 | I-48 | A seller gap report reads only current comparisons in the authorized demo session. It exposes counts and public evidence references, never buyer identity, conversation, budget or preferences. | `routes/listings.py`, `decision/gap_report.py`, bearer-session dependency |
 | I-49 | Structured decision reasons have one owner in `rank_comparison` and are required in memory, but cannot serialize into existing comparison responses, OpenAPI `Recommendation`, text-agent tool/input JSON or Live context. | `Recommendation` fields with `Field(exclude=True)` and boundary tests |
+| I-50 | Both browser hosts import the same `@luna/widget` package; widget source imports neither host and receives only the public adapter. | npm workspace, Playwright import-boundary test |
+| I-51 | The browser owns microphone, remote playback, captions and connection controls; the server sideband is the only Live tool executor. | `LiveVoiceControls.jsx`, `live_agent.py` |
+| I-52 | Provisional transcript fragments never mutate comparison state. The browser refreshes server-owned state only after confirmed Live lifecycle/backend completion events. | Live event handler and deterministic WebRTC browser test |
+| I-53 | Live is not marked connected before `session.started`, and Stop does not release the transport as successfully finalized before `session.closed`. | `LiveVoiceControls.jsx`, graceful-close Playwright test |
 
 ## Ownership invariants
 
@@ -127,10 +131,9 @@ These are current repository facts, not accepted exceptions:
    the intended single state/decision owner across the full application.
 3. The backend-connected Luna panel executes an API journey, but it has not replaced the
    parallel legacy comparison path or unified the storefront and API catalog identities.
-4. Host B and cross-host portability tests do not exist.
-5. Browser microphone/audio/stop controls do not exist, so the full Live invariant chain has
-   only backend proof.
-6. The single-origin Docker/deployment shape is planned, not implemented.
+4. Browser microphone/audio/stop controls exist and have offline transport proof, but no real
+   spoken provider turn has yet demonstrated a sideband mutation and visible revision change.
+5. The single-origin Docker/deployment shape is planned, not implemented.
 
 Until these are fixed, backend correctness must not be presented as end-to-end product
 correctness.

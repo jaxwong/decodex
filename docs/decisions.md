@@ -16,6 +16,8 @@ flowchart TD
     D6[Bounded text and Live agents]
     D7[One-origin demo runtime]
     D8[Measured evaluation artifacts]
+    D9[One portable widget package]
+    D10[Confirmed-event Live refresh]
 
     D1 --> D2
     D2 --> D3
@@ -25,6 +27,9 @@ flowchart TD
     D3 --> D7
     D2 --> D8
     D6 --> D8
+    D3 --> D9
+    D6 --> D10
+    D9 --> D10
 ```
 
 ## Summary
@@ -46,6 +51,8 @@ flowchart TD
 | D-13 | Planned, not implemented | Serve both hosts and API from one Docker image and origin |
 | D-14 | Rejected/superseded | Browser-owned OpenAI keys and independent browser ranking |
 | D-15 | Accepted for demo | Project seller listing gaps from current authorized session state |
+| D-16 | Accepted and implemented | Use one widget package, two host adapters and one root npm lock |
+| D-17 | Accepted and implemented | Refresh Live UI after confirmed events; never mutate from captions |
 
 ## D-01 — Labelled synthetic marketplace provider
 
@@ -195,8 +202,9 @@ measurement.
 
 **Why:** One service is the smallest deployable demo and removes CORS and split configuration.
 
-**Consequences:** Docker/deployment work cannot begin honestly until C provides both build outputs
-and cross-host E2E passes. Current backend readiness is not deployment readiness.
+**Consequences:** Both build outputs and cross-host E2E now exist. Docker/deployment still needs
+an explicit approved implementation and public smoke proof; frontend/backend readiness alone is
+not deployment readiness.
 
 ## D-14 — Browser-owned model access is rejected
 
@@ -224,3 +232,36 @@ comparisons with four items each. It does not show a buyer identity, conversatio
 preferences. Counts describe current comparison states in this process, not weekly analytics.
 Restarting clears them. Seller authentication, listing ownership, cross-session aggregation and
 the browser view remain future integration work.
+
+## D-16 — One portable widget package and one dependency lock
+
+**Decision:** `packages/luna-widget` owns the Luna API client, comparison/evidence/chat UI and
+Live controls. Host A and Host B supply separate `LunaHostAdapter` implementations and import
+the package; the package imports neither host. The repository root owns npm workspaces and the
+only JavaScript lockfile.
+
+**Why:** Copying UI or letting the widget reach into storefront state would make portability a
+claim rather than an invariant. Multiple lockfiles would let the two hosts resolve different
+versions of the supposedly same package.
+
+**Consequences:** Host-specific routing and selection stay outside the package. `make
+frontend-build` builds both hosts, and `make e2e` runs the same decision flow plus an
+import-boundary check. A real Shopee integration still needs authorized product identity,
+session, performance and security work.
+
+## D-17 — Confirmed-event Live refresh, not transcript mutation or endless polling
+
+**Decision:** The browser treats `session.input_transcript.delta` and
+`session.output_transcript.delta` as provisional captions only. It fetches canonical comparison
+state after `session.updated` or a nested `response.completed`, with at most one refresh in
+flight. The server sideband remains the sole tool executor.
+
+**Why:** A transcript fragment is not a committed preference, while continuous one-second
+polling creates unbounded calls for a long voice session. Confirmed lifecycle events give the
+browser a bounded trigger without introducing a second push service or state owner.
+
+**Consequences:** Offline Playwright proves offer/readiness/captions/mute/close wiring and the
+permission-denied text fallback. It cannot pass G4: one explicitly authorized real microphone
+run must still show provider speech, sideband `apply_preferences`, and a newer canonical
+revision. If that run fails, voice is removed from the main demo rather than replaced by a
+second architecture.

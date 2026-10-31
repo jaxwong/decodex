@@ -675,3 +675,65 @@ exit 0
 The source counts include the still-uncommitted deferred Playwright harness; it is not part of
 B9. Both verification commands made zero provider calls. C's seller UI, Host B, browser E2E,
 seller authentication/ownership and cross-session aggregation remain out of this backend slice.
+
+## B10: G3 portability and G4 browser transport — 31 October 2026
+
+**Outcome:** After explicit coordination with Developer C, completed the shared frontend
+integration needed to unblock parallel work. Luna now lives in one `@luna/widget` workspace
+package. Host A and independent Host B supply separate adapters and run the same cited,
+two-correction browser journey. The browser Live path implements WebRTC media and lifecycle
+events; the server sideband remains the only tool executor.
+
+**Root-cause decisions:**
+
+- Moved the widget instead of wrapping Host A's `src/luna` path. Every production caller now
+  imports `@luna/widget`; the old path is deleted.
+- Replaced the Host-A-only Playwright spike with one two-project gate and one root npm lock.
+- Host B loads the real API catalog instead of copying fixture IDs into production code.
+- Provisional transcripts never mutate state. Confirmed `session.updated` or nested
+  `response.completed` triggers one canonical refresh in flight, avoiding endless polling.
+- Stop sends `session.close`, retains the transport until `session.closed`, then releases mic,
+  data channel, peer and audio. Permission denial preserves text mode.
+
+**Human corrections during implementation:**
+
+1. The deferred harness still sent `patch`; the current strict tool contract requires the
+   complete `preferences` object. The harness was corrected from the backend schema.
+2. Host B initially rendered three indistinguishable “Select 100W” buttons. Exact price was
+   added to the accessible label, defining ambiguous SKU selection out of existence.
+3. The first successful-Live browser test supplied `{}` as a remote stream. The test double was
+   corrected to a real browser `MediaStream`; production media code was not weakened.
+4. React StrictMode exposed that the mounted flag must reset on the second effect setup. Cleanup
+   now remains correct in Host B development mode.
+
+**Final deterministic verification:**
+
+```text
+UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+62 files already formatted
+All checks passed!
+Success: no issues found in 60 source files
+194 passed in 1.28s
+exit 0
+
+./shopee-compare-app/node_modules/.bin/eslint \
+  --config shopee-compare-app/eslint.config.js \
+  packages/luna-widget/src apps/minimal-host/src apps/minimal-host/vite.config.js \
+  shopee-compare-app/src/lunaHostAdapter.js shopee-compare-app/vite.config.js
+exit 0
+
+make frontend-build
+Host A: 70 modules transformed
+Host B: 45 modules transformed
+exit 0
+
+make e2e
+5 passed, 1 intentionally skipped duplicate Host B transport test
+exit 0
+```
+
+These commands made zero provider calls. G3 has deterministic proof. G4 does not: the browser
+transport test is labelled fake, and no real microphone → GPT-Live → sideband mutation → visible
+revision run was authorized or executed. Voice stays out of the main demo until that check
+passes. Host A's legacy direct-browser OpenAI path, seller-report UI, deployment and public
+smoke proof remain out of this branch.

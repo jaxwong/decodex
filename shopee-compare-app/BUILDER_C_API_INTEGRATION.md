@@ -1,45 +1,46 @@
-# Builder C — Backend API integration
+# Builder C — current frontend integration
 
-## What changed
-- `src/luna/lunaClient.js`: HTTP client, demo-session bearer auth, error handling.
-- `src/luna/LunaWidget.jsx`: fetches API catalog, selects 2–4 exact variants, creates comparison,
-  sends chat with revision, fetches canonical state, displays ranking and evidence.
-- `vite.config.js`: local `/api` reverse proxy to FastAPI port 8000.
+## Ownership
 
-## Important integration boundaries
-- The existing Shopee sample comparison remains unchanged.
-- The Luna API uses a separate synthetic catalog. Shopee IDs are **not** assumed to match
-  API IDs. The widget only preselects exact matching `(listing_id, variant_id)` pairs.
-  Otherwise the user selects from the API catalog inside the widget.
-- `/ask` requires Builder B's OpenAI configuration. Without it, creation and ranking
-  can still be tested, but AI chat may return 503.
-- The UI is a first functional integration, not yet the final portable packaged widget,
-  shared Shopee/backend catalog, or WebRTC voice client.
-- Demo sessions are process-local and expire after one hour. Reloading creates a new session.
-- The browser never receives a server OpenAI key.
-- Failed `/ask` calls are not automatically retried, because a preference mutation may
-  already have committed. Use Refresh comparison.
+- `shopee-compare-app/` owns Host A's Shopee-style shell, routes and adapter.
+- `apps/minimal-host/` owns the independent Host B shell, catalog view and adapter.
+- `packages/luna-widget/` is the sole Luna browser implementation.
+- `services/luna-api/` owns authentication, evidence, comparison state, ranking, tools and
+  OpenAI calls. API keys never enter browser code.
+- Root `package.json` and `package-lock.json` are the only npm workspace/lock owners.
 
-## Test
-From repository root, in terminal 1:
-```
-make api-sync
-make api-dev
-```
-In terminal 2:
-```
-cd shopee-compare-app
-npm ci
-npm run dev -- --host 0.0.0.0
-```
-Open Codespaces port 5173; open Shopee Compare, click Ask Luna, choose 2–4
-API catalog variants, create a comparison, inspect ranking and evidence.
-Try asking a question if OpenAI environment variables are configured.
+Host A imports `LunaWidget` from `@luna/widget`; the deleted `src/luna` path has no wrapper.
+The host supplies only selection/navigation behavior. The widget uses relative `/api` routes.
 
-Frontend checks:
+## Implemented
+
+- Exact API-catalog variants, 2–4 item comparison and canonical revision display.
+- Server-ranked recommendation, preference chips, seller sources and review-mention citations.
+- Text turns with canonical refresh and explicit 401/409 failure text.
+- Independent Host B with a different component tree, layout and adapter.
+- GPT-Live browser WebRTC: mic, remote audio, `oai-events`, `session.started`, provisional
+  captions, Mute, Stop/`session.closed`, canonical refresh and text fallback.
+- Deterministic same-flow Playwright in both hosts and widget import-boundary test.
+
+## Verify
+
+From the repository root:
+
+```bash
+npm install
+make frontend-build
+make e2e
 ```
-cd shopee-compare-app
-npx eslint src/luna/LunaWidget.jsx src/luna/lunaClient.js vite.config.js
-npm run build
-```
-The repository has pre-existing unrelated global lint failures.
+
+`make e2e` makes no provider call. It uses frozen evidence, an injected SDK-shaped text
+response and a labelled browser WebRTC test double. Current result on this branch: five passed,
+one intentional Host B skip for the single shared-package transport lifecycle test.
+
+## Remaining and explicitly unverified
+
+- Host A's legacy `src/compare` path still owns a parallel comparison and browser OpenAI-key
+  route. It is superseded but not yet deleted.
+- A real paid microphone → GPT-Live → sideband `apply_preferences` → visible revision run has
+  not been executed on this branch. Offline Playwright does not pass G4.
+- The full cross-product review-aspect view, seller gap-report UI, Docker/Render deployment and
+  public smoke proof are not implemented.

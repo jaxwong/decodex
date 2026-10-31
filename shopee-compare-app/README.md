@@ -1,4 +1,12 @@
-# Shopee Compare
+# Shopee Compare — Luna Host A
+
+This Vite app is the Shopee-style Host A for the shared `@luna/widget` workspace package.
+The supported Luna flow is: open `#/Cart` → Compare → **Ask Luna**. Luna then uses only
+relative `/api` calls; model keys and ranking remain on `services/luna-api`.
+
+The older `src/compare` implementation still renders the surrounding legacy comparison and
+contains browser API-key settings. It is superseded, must not be used for the Luna demo, and
+must be deleted when the shared widget becomes Host A's sole compare owner.
 
 Evidence-grounded product comparison inside a Shopee-style cart. Buyers tick **Compare** on 2–4 cart items, pick the exact variation, and get a side-by-side table where every value traces back to the seller's own listing text.
 
@@ -12,13 +20,12 @@ All AI output then passes the same code checks: the quote must exist in the list
 
 ## Run it
 
-No local install needed. Use GitHub Codespaces or any machine with Node 18+:
+Install from the repository root so the shared widget and Host B resolve from one lockfile:
 
 ```bash
 npm install
-npm run dev            # http://localhost:5173/#/Cart
-npm run build          # static site in dist/ (works on GitHub Pages / Vercel / Netlify)
-npm run build:single   # one self-contained preview file: dist-single/index.html
+make frontend-build
+npm run dev --workspace shopee-compare  # http://localhost:5173/#/Cart
 ```
 
 Open `#/Cart`, tick **Compare** on 2–4 power banks, then press **Compare now**.
@@ -37,9 +44,15 @@ src/components/Section/
   Compare.jsx        comparison page (#/Compare)
 ```
 
-## Live AI (optional)
+## Legacy browser AI — do not use
 
-Under **⚙ Live AI settings** on the compare page, paste an OpenAI API key and set a model name. Only the fields the rules couldn't settle are sent to the model. The key stays in browser memory. Before you share a public demo link, move this call to a server function.
+The **⚙ Live AI settings** control belongs to the superseded `src/compare` path. Never paste an
+API key into it. Current Luna text and GPT-Live requests are server-owned and read only the root
+`.env` through FastAPI.
+
+GPT-Live browser controls exist inside `@luna/widget`, but voice is not a demo claim until a
+real microphone turn invokes the backend sideband tool and visibly increments the canonical
+comparison revision. Deterministic Playwright proves wiring and text fallback only.
 
 ## Credits / declarations
 
