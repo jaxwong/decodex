@@ -16,6 +16,7 @@ The host supplies only selection/navigation behavior. The widget uses relative `
 
 - Exact API-catalog variants, 2–4 item comparison and canonical revision display.
 - Server-ranked recommendation, preference chips, seller sources and review-mention citations.
+- Session-scoped seller gap report for excluded listings, including canonical conflict evidence.
 - Text turns with canonical refresh and explicit 401/409 failure text.
 - Independent Host B with a different component tree, layout and adapter.
 - GPT-Live browser WebRTC: mic, remote audio, `oai-events`, `session.started`, provisional
@@ -42,5 +43,5 @@ one intentional Host B skip for the single shared-package transport lifecycle te
   route. It is superseded but not yet deleted.
 - A real paid microphone → GPT-Live → sideband `apply_preferences` → visible revision run has
   not been executed on this branch. Offline Playwright does not pass G4.
-- The full cross-product review-aspect view, seller gap-report UI, Docker/Render deployment and
-  public smoke proof are not implemented.
+- The full cross-product review-aspect view, Docker/Render deployment and public smoke proof
+  are not implemented.

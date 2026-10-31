@@ -2,7 +2,10 @@
 
 **Date:** 31 October 2026 (hackathon day)
 **Audience:** Developers A, B and C
-**Status:** Proposal 1 backend implemented on `b9-seller-gap-report`; its C-owned UI remains pending. Proposals 2–5 remain proposals. The spec's cut order and kill switches win over anything in this file.
+**Status:** Proposal 1's demo-session backend and shared dual-host UI are implemented. Seller
+authentication, ownership, persistence and week-over-week aggregation remain roadmap.
+Proposals 2–5 remain proposals. The spec's cut order and kill switches win over anything in
+this file.
 **Source of truth for existing scope:** `Shopee_Compare_Luna_V3_Implementation_Spec.md`
 
 ## Why this file exists
@@ -15,9 +18,9 @@ Each proposal below is written in the same order: what the user or business can 
 
 ## Proposal 1 — Seller Listing Gap Report
 
-**Implementation status:** Developer B steps B-1 through B-5 are complete and tested. G3 now
-provides the shared widget, independent Host B and dual-host browser harness. Proposal-specific
-Developer C steps C-1 through C-6 are not implemented.
+**Implementation status:** Developer B steps B-1 through B-5 are complete and tested. The
+shared widget now renders the report in Host A and Host B, and the same Playwright journey
+proves the S$70 exclusion, weight/warranty gaps, over-budget count and reused evidence panel.
 
 ### Business value, in plain language
 
@@ -147,23 +150,32 @@ B-5. Tests, no model calls
 - New `tests/routes/test_listings.py` using `create_authorized_client` from `tests/routes/test_comparisons.py`: 401 without a token with the existing `SESSION_REQUIRED` envelope; 400 `UNKNOWN_LISTING` for `listingZ`; 200 zero report before any comparison; the path appears in `GET /openapi.json`.
 - Verify: `make api-test` exits 0.
 
-**Developer C**
+**Developer C — implemented result**
 
-C-1. Types. After B-4 merges, regenerate `packages/luna-widget/src/contracts.ts` from the running service's `GET /openapi.json`. Do not hand-write the report type. Only the additive gap-report models change; `Recommendation` does not.
+C-1. The proposed `packages/luna-widget/src/contracts.ts` path and a generation command were
+searched and not found. The frontend is JavaScript, so no generated-types claim or competing
+handwritten transport type was invented; the running service's OpenAPI remains the source of
+truth.
 
-C-2. Component `packages/luna-widget/src/SellerGapReport` with props `{ report, onOpenEvidence }`.
+C-2. `packages/luna-widget/src/SellerGapReport.jsx` renders the report with
+`{ report, onOpenEvidence, onClose }`.
 
 - Renders three lists straight from the report: gaps, beaten by, why buyers dropped you. It computes nothing: no counting, no sorting, no status reinterpretation.
 - Each gap row calls `onOpenEvidence(gap.evidence_ids)`. `onOpenEvidence` is the same callback the comparison table already uses to open the evidence drawer. There is no second drawer.
 - Fixed banner text: "Demo seller view. Counts cover comparisons in this demo session only."
 
-C-3. Fetch. Same API client and bearer token as the comparison: `GET /api/listings/{listingId}/gap-report`. On an error envelope show `error.message`. No retry, no fallback data.
+C-3. The existing API client and bearer token fetch
+`GET /api/listings/{listingId}/gap-report`. The existing widget error boundary shows the server
+message. There is no retry or fallback data.
 
-C-4. Host A: in `shopee-compare-app/src/App.jsx` add `<Route path="/Seller/:listingId" ...>` beside the existing `/Compare` route. On the comparison page, a "Seller view" link next to each excluded item passes its `listing_id`.
+C-4/C-5. The implementation is simpler than the proposed host routes: the "Seller view" action
+lives beside excluded items in the shared recommendation component and the report stays inside
+the shared widget that owns the demo token. Both hosts therefore inherit one implementation;
+neither host duplicates seller state, fetching or presentation.
 
-C-5. Host B: mount the same component in `apps/minimal-host` through its own adapter, different layout. No edit to the widget or the service.
-
-C-6. Playwright: after the Story C flow, open `#/Seller/listingC` and assert the gaps list contains "Weight" and the over-budget count reads 1.
+C-6. Playwright runs the same revision 0→1→2→3 journey in both hosts, opens listing C's seller
+view and asserts the weight/warranty gaps, `over_budget: 1` presentation and canonical evidence
+panel reuse.
 
 **Done when**
 
@@ -172,8 +184,8 @@ C-6. Playwright: after the Story C flow, open `#/Seller/listingC` and assert the
 - A second GET returns identical JSON.
 - **B complete:** the three backend conditions above pass, including a public create → ask →
   gap-report route test.
-- **C pending:** Host A and Host B render the seller page from the same response. Both hosts now
-  exist and share one widget; the seller-report view itself is not implemented.
+- **C complete for demo scope:** Host A and Host B render the same report from the same response
+  through `@luna/widget`; no host-specific seller implementation exists.
 
 ---
 

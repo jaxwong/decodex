@@ -15,7 +15,7 @@ This file records implemented Luna milestones. The implementation spec remains t
 - **C3 Host A API panel — [PR #14](https://github.com/jaxwong/decodex/pull/14):** demo-session auth, API catalog selection, comparison creation, text ask and canonical-state refresh inside `shopee-compare-app`. This connected panel does not yet replace the legacy browser comparison engine.
 - **C3 interactive Luna UI — [PR #19](https://github.com/jaxwong/decodex/pull/19):** recommendation cards, preference chips, evidence view and conversation UI in Host A.
 
-### Implemented on `feat/g3-g4-portable-live`
+### G3 portability and G4 browser transport — merged in [PR #20](https://github.com/jaxwong/decodex/pull/20)
 
 - Moved Luna browser ownership from Host A's deleted `src/luna` path into one
   `@luna/widget` workspace package; Host A and independent Host B provide separate adapters.
@@ -35,6 +35,24 @@ This file records implemented Luna milestones. The implementation spec remains t
   provider → sideband tool → visible revision run; the WebRTC test double is not that proof.
 - Added root/package integration READMEs and updated architecture, invariants, decisions, user
   stories and the implementation spec to match the current tree.
+
+### Implemented on `feat/seller-gap-view`
+
+- Added one `SellerGapReport` view to `@luna/widget`; neither host owns a parallel seller
+  route, fetch, count or presentation.
+- Excluded recommendation cards fetch the existing authenticated gap-report endpoint with the
+  widget's bearer token. The view renders server-owned evidence gaps, supported competitors,
+  exclusion/uncertainty counts and the required demo-session limitation.
+- Conflict actions reuse the existing comparison evidence panel. No second drawer, model call,
+  state store, retry or fallback data was added.
+- Extended the deterministic SDK-shaped test agent only to recognize the bounded S$70 test
+  turn. The same Playwright journey now proves revisions 0→1→2→3 and the seller flow in both
+  hosts.
+- Verification: **194 API tests passed**, focused frontend ESLint passed, Host A transformed 71
+  modules, Host B transformed 46 modules, and Playwright reported **5 passed / 1 intentional
+  duplicate-project skip**. These commands made zero provider calls.
+- `npm install` restored missing locked local packages and again reported the known 15 audit
+  findings (4 moderate, 11 high). No automatic or breaking audit fix was applied.
 
 ### Implemented on `b8-a4-c-unblock`
 
@@ -59,7 +77,8 @@ This file records implemented Luna milestones. The implementation spec remains t
 - The report performs one catalog lookup, reads at most ten comparisons with four items each,
   makes zero model calls, retains no new state and never crosses session boundaries.
 - Full API gate: formatting and lint passed, strict typing passed, and **181 tests passed**.
-- C still owns the generated report types, Host A/Host B seller view and browser journey.
+- The backend slice was later completed by the shared Host A/Host B seller view and browser
+  journey on `feat/seller-gap-view`.
 
 ### Implemented on `b5-api-hardening`
 
@@ -110,5 +129,4 @@ This file records implemented Luna milestones. The implementation spec remains t
   ranking path; the shared Luna widget currently exists beside that legacy path.
 - Run and record the explicitly authorized real-microphone delegation/mutation G4 check; cut
   voice from the main demo if it does not increment the canonical revision.
-- Render the existing seller gap-report in both hosts.
 - Add the single Docker image, Render deployment and public smoke proof.

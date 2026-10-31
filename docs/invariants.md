@@ -105,6 +105,7 @@ stateDiagram-v2
 | I-51 | The browser owns microphone, remote playback, captions and connection controls; the server sideband is the only Live tool executor. | `LiveVoiceControls.jsx`, `live_agent.py` |
 | I-52 | Provisional transcript fragments never mutate comparison state. The browser refreshes server-owned state only after confirmed Live lifecycle/backend completion events. | Live event handler and deterministic WebRTC browser test |
 | I-53 | Live is not marked connected before `session.started`, and Stop does not release the transport as successfully finalized before `session.closed`. | `LiveVoiceControls.jsx`, graceful-close Playwright test |
+| I-54 | The seller browser view renders the report response without recounting or reinterpreting decision reasons. It uses the current widget bearer token and the existing evidence panel; neither host owns a second seller implementation. | `SellerGapReport.jsx`, `LunaWidget.jsx`, dual-host Playwright journey |
 
 ## Ownership invariants
 

@@ -230,8 +230,9 @@ or second source of truth.
 **Consequences:** One report request performs one catalog existence lookup and reads at most ten
 comparisons with four items each. It does not show a buyer identity, conversation, budget or
 preferences. Counts describe current comparison states in this process, not weekly analytics.
-Restarting clears them. Seller authentication, listing ownership, cross-session aggregation and
-the browser view remain future integration work.
+Restarting clears them. The shared widget renders the report without recomputing its counts and
+reuses the comparison evidence panel for conflict sources. Seller authentication, listing
+ownership, cross-session aggregation and week-over-week history remain future integration work.
 
 ## D-16 — One portable widget package and one dependency lock
 
