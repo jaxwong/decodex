@@ -62,11 +62,29 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await expect(page.getByRole('heading', { name: "Cited in Luna's latest answer" })).toBeVisible();
   await expect(page.getByText('Source details unavailable')).toHaveCount(0);
   await expect(page.getByText(/Sources:/).first()).toBeVisible();
+  await page.getByRole('button', { name: /Evidence, conflicting claims & sources/ }).click();
 
   await page.getByLabel('Message Luna').fill('Actually price first.');
   await page.getByRole('button', { name: 'Send' }).click();
   await expect(page.getByText('Comparison · Revision 2')).toBeVisible();
   await expect(page.getByText('Priority: Price Minor')).toBeVisible();
+
+  await page.getByLabel('Message Luna').fill('Set my budget to S$70 and keep price first.');
+  await page.getByRole('button', { name: 'Send' }).click();
+  await expect(page.getByText('Comparison · Revision 3')).toBeVisible();
+  await expect(page.getByText('Budget ≤ SGD 70.00')).toBeVisible();
+  await page.getByRole('button', { name: 'Seller view' }).click();
+  await expect(page.getByRole('heading', { name: 'Demo seller view' })).toBeVisible();
+  await expect(page.getByText('Counts cover comparisons in this demo session only.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Evidence gaps' })).toBeVisible();
+  await expect(page.getByText('Weight G', { exact: true })).toBeVisible();
+  await expect(page.getByText('Warranty Months', { exact: true })).toBeVisible();
+  await expect(page.getByText('Over Budget: 1')).toBeVisible();
+  await page.getByRole('button', { name: 'Open evidence for Warranty Months' }).click();
+  await expect(page.getByRole('button', { name: /Evidence, conflicting claims & sources/ }))
+    .toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('heading', { name: "Cited in Luna's latest answer" })).toBeVisible();
+  await expect(page.getByText(/Sources:/).first()).toBeVisible();
 
   await page.getByRole('button', { name: 'Start', exact: true }).click();
   await expect(page.getByText('Microphone permission was denied. Text chat remains available.')).toBeVisible();

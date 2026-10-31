@@ -70,6 +70,7 @@ async def create_scripted_response(**request: Any) -> Response:
     priorities = (
         ["price_minor"] if "actually price first" in request_text else ["weight_g", "price_minor"]
     )
+    max_price_minor = 7000 if "s$70" in request_text else 8000
     return _model_response(
         "resp_e2e_apply",
         [
@@ -82,7 +83,7 @@ async def create_scripted_response(**request: Any) -> Response:
                     {
                         "comparison_id": comparison_ids[0],
                         "preferences": {
-                            "max_price_minor": 8000,
+                            "max_price_minor": max_price_minor,
                             "min_output_w": 65,
                             "priorities": priorities,
                         },
