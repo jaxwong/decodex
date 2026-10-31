@@ -158,3 +158,29 @@ class PreferenceUpdate(_SessionModel):
     preferences: Preferences
     recommendation: Recommendation
     ui_patch: UiPatch
+
+
+class AskComparisonRequest(_SessionModel):
+    """One bounded buyer turn against an expected comparison revision."""
+
+    conversation_id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+    message: str = Field(min_length=1, max_length=2000)
+    expected_revision: int = Field(ge=0)
+
+    @field_validator("message")
+    @classmethod
+    def require_nonblank_message(cls, message: str) -> str:
+        if not message.strip():
+            raise ValueError("message must contain non-whitespace text")
+        return message
+
+
+class AskComparisonResponse(_SessionModel):
+    """Validated Luna answer plus only server-computed decision and UI state."""
+
+    conversation_id: str
+    request_id: str
+    answer: str
+    cited_ids: list[str]
+    recommendation: Recommendation
+    ui_patch: UiPatch | None

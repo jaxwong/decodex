@@ -7,12 +7,29 @@ from app.contracts.session import ComparisonResponse, DemoSession
 DEMO_SESSION_LIFETIME = timedelta(hours=1)
 
 
+@dataclass(frozen=True, slots=True)
+class ConversationTurn:
+    """One successful buyer turn retained as bounded text-only model context."""
+
+    user_message: str
+    assistant_answer: str
+
+
+@dataclass(slots=True)
+class ConversationState:
+    """A conversation permanently bound to one comparison in its demo session."""
+
+    comparison_id: str
+    turns: list[ConversationTurn] = field(default_factory=list)
+
+
 @dataclass(slots=True)
 class DemoSessionState:
     """Private process-local state owned by one opaque demo session token."""
 
     expires_at: datetime
     comparisons: dict[str, ComparisonResponse] = field(default_factory=dict)
+    conversations: dict[str, ConversationState] = field(default_factory=dict)
 
 
 type DemoSessionStore = dict[str, DemoSessionState]
