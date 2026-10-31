@@ -8,11 +8,11 @@ import { ProductDetails } from './ProductPage';
 function Compare() {
     const [viewedProduct, setViewedProduct] = useState(null);
     const navigate = useNavigate();
-    const { cart, addToCart } = useShop();
+    const { cart, pickProduct } = useShop();
     // The adapter must not change with the cart or route helpers: a new adapter starts a new
     // Luna session and drops the comparison. Its callbacks read the latest values from here.
-    const latest = useRef({ cart, addToCart, navigate });
-    latest.current = { cart, addToCart, navigate };
+    const latest = useRef({ cart, pickProduct, navigate });
+    latest.current = { cart, pickProduct, navigate };
     // The cart hands over its ticked catalog variants. The cart is the only place to pick in
     // Host A, so a comparison needs 2–4 of them; anything else goes back to the cart.
     const { state: routeState } = useLocation();
@@ -21,12 +21,15 @@ function Compare() {
         () => createShopeeLunaAdapter(
             product => setViewedProduct({ listingId: product.listingId, variantId: product.variantId }),
             cartSelections,
-            // Picking in Luna is not buying: the product goes back to the cart as the only ticked
-            // line, and the shopper checks out from there if they want to.
+            // Picking in Luna is not buying: the pick becomes the cart's only ticked line and the
+            // shopper stays on the comparison. Checkout is a separate, explicit press in Luna's
+            // pick bar that opens Host A's checkout with just that line.
+            ({ listingId, variantId }) => latest.current.pickProduct(listingId, variantId),
             ({ listingId, variantId }) => {
-                const id = `${listingId}:${variantId}`;
-                if (!latest.current.cart.some(line => line.id === id)) latest.current.addToCart(listingId, variantId, 1);
-                latest.current.navigate('/Cart', { state: { pickedId: id } });
+                const line = latest.current.cart.find(candidate => candidate.id === `${listingId}:${variantId}`);
+                latest.current.navigate('/Checkout', {
+                    state: { items: [{ listingId, variantId, quantity: line?.quantity ?? 1 }] },
+                });
             },
         ),
         // eslint-disable-next-line react-hooks/exhaustive-deps
