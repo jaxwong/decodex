@@ -3,25 +3,16 @@ import PropTypes from 'prop-types';
 import { assertHostAdapter, selectionKey } from './hostAdapter.js';
 import { LiveVoiceControls } from './LiveVoiceControls.jsx';
 import { lunaClient } from './lunaClient.js';
-import { money } from './display.js';
+import { errorText, money } from './display.js';
 import {
   ComparisonTable, Conversation, PreferenceChips, SourcePanel, SparkleIcon, UpdateNotice,
 } from './LunaPanels.jsx';
-import { SellerGapReport } from './SellerGapReport.jsx';
 
 const greeting = {
   role: 'assistant',
   text: 'Here’s the side-by-side. Tell me what matters — budget, weight, charging power or reviews — and I’ll rank them and show you why.',
 };
 const suggestions = ['Lowest delivered price', 'Lightest first', 'What do reviews say?'];
-
-function errorText(error) {
-  if (error?.status === 401) return 'Your demo session expired. Restart the session to continue.';
-  if (error?.status === 409) return 'The comparison changed while you were asking. Refresh it, then ask again.';
-  if (error?.status === 0) return 'Luna can’t be reached right now. Check your connection and try again.';
-  if (error?.status >= 500) return 'Luna ran into a problem on our side. Please try again in a moment.';
-  return error?.message || 'Something went wrong.';
-}
 
 export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
   const hostAdapter = useMemo(() => assertHostAdapter(adapter), [adapter]);
@@ -35,7 +26,6 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState(null);
   const [sourceTarget, setSourceTarget] = useState(null);
-  const [sellerReport, setSellerReport] = useState(null);
   const conversationId = useRef(`luna_${crypto.randomUUID().replaceAll('-', '')}`);
   const generation = useRef(0);
   const inputRef = useRef(null);
@@ -62,6 +52,11 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
         const listings = result.listings || [];
         setSession(issued);
         setCatalog(listings);
+        // A new session cannot see an earlier session's comparison, so drop it with that session.
+        setComparison(null);
+        setMessages([]);
+        setNotice(null);
+        setSourceTarget(null);
         const hostKey = selectionKey(hostAdapter.getCurrentSelection());
         const availableKeys = new Set(listings.flatMap(listing => listing.variants
           .map(variant => `${listing.listing_id}:${variant.variant_id}`)));
@@ -115,12 +110,43 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
       : old.length < 4 ? [...old, itemKey] : old);
   }
 
+  // The API keeps sessions in memory, so a restart or the one-hour expiry forgets them. The
+  // widget always sends a token, so a 401 means this session is gone: start a new one.
+  async function renewSession() {
+    console.warn('Luna API no longer knows this demo session (HTTP 401); starting a new one');
+    const issued = await lunaClient.createSession(apiBaseUrl);
+    setSession(issued);
+    return issued;
+  }
+
+  // A forgotten session takes its comparison with it. Keep the picks so Compare rebuilds it.
+  async function recoverLostComparison() {
+    setComparison(null);
+    setNotice(null);
+    setSourceTarget(null);
+    setMessages([]);
+    try {
+      await renewSession();
+      setError('Luna restarted, so this comparison was cleared. Your products are still picked. Press Compare to build it again.');
+    } catch (err) { showError(err); }
+  }
+
   async function createComparison() {
     if (!session || selectedItems.length < 2 || selectedItems.length > 4 || busy) return;
     setBusy(true);
     setError('');
     try {
-      setComparison(await lunaClient.createComparison(apiBaseUrl, session.token, selectedItems));
+      let created;
+      try {
+        created = await lunaClient.createComparison(apiBaseUrl, session.token, selectedItems);
+      } catch (err) {
+        if (err?.status !== 401) throw err;
+        // The server rejected the old session before doing any work, so sending the same
+        // request once with a new session cannot create a duplicate comparison.
+        const renewed = await renewSession();
+        created = await lunaClient.createComparison(apiBaseUrl, renewed.token, selectedItems);
+      }
+      setComparison(created);
       setNotice(null);
       setMessages([greeting]);
     } catch (err) { showError(err); }
@@ -133,8 +159,10 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
     setError('');
     try {
       applyComparison(await lunaClient.getComparison(apiBaseUrl, session.token, comparison.comparison_id));
-    } catch (err) { showError(err); }
-    finally { setBusy(false); }
+    } catch (err) {
+      if (err?.status === 401) await recoverLostComparison();
+      else showError(err);
+    } finally { setBusy(false); }
   }
 
   async function ask(text) {
@@ -155,9 +183,10 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
       applyComparison(await lunaClient.getComparison(apiBaseUrl, session.token, comparison.comparison_id));
       setMessages(old => [...old, { role: 'assistant', text: answer.answer, citations: answer.cited_ids }]);
     } catch (err) {
-      showError(err);
       // A server-side preference mutation may have committed before a failed answer.
       // Refresh explicitly; never automatically replay a potentially mutating ask.
+      if (err?.status === 401) await recoverLostComparison();
+      else showError(err);
     } finally { setBusy(false); }
   }
 
@@ -165,16 +194,6 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
     setSourceTarget(null);
     setInput(text);
     inputRef.current?.focus();
-  }
-
-  async function openSellerReport(listingId) {
-    if (!session || busy) return;
-    setBusy(true);
-    setError('');
-    try {
-      setSellerReport(await lunaClient.getListingGapReport(apiBaseUrl, session.token, listingId));
-    } catch (err) { showError(err); }
-    finally { setBusy(false); }
   }
 
   const evidence = comparison?.evidence;
@@ -193,7 +212,6 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
     {error && <div role="alert" className="luna-alert">
       <span>{error}</span>
       {comparison && <button type="button" onClick={refreshComparison} disabled={busy} className="luna-link">Refresh comparison</button>}
-      {error.includes('expired') && <button type="button" onClick={() => window.location.reload()} className="luna-link">Restart session</button>}
     </div>}
 
     <div className="luna-body">
@@ -233,10 +251,7 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
             schemaFields={evidence.schema_fields} onChange={() => draftQuestion('Change my needs: ')}/>
           {notice && <UpdateNotice uiPatch={notice} preferences={comparison.preferences} evidence={evidence}/>}
           <ComparisonTable comparison={comparison} onOpenCell={setSourceTarget}
-            onNavigateToListing={hostAdapter.navigateToListing} onOpenSellerReport={openSellerReport}/>
-          {sellerReport && <SellerGapReport report={sellerReport} evidence={evidence}
-            onClose={() => setSellerReport(null)}
-            onOpenEvidence={gap => setSourceTarget({ itemKey: gap.item_key, fieldKey: gap.field_key })}/>}
+            onNavigateToListing={hostAdapter.navigateToListing}/>
         </div>
         <aside aria-label="Ask Luna" className="luna-chat">
           <h3 className="luna-chat-title">Ask Luna</h3>

@@ -848,13 +848,6 @@
   border-radius: 12px;
 }
 
-.luna-widget .luna-seller-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-}
-
 .luna-widget .luna-seller h3 {
   font-size: 15px;
   font-weight: 600;
@@ -885,6 +878,57 @@
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 8px;
+}
+
+.luna-widget .luna-seller-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  margin-top: 14px;
+}
+
+.luna-widget .luna-seller-listings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.luna-widget .luna-seller-listing {
+  padding: 10px 12px;
+  border: 1px solid var(--luna-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--luna-ink);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.luna-widget .luna-seller-listing[aria-pressed="true"] {
+  border-color: var(--luna-accent);
+  background: var(--luna-accent-soft);
+}
+
+.luna-widget .luna-seller-listing:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.luna-widget .luna-seller-sources {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--luna-panel);
+  list-style: none;
+  font-size: 12.5px;
+}
+
+@media (max-width: 720px) {
+  .luna-widget .luna-seller-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* ---------- source panel ---------- */

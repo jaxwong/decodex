@@ -1,27 +1,34 @@
-"""Build the read-only seller projection from one authorized demo session."""
+"""Build the read-only seller projection from buyer comparisons."""
+
+from collections.abc import Iterable
 
 from app.contracts.session import (
+    ComparisonResponse,
     ExclusionReason,
     ListingBeatenBy,
     ListingGapField,
     ListingGapReport,
 )
-from app.decision.sessions import DemoSessionState
+from app.evidence.schema import SCHEMA_FIELDS
 
 
-def build_gap_report(session_state: DemoSessionState, listing_id: str) -> ListingGapReport:
+def build_gap_report(
+    comparisons: Iterable[ComparisonResponse], listing_id: str
+) -> ListingGapReport:
     """Project current evidence gaps and decision reasons without retaining new state."""
-    comparisons = [
+    matching = [
         comparison
-        for comparison in session_state.comparisons.values()
+        for comparison in comparisons
         if any(item.listing_id == listing_id for item in comparison.evidence.items)
     ]
-    gaps: dict[tuple[str, str, str], ListingGapField] = {}
+    # Each comparison extracts the listing independently, so two buyers' comparisons can
+    # disagree about the same field. Both findings are kept rather than one chosen.
+    gaps: list[ListingGapField] = []
     competitor_keys: dict[tuple[str, str], list[str]] = {}
     exclusion_counts: dict[ExclusionReason, int] = {}
     uncertainty_counts: dict[str, int] = {}
 
-    for comparison in comparisons:
+    for comparison in matching:
         evidence = comparison.evidence
         target_items = [item for item in evidence.items if item.listing_id == listing_id]
         for item in target_items:
@@ -33,17 +40,10 @@ def build_gap_report(session_state: DemoSessionState, listing_id: str) -> Listin
                     field_key=fact.field_key,
                     status=fact.status,
                     conflicting_values=list(fact.conflicting_values),
-                    evidence_ids=list(fact.evidence_ids),
+                    evidence=[evidence.evidence[source_id] for source_id in fact.evidence_ids],
                 )
-                gap_key = (item.item_key, fact.field_key, fact.status)
-                existing_gap = gaps.get(gap_key)
-                if existing_gap is not None and existing_gap != gap:
-                    raise RuntimeError(
-                        "Gap report requires stable facts within one demo session: "
-                        f"listing_id={listing_id!r}, item_key={item.item_key!r}, "
-                        f"field_key={fact.field_key!r}"
-                    )
-                gaps[gap_key] = gap
+                if gap not in gaps:
+                    gaps.append(gap)
 
                 field_competitors = competitor_keys.setdefault((item.item_key, fact.field_key), [])
                 for competitor in evidence.items:
@@ -77,8 +77,9 @@ def build_gap_report(session_state: DemoSessionState, listing_id: str) -> Listin
     ]
     return ListingGapReport(
         listing_id=listing_id,
-        comparisons_count=len(comparisons),
-        gaps=list(gaps.values()),
+        schema_fields=SCHEMA_FIELDS,
+        comparisons_count=len(matching),
+        gaps=gaps,
         beaten_by=beaten_by,
         exclusion_counts=exclusion_counts,
         uncertainty_counts=uncertainty_counts,

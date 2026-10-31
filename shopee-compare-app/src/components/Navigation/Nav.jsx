@@ -9,7 +9,7 @@ function Nav() {
       <div className="max-w-[1200px] mx-auto flex items-center justify-between px-2 sm:px-4 py-1">
         {/* Left side links - hidden on mobile */}
         <nav className="hidden md:flex items-center gap-1">
-          <TopLink to="/Login">Seller Centre</TopLink>
+          <TopLink to="/SellerCentre">Seller Centre</TopLink>
           <Divider />
           <TopLink to="/Login">Start Selling</TopLink>
           <Divider />

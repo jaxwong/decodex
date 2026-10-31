@@ -25,6 +25,13 @@ const SOURCE_LABELS = {
   external: 'External source',
 };
 
+export function errorText(error) {
+  if (error?.status === 409) return 'The comparison changed while you were asking. Refresh it, then ask again.';
+  if (error?.status === 0) return 'Luna can’t be reached right now. Check your connection and try again.';
+  if (error?.status >= 500) return 'Luna ran into a problem on our side. Please try again in a moment.';
+  return error?.message || 'Something went wrong.';
+}
+
 export const money = (minor, currency) => `${currency} ${(minor / 100).toFixed(2)}`;
 
 export const itemName = item => `${item.title} · ${item.variant_label}`;

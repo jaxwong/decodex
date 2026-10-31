@@ -24,6 +24,7 @@ import Checkout from './components/Section/Checkout';
 import OrderConfirmation from './components/Section/OrderConfirmation';
 import Signup from './components/Authentication/Signup';
 import Compare from './components/Section/Compare';
+import SellerCentre from './components/Section/SellerCentre';
 
 const MainLayout = ({ children }) => (
   <>
@@ -67,6 +68,7 @@ function App() {
         <Route path="/Signup" element={<SubNavLayout><Signup /></SubNavLayout>} />
         <Route path="/Cart" element={<AddtoCart><Cart/></AddtoCart>}/>
         <Route path="/Compare" element={<AddtoCart><Compare/></AddtoCart>}/>
+        <Route path="/SellerCentre" element={<AddtoCart><SellerCentre/></AddtoCart>}/>
         <Route path="/Checkout" element={<AddtoCart><Checkout/></AddtoCart>}/>
         <Route path="/OrderConfirmation" element={<AddtoCart><OrderConfirmation/></AddtoCart>}/>
       </Routes>

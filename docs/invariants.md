@@ -99,7 +99,7 @@ stateDiagram-v2
 
 | ID | Invariant | Enforced by |
 |---|---|---|
-| I-48 | A seller gap report reads only current comparisons in the authorized demo session. It exposes counts and public evidence references, never buyer identity, conversation, budget or preferences. | `routes/listings.py`, `decision/gap_report.py`, bearer-session dependency |
+| I-48 | A seller gap report aggregates current comparisons from every active demo session and appears only on a seller page, never in the buyer widget. It exposes counts and public listing evidence, never buyer identity, conversation, budget or preferences. | `routes/listings.py`, `decision/gap_report.py`, `SellerGapReport`, Seller Centre Playwright test |
 | I-49 | Structured decision reasons have one owner in `rank_comparison` and are required in memory, but cannot serialize into existing comparison responses, OpenAPI `Recommendation`, text-agent tool/input JSON or Live context. | `Recommendation` fields with `Field(exclude=True)` and boundary tests |
 | I-50 | Both browser hosts import the same `@luna/widget` package; widget source imports neither host and receives only the public adapter. | npm workspace, Playwright import-boundary test |
 | I-51 | The browser owns microphone, remote playback, captions and connection controls; the server sideband is the only Live tool executor. | `LiveVoiceControls.jsx`, `live_agent.py` |
@@ -118,7 +118,7 @@ stateDiagram-v2
 | Demo-session lifetime and contents | B session store |
 | Preferences, recommendation and revision | B decision layer |
 | Ranking outcome | Deterministic `rank_comparison` |
-| Seller gap report | Pure `build_gap_report` projection over the authorized session |
+| Seller gap report | Pure `build_gap_report` projection over every active session's comparisons |
 | HTTP error wording/status | `app.errors` |
 | Text/Live model invocation | B OpenAI modules |
 | Browser rendering and media | C frontend |
