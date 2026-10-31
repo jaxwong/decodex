@@ -113,10 +113,11 @@ the listing's snapshot. Only the `mock` factory is implemented.
 
 The shared Python project, `uv.lock` and root Makefile now belong to B. Use that
 locked environment rather than a separate dependency installation. The A2 quality
-review passed formatting, lint, strict typing and 101 combined A/B tests using
-temporary root import-path overrides. B-owned configuration still needs to add
-the repository root to pytest's `pythonpath` and mypy's `mypy_path` before the
-plain Make target can import the root `eval` package.
+review passed formatting, lint, strict typing and 119 combined A/B tests after
+integrating main at `18f0009`, using a temporary mypy import-path override. B has
+configured pytest's root import path; B-owned configuration still needs to add
+the repository root to mypy's `mypy_path` before plain `make api-test` passes.
+The user explicitly left that configuration change to Developer B.
 
 The installed SDK's strict schema serialization and parser were exercised with a
 mock HTTP transport. These checks do not prove real evidence extraction or live
@@ -126,8 +127,8 @@ Standalone reproduction from the repository root:
 
 ```bash
 make api-sync
-# Temporary verification until the shared root import paths are configured:
-PYTHONPATH="$PWD" MYPYPATH="$PWD" make api-test
+# Temporary verification until B configures mypy's root import path:
+MYPYPATH="$PWD" make api-test
 PYTHONPATH=services/luna-api:. services/luna-api/.venv/bin/python -m eval.run
 ```
 
@@ -139,8 +140,8 @@ PYTHONPATH=services/luna-api:. services/luna-api/.venv/bin/python -m eval.run --
 ```
 
 The live pathway is never run by ordinary pytest. This A2 review did not run live
-model requests, browser E2E or deployment. B still needs to wrap/store
-`ComparisonEvidence`; C needs to render that wrapper.
+model requests, browser E2E or deployment. B2 now wraps/stores
+`ComparisonEvidence`; real model-backed comparison creation remains unverified.
 Fixture access on the pushed branch is the A1 handoff; no direct messages to
 teammates or unverified B/C compatibility claims were made.
 

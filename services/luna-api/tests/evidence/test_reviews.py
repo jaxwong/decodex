@@ -1,9 +1,7 @@
 from typing import Any
 
 import pytest
-from fakes import FakeModelClient
 from pydantic import ValidationError
-from test_pipeline import SELECTIONS, comparison, fact
 
 from app.contracts.evidence import ComparisonEvidence
 from app.evidence.model import ReviewCandidates
@@ -14,6 +12,8 @@ from app.evidence.reviews import (
     validate_review_mentions,
 )
 from app.providers import CatalogError, MockCatalogProvider
+from tests.evidence.fakes import FakeModelClient
+from tests.evidence.test_pipeline import SELECTIONS, comparison, fact
 
 
 def validate(

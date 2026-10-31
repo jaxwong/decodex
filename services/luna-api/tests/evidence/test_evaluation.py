@@ -6,9 +6,9 @@ from typing import Any
 import pytest
 from eval.metrics import ratio, score
 from eval.run import evaluate
-from test_pipeline import SELECTIONS, comparison
 
 from app.providers import MockCatalogProvider
+from tests.evidence.test_pipeline import SELECTIONS, comparison
 
 ROOT = Path(__file__).resolve().parents[4]
 

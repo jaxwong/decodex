@@ -7,7 +7,6 @@ from unittest.mock import AsyncMock
 
 import httpx2
 import pytest
-from fakes import FakeModelClient
 from openai import AsyncOpenAI, DefaultAsyncHttpxClient
 from pydantic import ValidationError
 
@@ -25,6 +24,7 @@ from app.evidence.model import (
 from app.evidence.normalize import normalize_value
 from app.evidence.validate import validate_facts
 from app.providers import CatalogError, CatalogProvider, MockCatalogProvider, provider_factory
+from tests.evidence.fakes import FakeModelClient
 
 SELECTIONS = [
     {"listing_id": "listingA", "variant_id": "100w"},
