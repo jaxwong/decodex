@@ -52,6 +52,8 @@ Comparison creation calls the evidence builder exactly once. Runtime has no fixt
 
 The builder makes two model calls per product (specs and reviews) concurrently, with `reasoning={"effort": "low"}` owned by `EVIDENCE_REASONING_EFFORT` in `app/openai/runtime.py`, and reuses a completed product analysis for the same snapshot version from process memory, so repeating a compare of unchanged products makes no model call. Like demo sessions, that memory resets on restart. Measured on the three demo products: 16.6 s before, 8.6 s for a first compare and 0.002 s for a repeat (D-22).
 
+The catalog provider validates `data/reviews.json` when it loads: each row needs `review_id` (unique), `listing_id` and `variant_id` (an existing listing and variant, or `null` for an unknown variant), an integer `rating` from 1 to 5 and `text`. A malformed row stops start-up with a `ValueError` naming the row, so hand-added reviews never surface as HTTP 500 mid-request.
+
 Copy the returned `comparison_id` and current `revision`, then ask Luna:
 
 ```bash

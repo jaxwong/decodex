@@ -4,6 +4,24 @@ This file records implemented Luna milestones. The implementation spec remains t
 
 ## 31 October 2026
 
+### Implemented on `fix/review-count-crash`
+
+- Reported as "adding more than two reviews crashes the server". What reproduced: a review row
+  added by hand to `data/reviews.json` with a missing key (`variant_id`, `text`, `review_id`,
+  `listing_id`) or a missing, string, fractional or out-of-range `rating` loaded silently and
+  then every `GET /api/catalog/{listing_id}` and `POST /api/comparisons` touching that listing
+  returned HTTP 500 (`KeyError` or response validation). Adding well-formed reviews, with
+  `variant_id` set or null, in English or Vietnamese, did not crash anything: the storefront
+  page, the comparison (one real model run included), seller replies and the browser flows
+  all worked with 29 reviews on one listing.
+- `MockCatalogProvider` now validates every `reviews.json` row when the fixture loads: required
+  keys and types, `rating` 1–5, a listing and variant that exist, and a unique `review_id`.
+  A bad row stops start-up with a `ValueError` naming the file, row index, `review_id` and
+  problem, so the failure is one line at boot instead of a 500 on each request.
+- Not changed: a listing with more than 50 reviews still fails `GET /api/catalog/{listing_id}`
+  explicitly (`STOREFRONT_REVIEW_LIMIT`), and hand-authored fixture counts in the unit, e2e
+  and evaluation checks fail (not crash) when the fixture changes.
+
 ### Implemented on `feat/extraction-latency`
 
 - A product's spec extraction and review extraction now run concurrently; disputes attach once

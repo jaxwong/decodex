@@ -8,12 +8,57 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Any
 
-from app.contracts.evidence import CatalogListing, CatalogVariant
+from pydantic import ConfigDict, TypeAdapter, ValidationError
+
+from app.contracts.evidence import CatalogListing, CatalogVariant, StorefrontReview
 from app.errors import ApiFailure, ErrorCode
 
 from .base import CatalogProvider
 
 DATA_ROOT = Path(__file__).resolve().parents[4] / "data"
+
+
+class FixtureReview(StorefrontReview):
+    """One reviews.json row: a storefront review plus the listing it belongs to.
+
+    `created_at` and `source` are provenance the API never reads, so they pass through.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    listing_id: str
+
+
+def validate_fixture_reviews(
+    path: Path, reviews: list[dict[str, Any]], listings: dict[str, dict[str, Any]]
+) -> None:
+    """Reject a hand-edited review row when the fixture loads, not with HTTP 500 per request.
+
+    Every route and the evidence builder index rows by these keys, so a missing or mistyped
+    field would otherwise surface as a KeyError or response validation error mid-request.
+    """
+    try:
+        rows = TypeAdapter(list[FixtureReview]).validate_python(reviews)
+    except ValidationError as failure:
+        problems = "; ".join(
+            f"reviews[{error['loc'][0]}] {'.'.join(str(part) for part in error['loc'][1:])}: "
+            f"{error['msg']}"
+            for error in failure.errors()
+        )
+        raise ValueError(f"{path} has malformed reviews: {problems}") from failure
+    seen: set[str] = set()
+    for number, row in enumerate(rows):
+        where = f"{path} reviews[{number}] {row.review_id!r}"
+        listing = listings.get(row.listing_id)
+        if listing is None:
+            raise ValueError(f"{where} names unknown listing {row.listing_id!r}")
+        if row.variant_id is not None and all(
+            variant["variant_id"] != row.variant_id for variant in listing["variants"]
+        ):
+            raise ValueError(f"{where} names unknown variant {row.variant_id!r}")
+        if row.review_id in seen:
+            raise ValueError(f"{where} is a duplicate review_id {row.review_id!r}")
+        seen.add(row.review_id)
 
 
 CATALOG_FAILURES: dict[str, tuple[ErrorCode, HTTPStatus, str, bool]] = {
@@ -104,7 +149,9 @@ class MockCatalogProvider:
     def __init__(self, data_root: Path = DATA_ROOT):
         listings = json.loads((data_root / "listings.json").read_text())["listings"]
         self._listings = {listing["listing_id"]: listing for listing in listings}
-        self._reviews = json.loads((data_root / "reviews.json").read_text())["reviews"]
+        reviews_path = data_root / "reviews.json"
+        self._reviews = json.loads(reviews_path.read_text())["reviews"]
+        validate_fixture_reviews(reviews_path, self._reviews, self._listings)
 
     async def list_listings(self, query: str | None = None) -> list[CatalogListing]:
         return [
