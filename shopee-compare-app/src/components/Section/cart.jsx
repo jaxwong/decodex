@@ -165,7 +165,6 @@ function Cart() {
                         </p>
                     </div>
                     <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:w-auto">
-                    <div className="text-right">
                         <button
                             type="button"
                             disabled={!ready || selectedItems.length < 2 || selectedItems.length > 4}
@@ -174,22 +173,21 @@ function Cart() {
                                     cartSelections: selectedItems.map(({ listingId, variantId }) => ({ listingId, variantId })),
                                 },
                             })}
-                            className="border border-shopee px-5 py-3 text-sm font-medium uppercase text-shopee hover:bg-orange-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 disabled:hover:bg-transparent"
+                            className="border border-solid border-shopee bg-white px-5 py-3 text-sm font-medium uppercase text-shopee hover:bg-orange-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 disabled:hover:bg-transparent"
                         >
                             Compare now ({selectedItems.length})
                         </button>
-                        <p className="mt-1 text-[11px] text-gray-500">Not sure which? Luna compares 2–4 ticked products.</p>
-                    </div>
-                    <button
-                        type="button"
-                        disabled={selectedItems.length === 0 || !ready}
-                        onClick={() => navigate('/Checkout', {
-                            state: { items: selectedItems.map(({ listingId, variantId, quantity }) => ({ listingId, variantId, quantity })) },
-                        })}
-                        className="bg-shopee px-8 py-3 text-sm font-medium uppercase text-white hover:bg-shopee2 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
-                    >
-                        Check Out
-                    </button>
+                        <button
+                            type="button"
+                            disabled={selectedItems.length === 0 || !ready}
+                            onClick={() => navigate('/Checkout', {
+                                state: { items: selectedItems.map(({ listingId, variantId, quantity }) => ({ listingId, variantId, quantity })) },
+                            })}
+                            className="bg-shopee px-8 py-3 text-sm font-medium uppercase text-white hover:bg-shopee2 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
+                        >
+                            Check Out
+                        </button>
+                        <p className="basis-full text-right text-[11px] text-gray-500">Not sure which? Luna compares 2–4 ticked products.</p>
                     </div>
                 </section>
             </div>
