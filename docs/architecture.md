@@ -305,7 +305,7 @@ The model can access exactly four functions:
 | Tool | Reads or writes | Boundary |
 |---|---|---|
 | `get_comparison` | Read | Compact facts, preferences and recommendation; no raw pages |
-| `get_review_aspect` | Read | One aspect, bounded item set and literal mentions |
+| `get_review_aspect` | Read | One or more of the six enumerated aspects, bounded item set and literal mentions |
 | `inspect_evidence` | Read | Exact stored evidence IDs only |
 | `apply_preferences` | **Write** | The only mutation; revision checked |
 

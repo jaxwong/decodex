@@ -623,7 +623,7 @@ Use **12–20 sampled demo reviews per listing**, not a claim to cover all marke
 4. **A:** Make aggregates in deterministic code: group by `(item_key, aspect, sentiment)`, compute unique **review counts** for each aspect (count a review once per aspect/sentiment; define how mixed sentiment is handled), `analyzed_reviews`, and a list of `mention_ids`. Do not infer complaint probabilities from these counts.
 5. **A:** Handle unknown variant reviews: either store in `listing_level_insights` and label them, or exclude from exact-SKU ranking. For hackathon UI, show clearly marked “Listing-wide reviews” below the variant-specific panel if necessary.
 6. **C:** Build a Reviews tab directly next to the Specs tab. Each product has aspect chips with e.g. `Heating: 4 negative mentions (of 18 reviews analyzed)`. A comparison view aligns the **same aspect** for A/B/C. Clicking the number opens supporting original review excerpts + review IDs.
-7. **B:** Expose a tool `get_review_aspect(comparison_id, item_keys, aspect)` which returns the stored aggregates and supporting review IDs, **not raw unbounded reviews**. Luna can say what reviews mention, not assert physical product quality as certain.
+7. **B:** Expose a tool `get_review_aspect(comparison_id, item_keys, aspects)` which returns the stored aggregates and supporting review IDs, **not raw unbounded reviews**. Luna can say what reviews mention, not assert physical product quality as certain.
 8. **Optional fast-path with Decisions API:** After extraction, classify ambiguous mention snippets with a fixed `choice` question (`positive/negative/neutral`) using `client.decisions.create(model="gpt-6-luna", input=..., questions=[...])`. Decisions returns a typed category/probability; it does not generate the review evidence contract. **Never substitute Decision probability for evidence**; keep quote-substring validation. Retain this path only if the same held-out review set shows a measured precision, latency or cost improvement over Responses structured extraction.
 
 ### Source contract
@@ -699,7 +699,7 @@ Luna MUST:
 ### 6.3 Exactly four required tools (not ten)
 
 1. `get_comparison(comparison_id)` → normalized facts, exact item keys, known prices, selected variant labels, current preference state (omit massive descriptions).
-2. `get_review_aspect(comparison_id, aspect, item_keys)` → review counts + citation/mention IDs.
+2. `get_review_aspect(comparison_id, aspects, item_keys)` → review counts + citation/mention IDs.
 3. `apply_preferences(comparison_id, patch, expected_revision)` → validates permitted fields; merges with current preferences; reruns deterministic filter/ranking; saves state; returns `ui_patch`, ranked candidates, uncertainties, and new revision.
 4. `inspect_evidence(comparison_id, evidence_ids)` → exact source details for already stored citations.
 
