@@ -113,8 +113,8 @@ the listing's snapshot. Only the `mock` factory is implemented.
 
 The shared Python project, `uv.lock` and root Makefile now belong to B. Use that
 locked environment rather than a separate dependency installation. The A2 quality
-review passed formatting, lint, strict typing and 142 combined A/B tests after
-integrating main at `35c33e2`, using a temporary mypy import-path override. B has
+review passed formatting, lint, strict typing and 150 combined A/B tests after
+integrating main at `8068646`, using a temporary mypy import-path override. B has
 configured pytest's root import path; B-owned configuration still needs to add
 the repository root to mypy's `mypy_path` before plain `make api-test` passes.
 The user explicitly left that configuration change to Developer B.

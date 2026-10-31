@@ -102,7 +102,7 @@ count was exactly 36 requests. Configured and returned model names agreed.
 |---|---:|---:|---:|
 | Supported-field accuracy | 55/88 | 88/88 | 88/88 |
 | Evidence precision | 56/92 | 96/96 | 92/96 |
-| Unsupported supported-claim rate | 36/92 | 0/88 | 0/88 |
+| Unsupported claim rate (supported facts) | 36/92 | 0/88 | 0/88 |
 | Missing-field recall | 4/4 | 4/4 | 4/4 |
 | Exact normalized contradiction recall | 0/4 | 4/4 | 2/4 |
 | Variant leakage | 9/12 | 0/12 | 0/12 |
@@ -125,6 +125,8 @@ nearest-rank p95 10.051s for only three samples. Observed tokens were 11,435 for
 smoke, 32,827 for grounded evaluation and 22,778 for free-form evaluation (67,040
 total). Usage coverage was complete; cost remains unavailable. These measurements
 are a single synthetic run, not production accuracy, throughput or shopping value.
+Grounded token totals include review extraction, while free-form totals cover
+specifications only; the workloads differ.
 
 `tests/evidence/test_live_evaluation.py` exercises both SDK paths over an injected
 in-memory HTTP transport, including smoke failure, partial failures, malformed

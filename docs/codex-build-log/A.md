@@ -263,3 +263,24 @@ access, human user study, production evaluation or deployed integration is claim
 - Fixtures and labels remain synthetic and were authored together. B's agent
   output evaluation, C's browser/second-host proof and deployment remain outside
   this A-owned run. No additional paid calls are authorized by this completed run.
+
+- Before publishing, merged latest main `8068646`, including B4 and C's existing
+  changes, without editing their implementations. Final offline verification:
+
+  ```text
+  MYPYPATH="$PWD" UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+  55 files already formatted
+  All checks passed!
+  Success: no issues found in 53 source files
+  150 passed in 1.36s
+  exit 0
+  ```
+
+- Plain `make api-typecheck` still exits 2: missing root `eval` imports produce
+  eight diagnostics, including a propagated untyped return in the standalone
+  smoke entry point. All disappear with the root `MYPYPATH` override. The same
+  B-owned `mypy_path = ["$MYPY_CONFIG_FILE_DIR/../.."]` configuration remains
+  pending. No rule was suppressed and no B-owned configuration was changed.
+- Final source/artifact audit: changed paths are A-owned; the fixture, canonical
+  evidence contract and data sources are unchanged; both live canonical graphs
+  validate; source hashes match; no secret value is present in candidate files.
