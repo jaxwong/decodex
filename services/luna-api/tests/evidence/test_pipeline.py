@@ -24,6 +24,7 @@ from app.evidence.model import (
     ExtractionError,
     ModelClient,
     OpenAIModelClient,
+    ReviewCandidates,
     SpecCandidates,
 )
 from app.evidence.normalize import normalize_value
@@ -298,6 +299,36 @@ def test_model_timeout_and_partial_extraction_failure() -> None:
     )
     assert fact(result, "listingA:100w", "max_output_w").value == 100
     assert len(model.spec_requests) == 3
+
+
+def test_spec_and_review_extraction_overlap_per_item() -> None:
+    """Each call waits for the other one on the same item; sequential calls would time out."""
+
+    class HandshakeClient(FakeModelClient):
+        def __init__(self) -> None:
+            super().__init__()
+            self.started: dict[tuple[str, str], asyncio.Event] = {}
+
+        def _event(self, call: str, item_key: str) -> asyncio.Event:
+            return self.started.setdefault((call, item_key), asyncio.Event())
+
+        async def extract_specs(self, request: dict[str, Any]) -> SpecCandidates:
+            self._event("specs", request["item_key"]).set()
+            await asyncio.wait_for(self._event("reviews", request["item_key"]).wait(), 1)
+            return await super().extract_specs(request)
+
+        async def extract_reviews(self, request: dict[str, Any]) -> ReviewCandidates:
+            self._event("reviews", request["item_key"]).set()
+            await asyncio.wait_for(self._event("specs", request["item_key"]).wait(), 1)
+            return await super().extract_reviews(request)
+
+    model = HandshakeClient()
+    result = comparison(model, [SELECTIONS[0], SELECTIONS[1]])
+    assert [(i.analysis_status, i.review_status) for i in result.items] == [
+        ("completed", "completed")
+    ] * 2
+    assert fact(result, "listingA:100w", "weight_g").value == 420
+    assert len(model.spec_requests) == len(model.review_requests) == 2
 
 
 def test_four_items_at_most_four_spec_requests() -> None:
