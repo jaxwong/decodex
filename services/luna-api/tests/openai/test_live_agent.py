@@ -14,7 +14,7 @@ from openai.types.live import DelegationCreatedEvent, LiveCreateResponse, Respon
 from app.contracts.evidence import ComparisonSelection
 from app.contracts.session import Preferences
 from app.decision.comparisons import create_comparison, require_comparison
-from app.decision.sessions import DemoSessionState
+from app.decision.sessions import DemoSessionState, shutdown_demo_sessions
 from app.decision.tools import apply_preferences
 from app.openai.capability_smoke import build_live_audio_offer_sdp
 from app.openai.live_agent import (
@@ -215,6 +215,78 @@ def test_start_live_session_uses_one_create_and_zero_retry_sideband_attach(
         assert len(creation_logs) == 1
         assert "external_calls=2" in creation_logs[0]
         assert "elapsed_ms=" in creation_logs[0]
+
+    asyncio.run(scenario())
+
+
+def test_start_live_session_replaces_the_existing_comparison_relay() -> None:
+    class BlockingSidebandConnection(FakeSidebandConnection):
+        def __init__(self) -> None:
+            super().__init__([])
+            self.release = asyncio.Event()
+
+        async def __aiter__(self) -> AsyncIterator[object]:
+            await self.release.wait()
+            yield closed_event()
+
+    class SequencedSideband:
+        def __init__(self, connections: dict[str, BlockingSidebandConnection]) -> None:
+            self.connections = connections
+
+        def connect(self, **request: Any) -> FakeSidebandManager:
+            return FakeSidebandManager(self.connections[cast(str, request["session_id"])])
+
+    class SequencedLive:
+        def __init__(self, connections: dict[str, BlockingSidebandConnection]) -> None:
+            self.sideband = SequencedSideband(connections)
+            self.create_count = 0
+
+        async def create(self, **request: Any) -> LiveCreateResponse:
+            del request
+            self.create_count += 1
+            return LiveCreateResponse.model_validate(
+                {
+                    "session": {"id": f"live_{self.create_count}"},
+                    "transport": {"type": "webrtc", "sdp": "provider-answer-sdp"},
+                }
+            )
+
+    async def scenario() -> None:
+        session_state, comparison_id = await create_comparison_state()
+        connections = {
+            "live_1": BlockingSidebandConnection(),
+            "live_2": BlockingSidebandConnection(),
+        }
+        fake_client = SimpleNamespace(live=SequencedLive(connections))
+
+        first = await start_live_session(
+            cast(AsyncOpenAI, fake_client),
+            session_state,
+            comparison_id=comparison_id,
+            offer_sdp=build_live_audio_offer_sdp(),
+            live_model="gpt-live-1",
+            text_model="gpt-6-luna",
+        )
+        first_task = session_state.live_sessions[first.session.id].relay_task
+        await asyncio.sleep(0)
+
+        second = await start_live_session(
+            cast(AsyncOpenAI, fake_client),
+            session_state,
+            comparison_id=comparison_id,
+            offer_sdp=build_live_audio_offer_sdp(),
+            live_model="gpt-live-1",
+            text_model="gpt-6-luna",
+        )
+        await asyncio.sleep(0)
+
+        assert first_task.cancelled()
+        assert connections["live_1"].closed is True
+        assert set(session_state.live_sessions) == {second.session.id}
+
+        await shutdown_demo_sessions({"test": session_state})
+
+        assert connections["live_2"].closed is True
 
     asyncio.run(scenario())
 

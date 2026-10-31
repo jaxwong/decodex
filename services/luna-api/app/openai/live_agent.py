@@ -31,7 +31,7 @@ from pydantic import ValidationError
 from websockets.exceptions import WebSocketException
 
 from app.decision.comparisons import require_comparison
-from app.decision.sessions import DemoSessionState, LiveSessionState
+from app.decision.sessions import DemoSessionState, LiveSessionState, cancel_live_relays
 from app.decision.tools import RevisionConflict
 from app.errors import ApiFailure, ErrorCode, ErrorDetail, ToolErrorResponse
 from app.openai.text_agent import (
@@ -435,14 +435,21 @@ async def start_live_session(
     except (OpenAIError, OSError, WebSocketException) as failure:
         raise LunaLiveUnavailable("Live session creation or sideband attach failed") from failure
 
-    relay_task = asyncio.create_task(
-        run_live_sideband(
+    cancel_live_relays(session_state, comparison_id=comparison_id)
+    relay_started = asyncio.Event()
+
+    async def run_registered_relay() -> None:
+        relay_started.set()
+        await run_live_sideband(
             connection,
             session_state,
             session_id=live_response.session.id,
             comparison_id=comparison_id,
             text_model=text_model,
-        ),
+        )
+
+    relay_task = asyncio.create_task(
+        run_registered_relay(),
         name=f"luna-live-{live_response.session.id}",
     )
     session_state.live_sessions[live_response.session.id] = LiveSessionState(
@@ -456,6 +463,7 @@ async def start_live_session(
             completed_task,
         )
     )
+    await relay_started.wait()
     logger.info(
         "Created Live session session_id=%s comparison_id=%s revision=%s "
         "external_calls=2 elapsed_ms=%.1f max_attach_retries=0",

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Request, status
 
 from app.contracts.session import DemoSession
 from app.decision.sessions import DemoSessionStore, create_demo_session
+from app.errors import ErrorResponse
 
 router = APIRouter(prefix="/api", tags=["sessions"])
 
@@ -13,6 +14,7 @@ router = APIRouter(prefix="/api", tags=["sessions"])
     "/demo-sessions",
     response_model=DemoSession,
     status_code=status.HTTP_201_CREATED,
+    responses={503: {"model": ErrorResponse}},
 )
 def issue_demo_session(request: Request) -> DemoSession:
     """Issue a server-owned one-hour demo session for the current API process."""

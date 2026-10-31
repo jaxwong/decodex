@@ -24,12 +24,11 @@ from pydantic import BaseModel, ConfigDict
 from app.contracts.evidence import ComparisonEvidence, ComparisonSelection
 from app.contracts.session import Preferences
 from app.decision.comparisons import create_comparison, require_comparison
-from app.decision.sessions import DemoSessionState
+from app.decision.sessions import ConversationComparisonMismatch, DemoSessionState
 from app.decision.tools import RevisionConflict, apply_preferences
 from app.openai.runtime import OPENAI_REQUEST_TIMEOUT_SECONDS, CreateModelResponse
 from app.openai.text_agent import (
     MAX_PROVIDER_CALLS,
-    ConversationComparisonMismatch,
     LunaAgentContractError,
     LunaAgentTimeout,
     LunaAgentUnavailable,

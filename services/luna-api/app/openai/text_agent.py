@@ -24,7 +24,13 @@ from app.contracts.session import (
     PreferenceUpdate,
 )
 from app.decision.comparisons import require_comparison
-from app.decision.sessions import ConversationState, ConversationTurn, DemoSessionState
+from app.decision.sessions import (
+    ConversationState,
+    ConversationTurn,
+    DemoSessionState,
+    release_conversation_reservation,
+    reserve_conversation,
+)
 from app.decision.tools import (
     RevisionConflict,
     UnknownEvidence,
@@ -117,15 +123,6 @@ ANSWER_TEXT_CONFIG: ResponseTextConfigParam = {
     },
     "verbosity": "low",
 }
-
-
-class ConversationComparisonMismatch(ApiFailure):
-    """Raised when a conversation ID is reused for another comparison."""
-
-    code = ErrorCode.CONVERSATION_COMPARISON_MISMATCH
-    http_status = HTTPStatus.CONFLICT
-    public_message = "Start a new conversation for this comparison."
-    retryable = False
 
 
 class LunaToolCallRejected(ApiFailure):
@@ -384,8 +381,8 @@ def _conversation_history(
     if conversation is None:
         return []
     if conversation.comparison_id != comparison_id:
-        raise ConversationComparisonMismatch(
-            "conversation is bound to another comparison in this demo session"
+        raise RuntimeError(
+            "Conversation comparison changed after validation in _conversation_history"
         )
     return conversation.turns[-MAX_HISTORY_TURNS:]
 
@@ -438,9 +435,7 @@ def _record_successful_turn(
         conversation = ConversationState(comparison_id=comparison_id)
         session_state.conversations[conversation_id] = conversation
     elif conversation.comparison_id != comparison_id:
-        raise RuntimeError(
-            "Conversation comparison changed after validation in _record_successful_turn"
-        )
+        raise RuntimeError("Conversation state changed after validation in _record_successful_turn")
 
     conversation.turns.append(
         ConversationTurn(
@@ -550,7 +545,7 @@ def _safe_answer(
     )
 
 
-async def run_luna(
+async def _run_luna_turn(
     session_state: DemoSessionState,
     *,
     comparison_id: str,
@@ -562,10 +557,6 @@ async def run_luna(
 ) -> AskComparisonResponse:
     """Run at most three tool rounds and return only validated server-owned state."""
     turn_started_at = perf_counter()
-    comparison = require_comparison(session_state, comparison_id)
-    if comparison.revision != expected_revision:
-        raise RevisionConflict(comparison.revision)
-
     model_input = _initial_input(
         session_state,
         comparison_id=comparison_id,
@@ -675,3 +666,40 @@ async def run_luna(
         recommendation=current_comparison.recommendation,
         ui_patch=applied_update.ui_patch if applied_update is not None else None,
     )
+
+
+async def run_luna(
+    session_state: DemoSessionState,
+    *,
+    comparison_id: str,
+    conversation_id: str,
+    message: str,
+    expected_revision: int,
+    create_response: openai_runtime.CreateModelResponse,
+    model: str,
+) -> AskComparisonResponse:
+    """Validate state, reserve conversation capacity, and run one bounded Luna turn."""
+    comparison = require_comparison(session_state, comparison_id)
+    if comparison.revision != expected_revision:
+        raise RevisionConflict(comparison.revision)
+    reserved_conversation = reserve_conversation(
+        session_state,
+        conversation_id=conversation_id,
+        comparison_id=comparison_id,
+    )
+    try:
+        return await _run_luna_turn(
+            session_state,
+            comparison_id=comparison_id,
+            conversation_id=conversation_id,
+            message=message,
+            expected_revision=expected_revision,
+            create_response=create_response,
+            model=model,
+        )
+    finally:
+        if reserved_conversation:
+            release_conversation_reservation(
+                session_state,
+                conversation_id=conversation_id,
+            )

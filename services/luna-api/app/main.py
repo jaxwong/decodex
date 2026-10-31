@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from openai import AsyncOpenAI
 
 from app.decision.comparisons import BuildComparisonEvidence
-from app.decision.sessions import DemoSessionStore
+from app.decision.sessions import DemoSessionStore, shutdown_demo_sessions
 from app.errors import register_exception_handlers
 from app.evidence import EvidenceBuilder, OpenAIModelClient
 from app.openai.runtime import (
@@ -78,12 +78,14 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
-        del application
         try:
             yield
         finally:
-            if runtime.owns_client and runtime.client is not None:
-                await runtime.client.close()
+            try:
+                await shutdown_demo_sessions(application.state.demo_sessions)
+            finally:
+                if runtime.owns_client and runtime.client is not None:
+                    await runtime.client.close()
 
     app = FastAPI(title="Luna API", version="0.1.0", lifespan=lifespan)
     app.state.demo_sessions = session_store if session_store is not None else {}
