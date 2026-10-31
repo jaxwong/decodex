@@ -1,5 +1,39 @@
 # Synthetic evidence evaluation
 
+## A4 final scorecard
+
+Run `make eval` from the repository root. It executes the deterministic baselines,
+validates B's current agent handoff, re-scores saved evidence predictions against
+the matching source/label snapshot, and writes both `eval/results.json` and
+[`SCORECARD.md`](SCORECARD.md). It makes **zero model requests** and does not modify
+either paid artifact.
+
+The JSON separates new extraction in this invocation (`grounded_structured_outputs`
+and `ungrounded_free_form`) from `recorded_evidence_evaluation`. The recorded
+section verifies source/label hashes, canonical evidence relationships, catalog
+coverage, original seller/review strings reconstructed through the provider,
+request accounting and agreement between stored and recomputed metrics. Free-form
+scored facts must also match the parsed output retained for that item.
+An invalid or source-stale artifact is reported unavailable, with its reason.
+
+The original 36-request evidence run did not record an implementation fingerprint.
+Its source-valid predictions remain useful historical measurements, but
+`current_implementation_verified` is false. A subsequent refactor is not silently
+declared live-tested. Future explicitly authorized extraction runs record hashes
+of evidence/provider/contract/runtime code plus SDK and Pydantic versions; code or
+version changes retain the run as historical rather than current-runtime proof.
+No fingerprint is retrofitted into the old paid artifact.
+
+B's separate 28-request artifact passes its existing evidence/scenario/text-agent
+hash checks and retains `status: partial`, including both failed scenarios. Server
+state outcomes are not browser UI verification. The final scorecard explicitly
+marks matched browser friction, a prose-only agent baseline and cost unavailable
+until their actual measurements or verified pricing exist. A4's measured report
+is ready to consume; passing every agent scenario and completing G2/G3 remain
+separate product acceptance work.
+
+## Individual evaluation commands
+
 Run from repository root with the dependency environment described in
 `services/luna-api/app/evidence/README.md`:
 
