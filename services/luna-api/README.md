@@ -22,9 +22,11 @@ Developer B is the only dependency-lock owner. A new Python dependency is reques
 
 ## Run locally
 
+From the repository root:
+
 ```bash
-uv sync --frozen
-uv run uvicorn app.main:app --reload --port 8000
+make api-sync
+make api-dev
 curl --fail http://127.0.0.1:8000/api/health
 curl --fail -X POST http://127.0.0.1:8000/api/demo-sessions
 ```
@@ -32,10 +34,7 @@ curl --fail -X POST http://127.0.0.1:8000/api/demo-sessions
 ## Verify
 
 ```bash
-uv run pytest -q
-uv run ruff check .
-uv run ruff format --check .
-uv run mypy
+make api-test
 ```
 
 ## OpenAI capability smoke
@@ -43,10 +42,7 @@ uv run mypy
 The command makes at most two provider calls and never retries: one forced strict Responses function call and one GPT-Live create-session request with a locally generated audio-plus-data WebRTC offer. It writes no API key, provider response ID, or SDP to the report.
 
 ```bash
-set -a
-source ../../.env
-set +a
-uv run python -m app.openai.capability_smoke
+make api-capability-smoke
 ```
 
 `.env` owns the API key and both model names; `.env.example` documents the required variables. Without a key, the command makes no external call, writes an explicit blocked result to `../../docs/capability-smoke.json`, and exits `2`. Missing or blank model configuration exits `2` without writing a misleading report.
