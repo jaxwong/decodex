@@ -12,6 +12,19 @@ This file records implemented Luna milestones. The implementation spec remains t
 - **B2 deterministic sessions and decision tools — [PR #5](https://github.com/jaxwong/decodex/pull/5):** authenticated comparison state, provider-backed catalog and evidence creation, deterministic ranking, exactly four decision tools, optimistic revisions, and stable HTTP errors.
 - **B3 bounded Responses text agent — [PR #7](https://github.com/jaxwong/decodex/pull/7):** authenticated comparison chat over the same four tools, bounded conversation history, revision-safe mutations, evidence-bound answers, and a paid local end-to-end verification.
 - **B4 GPT-Live server delegation — [PR #9](https://github.com/jaxwong/decodex/pull/9):** authenticated WebRTC session creation, one no-retry server sideband executor over the same four tools, revision-safe corrections, and paid provider create-and-attach verification. Browser microphone/audio remained C5 work and was not claimed complete.
+- **C3 Host A API panel — [PR #14](https://github.com/jaxwong/decodex/pull/14):** demo-session auth, API catalog selection, comparison creation, text ask and canonical-state refresh inside `shopee-compare-app`. This connected panel does not yet replace the legacy browser comparison engine.
+
+### Implemented on `b8-a4-c-unblock`
+
+- Executed the one explicitly authorized current-agent benchmark with no retry: 28/44 provider
+  requests, 10/12 scenarios, `partial` status. `review_query` failed citation validation and
+  `no_comparable_winner` made a rejected tool call; both failures remain visible.
+- Regenerated `eval/results.json` with the free `make eval` projection. It validates the current
+  evidence, scenario-suite and text-agent hashes and now reports
+  `agent_output_evaluation.available: true`, unblocking A4's honest scorecard.
+- Confirmed that C's merged panel has all B routes needed to continue. Remaining replacement of
+  the direct browser OpenAI path, review UI, portable widget, Host B, voice controls and
+  dual-host E2E are C-owned work; no additional B route is pending.
 
 ### Implemented on `b5-api-hardening`
 
@@ -56,10 +69,10 @@ This file records implemented Luna milestones. The implementation spec remains t
 - Full API gate: **56 files formatted, lint passed, 54 sources strictly typed, and 159 tests
   passed**. No provider call was made.
 
-### Not yet merged
+### Remaining integration
 
-- C3 Host A API integration, including deletion of the browser API-key field, direct OpenAI call
-  and independent browser ranking path.
+- Complete C3 by deleting the browser API-key field, direct OpenAI call and independent browser
+  ranking path; the merged Luna panel currently exists beside that legacy path.
 - C5 browser WebRTC voice controls and the joint real-microphone delegation/mutation check.
 - C's independent Host B.
 - Aggregate E2E/demo Make targets, the single Docker image, and Render deployment.

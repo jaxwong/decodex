@@ -11,15 +11,17 @@ The repository contains two different levels of completion:
 
 - **Implemented and tested:** the Python API, synthetic catalog provider, evidence pipeline,
   deterministic ranking, session state, four decision tools, Responses text agent, GPT-Live
-  server sideband, and evaluation runners.
-- **Not integrated:** `shopee-compare-app` still owns a separate browser comparison engine.
-  Its `LunaWidget` is a local prototype, and `src/compare/engine.js` still contains a direct
-  browser request to OpenAI. It does not call the Luna API.
+  server sideband, and evaluation runners. The current paid agent artifact is projected by
+  `make eval` and remains honestly partial at 10/12 scenarios.
+- **Host A connected, replacement incomplete:** `shopee-compare-app` now has a Luna panel that
+  creates a session, reads the API catalog, creates a comparison, asks the text agent and
+  refreshes canonical state. The old compare engine still exists in parallel and
+  `src/compare/engine.js` still contains a direct browser request to OpenAI.
 - **Missing:** the independent Host B, browser WebRTC voice controls, root E2E command,
   single-image runtime, and deployment files.
 
-Do not interpret the backend diagrams as proof that the current frontend uses the backend.
-That boundary remains the G2 integration blocker.
+The backend no longer blocks C. C still owns replacing the parallel legacy path, packaging the
+shared widget, building Host B and proving the complete browser journey.
 
 ## System map
 
@@ -31,7 +33,8 @@ flowchart LR
         Cart[Cart and variant selection]
         CompareContext[CompareContext]
         LegacyEngine[Legacy browser comparison engine]
-        LocalWidget[LunaWidget local prototype]
+        LocalWidget[Backend-connected Luna panel]
+        LunaClient[Relative /api client]
         BrowserSettings[Browser API-key settings]
     end
 
@@ -55,11 +58,11 @@ flowchart LR
     end
 
     Buyer --> Cart --> CompareContext --> LegacyEngine
-    CompareContext --> LocalWidget
+    CompareContext --> LocalWidget --> LunaClient
     BrowserSettings --> LegacyEngine
     LegacyEngine -. "direct browser call — must be removed" .-> Responses
 
-    HostA -. "intended relative /api calls — not wired" .-> Routes
+    LunaClient --> Routes
 
     Routes --> SessionStore
     Routes --> EvidenceBuilder
@@ -77,7 +80,7 @@ flowchart LR
 
 | Area | Owner | Primary paths | Responsibility |
 |---|---|---|---|
-| Host A | C | `shopee-compare-app/` | Cart, compare UI, evidence/review presentation, eventual API client and voice controls |
+| Host A | C | `shopee-compare-app/` | Cart, compare UI, API client, evidence/review presentation and voice controls |
 | HTTP/API composition | B | `services/luna-api/app/main.py`, `app/routes/`, `app/errors.py` | Authentication boundary, routes, dependency wiring, stable error envelope |
 | Mutable decision state | B | `app/decision/`, `app/contracts/session.py` | Demo sessions, comparisons, preferences, ranking, revisions and tools |
 | Immutable evidence | A | `app/evidence/`, `app/contracts/evidence.py` | Exact-variant extraction, normalization, citations and review analysis |
@@ -363,10 +366,9 @@ flowchart LR
   evidence, scenario suite and text-agent implementation hashes are current.
 - Paid evaluators require an explicit `--live`, use no retries and enforce request ceilings.
 - Missing metrics stay unavailable rather than becoming zero.
-- As of 31 October 2026, the first paid agent run used 28 of 44 allowed requests and passed
-  10 of 12 scenarios. It was not retried; failures remain in the artifact. B7 changed the agent
-  contract afterward, so this run is retained as historical and the current projection reports
-  the agent metric unavailable until another explicitly authorized paid run.
+- As of 31 October 2026, the authorized current-agent run used 28 of 44 allowed requests and
+  passed 10 of 12 scenarios. It was not retried; failures remain in the artifact. The current
+  projection reports `available: true`, `status: partial`.
 
 ## Local operation
 
@@ -397,17 +399,17 @@ implemented yet. Do not infer deployment readiness from backend test success.
 
 ## Required next integration
 
-The next system-level milestone is not another backend feature. C must replace the legacy
-browser comparison path with the API journey:
+The next system-level milestone is not another backend feature. The Host A panel already issues
+a session, loads `/api/catalog`, creates a comparison, calls `/ask` with the current revision and
+refreshes canonical state. C can proceed without A or B and must now:
 
-1. issue one demo session;
-2. load `/api/catalog`;
-3. create a comparison from exact variant IDs;
-4. render the returned evidence and recommendation without recomputation;
-5. send text intent to `/ask` with the current revision;
-6. reject stale UI patches;
-7. delete the browser API-key settings and direct OpenAI call; and
-8. mount the same widget in an independent Host B.
+1. make Host A's main compare journey use the canonical API selection instead of keeping a
+   separate synthetic Luna catalog beside the legacy comparison;
+2. delete the browser API-key settings, direct OpenAI call and independent ranking path;
+3. render review-mention citations from the canonical review source collection;
+4. extract the host-neutral widget package and mount it unchanged in Host B;
+5. add browser WebRTC controls only after the text journey is stable; and
+6. prove the same text journey in both hosts with Playwright.
 
 Only after that path passes can E2E, voice UI, optional seller reporting, Docker and deployment
 be represented as working system features.
