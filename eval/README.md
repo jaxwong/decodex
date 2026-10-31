@@ -118,30 +118,28 @@ response IDs, reasoning or credentials.
 44 permitted provider requests and completed with `partial` status: 10 of 12 scenarios passed.
 The CLI exited 2 as designed for a partial run. It was not retried.
 
-This run predates B7's terminal-mutation and citation-contract changes. The artifact remains
-unchanged as historical evidence, while the current `eval/results.json` marks agent evaluation
-unavailable because the implementation hash changed. The measurements below do not validate
-B7; a new paid run requires explicit authorization.
+This is the one authorized run of the current B7 agent. `make eval` validates its evidence,
+scenario-suite and implementation hashes and projects it into `eval/results.json` as
+`agent_output_evaluation.available: true`. The partial status is retained; the run was not
+retried or repaired.
 
 | Metric | Observed result |
 |---|---:|
 | Scenario success | 10/12 |
-| Expected tool behavior | 11/11 |
-| Expected UI/state outcome | 12/12 |
+| Expected tool behavior | 10/11 |
+| Expected UI/state outcome | 11/12 |
 | Citation behavior | 4/5 |
 | State correction | 1/1 |
 | Stale-turn protection | 1/1 |
 
-The review-query scenario reached the correct review tool and preserved state, but the model
-returned unsupported citation IDs. The production citation boundary replaced that output with
-the conservative unverified answer, so citation behavior failed. The review-reliability
-scenario correctly left the recommendation empty and changed preferences once, but attempted
-a third tool after the mutation; the one-mutation boundary rejected it with
-`LunaToolCallRejected`. These failures remain in the artifact rather than being repaired or
-removed.
+The review-query scenario reached the correct review tool and preserved state, but final-output
+validation rejected unsupported citations with `LunaAgentContractError`. The
+no-comparable-winner scenario read comparison and review data, then made a rejected tool call;
+it returned `LunaToolCallRejected` without changing state or inventing a winner. These failures
+remain in the artifact rather than being repaired or removed.
 
-The eleven model-backed scenario latencies had p50 5.911s and nearest-rank p95 8.094s. All 28
-responses reported usage: 71,663 input tokens and 1,935 output tokens. Cost remains unavailable
+The eleven model-backed scenario latencies had p50 5.930s and nearest-rank p95 7.653s. All 28
+responses reported usage: 76,509 input tokens and 1,965 output tokens. Cost remains unavailable
 because no verified price table is configured. These are one synthetic run's observations, not
 a production accuracy claim or latency SLO. The frozen fixture has no objective value tie, so
 the no-comparable-winner scenario measures abstention when review reliability cannot produce an

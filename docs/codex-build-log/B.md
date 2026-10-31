@@ -549,3 +549,72 @@ exit 0
 
 No paid provider call, browser E2E, Live microphone flow, Host B, Docker or deployment was run.
 The existing `eval/agent-results.json` remains the unmodified B6 historical measurement.
+
+## B8: current A4 artifact and C handoff — 31 October 2026
+
+**Outcome:** Ran the one explicitly authorized current-agent benchmark, projected its
+hash-validated result for A4, and audited the merged C3 panel against B's public routes. A can
+score the current output, and C has no remaining B dependency for its frontend work.
+
+**Paid execution:**
+
+```text
+cd services/luna-api
+UV_CACHE_DIR=/tmp/decodex-uv-cache PYTHONPATH=../.. uv run --frozen python -m eval.agent --live
+status=partial
+attempted_requests=28
+request_limit=44
+scenario_success=10/12
+tool_success=10/11
+ui_outcome_success=11/12
+citation_behavior_success=4/5
+state_correction_success=1/1
+stale_turn_protection=1/1
+exit 2
+```
+
+The command was not retried. `review_query` failed final citation validation with
+`LunaAgentContractError`; `no_comparable_winner` made a rejected tool call and returned
+`LunaToolCallRejected` without changing state or inventing a winner.
+
+**A handoff:**
+
+```text
+UV_CACHE_DIR=/tmp/decodex-uv-cache make eval
+agent=true
+exit 0
+```
+
+`eval/results.json` now projects the current artifact with `available: true` and
+`status: partial`. Changing the agent before A consumes this handoff would stale the artifact
+and require separate authorization for another paid run.
+
+**C handoff:** PR #14's Host A panel already consumes B's session, catalog, comparison, ask and
+canonical refresh routes. The remaining direct-browser OpenAI deletion, canonical host adapter,
+review presentation, shared widget package, Host B, browser voice and dual-host browser test are
+C-owned. No backend route or schema is pending for C to continue.
+
+**Final deterministic verification:**
+
+```text
+UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+57 files already formatted
+All checks passed!
+Success: no issues found in 55 source files
+170 passed in 0.93s
+exit 0
+
+cd shopee-compare-app
+npx eslint src/luna/LunaWidget.jsx src/luna/lunaClient.js vite.config.js
+exit 0
+
+npm run build
+64 modules transformed
+build completed
+exit 0
+```
+
+The extra formatted/typed source is a deferred local Playwright test harness and is not part of
+this handoff commit. Its browser journey reached `/ask` but did not observe revision 1 after two
+runs, so it was not presented as passing and was excluded rather than delaying A or C. No paid
+provider call was made by these final commands.
