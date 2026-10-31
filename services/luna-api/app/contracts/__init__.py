@@ -1,1 +1,1 @@
-"""B-owned API session contracts."""
+"""API session contracts."""

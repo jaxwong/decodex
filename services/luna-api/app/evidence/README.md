@@ -117,27 +117,22 @@ the listing's snapshot. Only the `mock` factory is implemented.
   safety conclusions. Unknown-variant listing-wide insights are excluded rather
   than presented as exact-SKU summaries.
 
-## Verification and integration prerequisites
+## Verification
 
-The shared Python project, `uv.lock` and root Makefile now belong to B. Use that
-locked environment rather than a separate dependency installation. The A2 quality
-review passed formatting, lint, strict typing and 150 combined A/B tests after
-integrating main at `8068646`, using a temporary mypy import-path override. B has
-configured pytest's root import path; B-owned configuration still needs to add
-the repository root to mypy's `mypy_path` before plain `make api-test` passes.
-The user explicitly left that configuration change to Developer B.
+The evidence package shares `services/luna-api/pyproject.toml`, `uv.lock` and the root
+`Makefile` with the rest of the API. Use that locked environment rather than a separate
+dependency installation; `pyproject.toml` already adds the repository root to pytest's and
+mypy's import paths.
 
 The installed SDK's strict schema serialization and parser were exercised with a
-mock HTTP transport. These checks do not prove real evidence extraction or live
-A/B integration.
+mock HTTP transport. These checks do not prove real evidence extraction.
 
-Standalone reproduction from the repository root:
+Offline reproduction from the repository root:
 
 ```bash
 make api-sync
-# Temporary verification until B configures mypy's root import path:
-MYPYPATH="$PWD" make api-test
-PYTHONPATH=services/luna-api:. services/luna-api/.venv/bin/python -m eval.run
+make api-test
+make eval
 ```
 
 Separate real-API pathways, requiring a server-side key and available model access:

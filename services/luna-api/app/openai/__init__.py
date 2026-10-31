@@ -1,1 +1,1 @@
-"""B-owned OpenAI decision-agent and GPT-Live integrations."""
+"""OpenAI decision-agent and GPT-Live integrations."""

@@ -107,19 +107,19 @@ flowchart LR
 
 ## Repository responsibilities
 
-| Area | Owner | Primary paths | Responsibility |
-|---|---|---|---|
-| Host A | C | `shopee-compare-app/` | Shopee-style shell, routes and host adapter |
-| Shared widget | C | `packages/luna-widget/` | Comparison UI, API client, evidence/citations and WebRTC media |
-| Host B | C | `apps/minimal-host/` | Independent layout, catalog UI and host adapter for portability proof |
-| Frontend workspace/test gate | C | `package.json`, `package-lock.json`, `playwright.config.js` | One dependency lock, both builds and dual-host browser tests |
-| HTTP/API composition | B | `services/luna-api/app/main.py`, `app/routes/`, `app/errors.py` | Authentication boundary, routes, dependency wiring, stable error envelope |
-| Mutable decision state | B | `app/decision/`, `app/contracts/session.py` | Demo sessions, comparisons, preferences, ranking, revisions and tools |
-| Immutable evidence | A | `app/evidence/`, `app/contracts/evidence.py` | Exact-variant extraction, normalization, citations and review analysis |
-| Marketplace boundary | A | `app/providers/` | Catalog protocol and labelled synthetic provider |
-| OpenAI decision boundary | B | `app/openai/` | Bounded Responses loop and Live sideband executor |
-| Evaluation | A + B | `eval/` | Evidence metrics, paid evidence run, B's agent benchmark and honest artifacts |
-| Delivery | B after C handoff | `Makefile`, future `Dockerfile`, future `render.yaml` | Commands and eventual single-service runtime |
+| Area | Primary paths | Responsibility |
+|---|---|---|
+| Host A | `shopee-compare-app/` | Shopee-style shell, routes and host adapter |
+| Shared widget | `packages/luna-widget/` | Comparison UI, API client, evidence/citations and WebRTC media |
+| Host B | `apps/minimal-host/` | Independent layout, catalog UI and host adapter for portability proof |
+| Frontend workspace/test gate | `package.json`, `package-lock.json`, `playwright.config.js` | One dependency lock, both builds and dual-host browser tests |
+| HTTP/API composition | `services/luna-api/app/main.py`, `app/routes/`, `app/errors.py` | Authentication boundary, routes, dependency wiring, stable error envelope |
+| Mutable decision state | `app/decision/`, `app/contracts/session.py` | Demo sessions, comparisons, preferences, ranking, revisions and tools |
+| Immutable evidence | `app/evidence/`, `app/contracts/evidence.py` | Exact-variant extraction, normalization, citations and review analysis |
+| Marketplace boundary | `app/providers/` | Catalog protocol and labelled synthetic provider |
+| OpenAI decision boundary | `app/openai/` | Bounded Responses loop and Live sideband executor |
+| Evaluation | `eval/` | Evidence metrics, paid evidence run, the agent benchmark and honest artifacts |
+| Delivery | `Makefile`, future `Dockerfile`, future `render.yaml` | Commands and eventual single-service runtime |
 
 ### Product view evidence flow
 
