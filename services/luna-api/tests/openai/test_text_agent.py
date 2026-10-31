@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from datetime import UTC, datetime
 from typing import Any
 
@@ -94,7 +95,11 @@ async def create_comparison_state() -> tuple[DemoSessionState, str]:
     return session_state, comparison.comparison_id
 
 
-def test_agent_executes_one_mutation_and_returns_only_valid_citations() -> None:
+def test_agent_executes_one_mutation_and_returns_only_valid_citations(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.INFO, logger="app.openai.text_agent")
+
     async def scenario() -> None:
         session_state, comparison_id = await create_comparison_state()
         comparison = require_comparison(session_state, comparison_id)
@@ -158,6 +163,12 @@ def test_agent_executes_one_mutation_and_returns_only_valid_citations() -> None:
         assert "untrusted" in provider_requests[0]["instructions"].lower()
         assert provider_requests[1]["previous_response_id"] == "resp_tool"
         assert provider_requests[1]["input"][0]["type"] == "function_call_output"
+        completion_logs = [
+            record.message for record in caplog.records if "Completed Luna turn" in record.message
+        ]
+        assert len(completion_logs) == 1
+        assert "provider_calls=2" in completion_logs[0]
+        assert "elapsed_ms=" in completion_logs[0]
 
     asyncio.run(scenario())
 
