@@ -4,6 +4,27 @@ This file records implemented Luna milestones. The implementation spec remains t
 
 ## 31 October 2026
 
+### Implemented on `feat/extraction-latency`
+
+- A product's spec extraction and review extraction now run concurrently; disputes attach once
+  both resolve, and a failed call on either side still leaves the other side's result intact.
+- `EvidenceBuilder` reuses completed per-product analyses from a bounded in-process dict keyed by
+  `(listing_id, variant_id, snapshot_version)` (64 entries, oldest evicted). A repeat compare of
+  unchanged products makes no model call; a seller reply re-extracts only that product;
+  unresolved analyses are never cached (I-60).
+- Evidence extraction calls send `reasoning={"effort": "low"}` through a required
+  `OpenAIModelClient(reasoning_effort=...)`, owned by `EVIDENCE_REASONING_EFFORT` in
+  `app/openai/runtime.py` and passed by the API, `eval/run.py` and the live smoke (D-22).
+- Measured on `POST /api/comparisons` for the three demo products against the real API, one
+  compare per step:
+
+  | Step | First compare | Repeat compare | supported facts / mentions / rejected / disputed |
+  |---|---|---|---|
+  | before | 16.6 s | 16.6 s | 22 / 52 / 0 / 1 |
+  | concurrent calls | 11.5 s | same | 22 / 52 / 0 / 1 |
+  | + snapshot reuse | 10.1 s | 0.003 s, 0 model calls | 22 / 51 / 0 / 1 |
+  | + low effort | 8.6 s | 0.002 s, 0 model calls | 22 / 51 / 0 / 1 |
+
 ### Implemented on `feat/deploy-render`
 
 - One image now serves both hosts and the API from one origin: multi-stage `Dockerfile`, allowlist

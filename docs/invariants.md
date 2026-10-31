@@ -65,6 +65,7 @@ stateDiagram-v2
 | I-31 | Any typed text-provider failure or invalid response after mutation is non-retryable and includes the committed revision; the client refreshes instead of repeating intent. | Agent exceptions and HTTP mapping |
 | I-32 | Expected external failures have one typed boundary and explicit behavior. Programmer errors raise. | Evidence failure handling and `app.errors` |
 | I-33 | Streamed or partial provider output is not durable state. Only validated completed output is used. | Response/status validation |
+| I-60 | A product analysis is reused only for the same `(listing_id, variant_id, snapshot_version)`, and only when both `analysis_status` and `review_status` are `completed`; an unresolved analysis is never cached, so the next compare retries it. The cache is bounded process memory (64 entries, oldest evicted). Evaluation constructs a fresh `EvidenceBuilder`, so a reused analysis is never reported as a measured one. | `EvidenceBuilder._analysis`, `test_pipeline.py` cache tests, `eval/run.py` and `eval/smoke.py` per-stage builders |
 
 ## Live-specific ownership
 

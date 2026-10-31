@@ -50,6 +50,8 @@ curl --fail -X POST \
 
 Comparison creation calls the evidence builder exactly once. Runtime has no fixture fallback; the frozen fixture builder exists only under `tests/`.
 
+The builder makes two model calls per product (specs and reviews) concurrently, with `reasoning={"effort": "low"}` owned by `EVIDENCE_REASONING_EFFORT` in `app/openai/runtime.py`, and reuses a completed product analysis for the same snapshot version from process memory, so repeating a compare of unchanged products makes no model call. Like demo sessions, that memory resets on restart. Measured on the three demo products: 16.6 s before, 8.6 s for a first compare and 0.002 s for a repeat (D-22).
+
 Copy the returned `comparison_id` and current `revision`, then ask Luna:
 
 ```bash

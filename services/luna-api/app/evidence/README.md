@@ -43,6 +43,7 @@ Run Python with `services/luna-api` on the import path. The exact public interfa
 from app.evidence import build_comparison_evidence, evidence_dependencies
 from app.evidence import OpenAIModelClient
 from app.contracts.evidence import ComparisonSelection
+from app.openai.runtime import EVIDENCE_REASONING_EFFORT
 from app.providers import provider_factory
 
 selections = [
@@ -52,7 +53,9 @@ selections = [
 ]
 
 # Inside B's asynchronous route/service:
-model_client = OpenAIModelClient(shared_sdk_client, model=resolved_text_model)
+model_client = OpenAIModelClient(
+    shared_sdk_client, model=resolved_text_model, reasoning_effort=EVIDENCE_REASONING_EFFORT
+)
 with evidence_dependencies(provider_factory({"provider": "mock"}), model_client):
     evidence = await build_comparison_evidence(selections)
 ```
@@ -90,6 +93,18 @@ the listing's snapshot. Only the `mock` factory is implemented.
 - One specification request per item, at most four per comparison, with no
   automatic retry. SDK `responses.parse(text_format=...)` validates typed raw
   candidates; Python converts Ah/mAh, kg/g, years/months and boolean aliases.
+  Every call sends the `reasoning_effort` the client was built with
+  (`EVIDENCE_REASONING_EFFORT`, "low"; D-22 has the measurements).
+- An item's specification request and its review requests run concurrently; the
+  review-disputed claims are attached after both finish. Spec validation only ever
+  sees seller evidence; review sources join the index afterwards for citations.
+- `EvidenceBuilder` reuses a completed item analysis (`analysis_status` and
+  `review_status` both `completed`) for the same `(listing_id, variant_id,
+  snapshot_version)` from a bounded in-process dict (64 entries, oldest evicted).
+  Unresolved analyses are never kept, so a transient failure retries on the next
+  compare. The provider's snapshot version hashes listing text, reviews and seller
+  replies, so a seller reply re-extracts only that product. Evaluation constructs a
+  fresh builder per stage; a reused analysis is never reported as a measurement.
 - Supported values require exact-SKU evidence and a recognized, fully labelled
   source clause such as `Weight: 0.42 kg`. Unsupported dimensions, ambiguous prose,
   unknown citations and sibling claims abstain. This deliberately limits natural

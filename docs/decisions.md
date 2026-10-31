@@ -54,6 +54,7 @@ flowchart TD
 | D-16 | Accepted and implemented | Use one widget package, two host adapters and one root npm lock |
 | D-17 | Accepted and implemented | Refresh Live UI after confirmed events; never mutate from captions |
 | D-21 | Accepted and implemented | Separate buyer and seller UI; picking in Luna returns to the cart; Host A has no picker |
+| D-22 | Accepted and implemented | Cut compare latency: concurrent spec/review calls, snapshot-keyed analysis reuse, low reasoning effort |
 | D-24 | Accepted and implemented | A Your pick bar puts checkout one explicit press from the comparison without making a pick a purchase |
 
 ## D-01 — Labelled synthetic marketplace provider
@@ -372,6 +373,68 @@ made judges distrust the parts that work.
 asked listing); nothing polls. Questions are in-memory demo state like sessions and reset on API
 restart. Host B still uses the picker because it has no cart. `make api-dev` reloads on API file
 edits and forgets sessions; the widget now recovers in place instead of showing a picker.
+
+## D-22 — Cut compare latency without changing what counts as evidence
+
+**Decision:** Three changes to the evidence pipeline, each measured on the three demo products
+(`listingA:100w`, `listingB:65w`, `listingC:87w`) against the real `gpt-6-luna` Structured
+Outputs API, one `POST /api/comparisons` per step (six paid calls each):
+
+1. A product's spec extraction and review extraction run concurrently (`asyncio.gather`); review
+   disputes attach once both resolve. Spec validation still sees seller evidence only.
+2. `EvidenceBuilder` keeps completed per-product analyses in a bounded in-process dict (64
+   entries, oldest evicted) keyed by `(listing_id, variant_id, snapshot_version)`. Only analyses
+   with `analysis_status` and `review_status` both `completed` are kept.
+3. Both calls send `reasoning={"effort": "low"}`, owned by `EVIDENCE_REASONING_EFFORT` in
+   `app/openai/runtime.py` and passed by the API, the eval runner and the live smoke. There is
+   no environment knob.
+
+| Step | First compare | Repeat compare | Quality (validators) |
+|---|---|---|---|
+| `main` before | 16.6 s | 16.6 s (re-extracts) | 22 supported facts, 52 mentions, 0 rejected, 1 disputed |
+| + concurrent spec/review | 11.5 s | same | 22, 52, 0, 1 |
+| + snapshot-keyed reuse | 10.1 s | 0.003 s, 0 model calls | 22, 51, 0, 1 |
+| + low reasoning effort | 8.6 s | 0.002 s, 0 model calls | 22, 51, 0, 1 |
+
+Reasoning effort per call, three products concurrently, one run per effort (seconds, output
+tokens, reasoning tokens, validator outcome):
+
+| effort | item | call | s | out | reasoning | validators |
+|---|---|---|---|---|---|---|
+| default | listingA:100w | specs | 4.9 | 595 | 94 | supported=8 |
+| default | listingA:100w | reviews | 7.1 | 834 | 215 | accepted=18 rejected=0 |
+| default | listingB:65w | specs | 4.4 | 547 | 49 | supported=8 |
+| default | listingB:65w | reviews | 12.1 | 1321 | 708 | accepted=17 rejected=0 disputes=2 |
+| default | listingC:87w | specs | 4.8 | 573 | 85 | supported=6 missing=1 conflicting=1 |
+| default | listingC:87w | reviews | 7.4 | 859 | 261 | accepted=17 rejected=0 |
+| low | listingA:100w | specs | 5.5 | 499 | 0 | supported=8 |
+| low | listingA:100w | reviews | 5.4 | 758 | 140 | accepted=18 rejected=0 |
+| low | listingB:65w | specs | 6.8 | 551 | 53 | supported=8 |
+| low | listingB:65w | reviews | 6.4 | 778 | 197 | accepted=16 rejected=0 disputes=2 |
+| low | listingC:87w | specs | 5.6 | 486 | 0 | supported=6 missing=1 conflicting=1 |
+| low | listingC:87w | reviews | 6.1 | 818 | 215 | accepted=17 rejected=0 |
+| none | listingA:100w | specs | 4.0 | 499 | 0 | supported=8 |
+| none | listingA:100w | reviews | 4.4 | 616 | 0 | accepted=18 rejected=0 |
+| none | listingB:65w | specs | 4.0 | 496 | 0 | supported=8 |
+| none | listingB:65w | reviews | 4.7 | 579 | 0 | accepted=16 rejected=0 disputes=2 |
+| none | listingC:87w | specs | 4.2 | 487 | 0 | **supported=5 missing=1 conflicting=1 unresolved=1** |
+| none | listingC:87w | reviews | 4.4 | 573 | 0 | accepted=16 rejected=0 |
+
+**Why:** A compare took 17 s because each product's two model calls ran one after the other
+and every compare re-extracted products whose text had not changed. The slowest call was review
+extraction spending up to 708 reasoning tokens on copy-and-cite work. `none` is faster still but
+turned one `listingC` fact unresolved that `default` and `low` both resolved; `low` matched the
+default validators on every fact, kept the two disputes and rejected no mention. The mention
+counts (51–52, 16–17 on `listingB`) moved by one between runs at the same effort, which is model
+variance, not an effort effect.
+
+**Consequences:** The cache is process memory like demo sessions (D-09): it resets on restart and
+is not shared across workers. Unresolved analyses are never kept, so a failed call retries on the
+next compare. Evaluation (`eval/run.py`, `eval/smoke.py`) builds a fresh builder per stage, so a
+reused analysis never appears as a measured latency. The model rejects `minimal`; the accepted
+efforts are `none`, `low`, `medium`, `high`, `xhigh`. Not measured: `medium` and above, more than
+one run per effort, and the paid `make eval --live` benchmark against the recorded labels; the
+recorded live run's implementation hash was already stale before this change (D-20).
 
 ## D-24 — Deciding and buying sit together on the comparison but stay two presses
 
