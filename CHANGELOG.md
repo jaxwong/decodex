@@ -21,8 +21,30 @@ This file records implemented Luna milestones. The implementation spec remains t
 - Full API gate: **54 files formatted, lint passed, 52 sources strictly typed, and 139 tests passed**.
 - Screenshot matching was not started because G4 still requires C5's real microphone → tool → revision proof; aggregate E2E and deployment remain blocked on C's absent Host B/build outputs.
 
+### Implemented on `b6-agent-evaluation`
+
+- Added a fixed 12-utterance decision-agent benchmark over the production `run_luna` loop,
+  same four tools and frozen comparison evidence. Eleven model-backed scenarios are bounded to
+  four calls each; the stale-turn scenario fails before a model call, for a structural ceiling
+  of 44 paid requests.
+- The first paid `gpt-6-luna` run used 28/44 requests and finished `partial`: scenario success
+  10/12, tool behavior 11/11, UI/state outcomes 12/12, citation behavior 4/5, state correction
+  1/1 and stale-turn protection 1/1. It was not retried; both failed scenarios remain in the
+  committed artifact.
+- `make eval` is now an actual phony command and projects the hash-validated agent artifact into
+  `eval/results.json` without making a provider call.
+- Added `docs/architecture.md`, `docs/invariants.md`, `docs/decisions.md` and
+  `docs/user-stories.md`, including Mermaid system/flow diagrams and explicit implemented versus
+  planned status.
+- Full API gate: **56 files formatted, lint passed, 54 sources strictly typed, and 156 tests
+  passed**.
+- The docs identify the main integration gap rather than hiding it: Host A still uses its legacy
+  browser comparison/OpenAI path, and C3 has not connected it to the implemented Luna API.
+
 ### Not yet merged
 
+- C3 Host A API integration, including deletion of the browser API-key field, direct OpenAI call
+  and independent browser ranking path.
 - C5 browser WebRTC voice controls and the joint real-microphone delegation/mutation check.
 - C's independent Host B.
 - Aggregate E2E/demo Make targets, the single Docker image, and Render deployment.

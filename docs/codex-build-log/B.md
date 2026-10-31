@@ -396,3 +396,83 @@ exit 0
 ```
 
 No paid provider call, browser E2E, screenshot feature or deployment was run in B5. Those are unnecessary for this deterministic hardening block or remain gated as described above.
+
+## B6: bounded decision-agent evaluation and system documentation — 31 October 2026
+
+**Outcome:** Added a fixed synthetic benchmark that exercises the production Responses agent,
+same four decision tools and canonical comparison state. Added `make eval`, recorded one paid
+run without retry, and documented the current architecture, invariants, decisions and
+plain-language product flow. The documentation states that the backend exists but Host A is not
+connected; this branch does not claim browser E2E.
+
+**Ownership and limits:**
+
+- `eval/agent.py` owns the twelve fixed utterances and one `eval/agent-results.json` artifact.
+  The stale-turn scenario makes zero model calls; the other eleven allow at most four each, so
+  the complete benchmark has a 44-request ceiling.
+- The paid CLI is the only writer of agent measurements. Tests inject concrete SDK response
+  objects and cannot write a measured artifact. `eval.run` only hash-validates and projects an
+  existing artifact.
+- SDK retries, repair passes and alternate models are disabled. A partial run remains partial.
+- This branch does not change React. `shopee-compare-app/src/compare/engine.js` still calls
+  OpenAI directly and `src/luna/LunaWidget.jsx` still says API integration is pending. Deleting
+  that superseded path and wiring Host A to `/api` remains C3.
+
+**Files changed:**
+
+- `eval/agent.py`
+- `eval/live.py`
+- `eval/run.py`
+- `eval/agent-results.json`
+- `eval/results.json`
+- `eval/README.md`
+- `services/luna-api/tests/openai/test_agent_evaluation.py`
+- `services/luna-api/tests/evidence/test_live_evaluation.py`
+- `Makefile`
+- `docs/{architecture,invariants,decisions,user-stories}.md`
+- `CHANGELOG.md`
+- `docs/codex-build-log/B.md`
+
+**Paid evaluation:**
+
+```text
+cd services/luna-api
+PYTHONPATH=../.. uv run --frozen python -m eval.agent --live
+status=partial
+attempted_requests=28
+request_limit=44
+scenario_success=10/12
+tool_success=11/11
+ui_outcome_success=12/12
+citation_behavior_success=4/5
+state_correction_success=1/1
+stale_turn_protection=1/1
+exit 2
+```
+
+The review-query output used unsupported citation IDs, so the production citation boundary
+returned the conservative unverified answer. The review-reliability scenario mutated once and
+correctly kept the recommendation empty, then attempted a disallowed third tool and received
+`LunaToolCallRejected`. Neither scenario was retried or repaired.
+
+**Final deterministic verification:**
+
+```text
+UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+56 files already formatted
+All checks passed!
+Success: no issues found in 54 source files
+156 passed in 0.97s
+exit 0
+
+UV_CACHE_DIR=/tmp/decodex-uv-cache make eval
+agent=true
+exit 0
+
+git diff --check -- docs/architecture.md docs/invariants.md docs/decisions.md docs/user-stories.md
+exit 0
+```
+
+No paid provider call was made by either final verification command. Browser E2E, real
+microphone input, Host B, Docker and deployment remain unverified because their C-owned inputs
+do not exist.
