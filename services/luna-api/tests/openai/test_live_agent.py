@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from types import SimpleNamespace
@@ -158,7 +159,11 @@ def closed_event() -> SimpleNamespace:
     return SimpleNamespace(type="session.closed")
 
 
-def test_start_live_session_uses_one_create_and_zero_retry_sideband_attach() -> None:
+def test_start_live_session_uses_one_create_and_zero_retry_sideband_attach(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.INFO, logger="app.openai.live_agent")
+
     async def scenario() -> None:
         session_state, comparison_id = await create_comparison_state()
         connection = FakeSidebandConnection([])
@@ -203,6 +208,12 @@ def test_start_live_session_uses_one_create_and_zero_retry_sideband_attach() -> 
         assert fake_client.live.sideband.requests == [{"session_id": "live_test", "max_retries": 0}]
         assert connection.closed is True
         assert session_state.live_sessions == {}
+        creation_logs = [
+            record.message for record in caplog.records if "Created Live session" in record.message
+        ]
+        assert len(creation_logs) == 1
+        assert "external_calls=2" in creation_logs[0]
+        assert "elapsed_ms=" in creation_logs[0]
 
     asyncio.run(scenario())
 

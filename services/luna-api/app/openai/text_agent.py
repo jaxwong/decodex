@@ -4,6 +4,7 @@ import logging
 import os
 import secrets
 from collections.abc import Awaitable, Callable
+from time import perf_counter
 from typing import Any
 
 from openai import APITimeoutError, AsyncOpenAI, OpenAIError
@@ -552,6 +553,7 @@ async def run_luna(
     model: str,
 ) -> AskComparisonResponse:
     """Run at most three tool rounds and return only validated server-owned state."""
+    turn_started_at = perf_counter()
     comparison = require_comparison(session_state, comparison_id)
     if comparison.revision != expected_revision:
         raise RevisionConflict(comparison.revision)
@@ -634,13 +636,16 @@ async def run_luna(
     request_id = f"req_{secrets.token_urlsafe(18)}"
     logger.info(
         "Completed Luna turn request_id=%s comparison_id=%s revision=%s "
-        "tool_rounds=%s action_completed=%s citation_count=%s max_provider_calls=%s",
+        "tool_rounds=%s provider_calls=%s action_completed=%s citation_count=%s "
+        "elapsed_ms=%.1f max_provider_calls=%s",
         request_id,
         comparison_id,
         current_comparison.revision,
         tool_rounds,
+        tool_rounds + 1,
         applied_update is not None,
         len(answer.cited_ids),
+        (perf_counter() - turn_started_at) * 1000,
         MAX_PROVIDER_CALLS,
     )
     return AskComparisonResponse(

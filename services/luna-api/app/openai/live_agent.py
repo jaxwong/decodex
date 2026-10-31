@@ -6,6 +6,7 @@ import logging
 import os
 import secrets
 from dataclasses import dataclass
+from time import perf_counter
 from typing import cast
 
 from openai import AsyncOpenAI, OpenAIError
@@ -406,6 +407,7 @@ async def start_live_session(
     text_model: str,
 ) -> LiveCreateResponse:
     """Create one WebRTC session, attach one no-retry sideband, and start its relay."""
+    live_started_at = perf_counter()
     require_comparison(session_state, comparison_id)
     session_config = build_live_session_config(
         session_state,
@@ -453,9 +455,11 @@ async def start_live_session(
         )
     )
     logger.info(
-        "Created Live session session_id=%s comparison_id=%s revision=%s max_attach_retries=0",
+        "Created Live session session_id=%s comparison_id=%s revision=%s "
+        "external_calls=2 elapsed_ms=%.1f max_attach_retries=0",
         live_response.session.id,
         comparison_id,
         require_comparison(session_state, comparison_id).revision,
+        (perf_counter() - live_started_at) * 1000,
     )
     return live_response
