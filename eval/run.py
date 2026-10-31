@@ -39,7 +39,7 @@ from app.contracts.evidence import ComparisonSelection
 from app.evidence import EvidenceBuilder, OpenAIModelClient
 from app.evidence.index import build_evidence_index
 from app.evidence.reviews import review_batches
-from app.openai.runtime import OPENAI_REQUEST_TIMEOUT_SECONDS
+from app.openai.runtime import EVIDENCE_REASONING_EFFORT, OPENAI_REQUEST_TIMEOUT_SECONDS
 from app.providers import CatalogProvider, MockCatalogProvider
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -135,7 +135,7 @@ async def live_predictions(
             transport=transport, event_hooks={"request": [budget.track]}
         ),
     ) as sdk:
-        model = OpenAIModelClient(sdk, model=model_name)
+        model = OpenAIModelClient(sdk, model=model_name, reasoning_effort=EVIDENCE_REASONING_EFFORT)
         report["smoke"] = await run_smoke(provider, model)
         smoke_observations = list(model.observations)
         report["smoke"]["response_models"] = sorted(

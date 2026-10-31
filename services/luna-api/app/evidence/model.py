@@ -5,6 +5,7 @@ import json
 from typing import Any, Protocol, TypeVar
 
 from openai import AsyncOpenAI, OpenAIError
+from openai.types.shared import ReasoningEffort
 from pydantic import BaseModel, ConfigDict
 
 from app.contracts.evidence import Aspect, FieldKey, Sentiment, Status
@@ -71,6 +72,7 @@ class OpenAIModelClient:
         *,
         model: str | None = None,
         timeout_seconds: float = OPENAI_REQUEST_TIMEOUT_SECONDS,
+        reasoning_effort: ReasoningEffort,
     ) -> None:
         if model is not None and not model.strip():
             raise ValueError("OpenAIModelClient model must not be blank")
@@ -79,6 +81,7 @@ class OpenAIModelClient:
         self._client = client
         self.model = model
         self.timeout_seconds = timeout_seconds
+        self.reasoning_effort = reasoning_effort
         self.observations: list[dict[str, Any]] = []
 
     async def _parse(
@@ -95,6 +98,7 @@ class OpenAIModelClient:
                         {"role": "user", "content": json.dumps(request)},
                     ],
                     text_format=response_type,
+                    reasoning={"effort": self.reasoning_effort},
                     store=False,
                 ),
                 timeout=self.timeout_seconds,

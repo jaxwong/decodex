@@ -5,8 +5,11 @@ from dataclasses import dataclass
 
 from openai import AsyncOpenAI
 from openai.types.responses import Response
+from openai.types.shared import ReasoningEffort
 
 OPENAI_REQUEST_TIMEOUT_SECONDS = 30.0
+# Evidence extraction is copy-and-cite work over supplied text; see D-22 for the measurements.
+EVIDENCE_REASONING_EFFORT: ReasoningEffort = "low"
 
 type CreateModelResponse = Callable[..., Awaitable[Response]]
 

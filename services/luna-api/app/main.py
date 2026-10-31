@@ -11,6 +11,7 @@ from app.decision.sessions import DemoSessionStore, shutdown_demo_sessions
 from app.errors import register_exception_handlers
 from app.evidence import EvidenceBuilder, OpenAIModelClient
 from app.openai.runtime import (
+    EVIDENCE_REASONING_EFFORT,
     OPENAI_REQUEST_TIMEOUT_SECONDS,
     CreateModelResponse,
     OpenAIRuntime,
@@ -105,6 +106,7 @@ def create_app(
                 runtime.client,
                 model=runtime.text_model,
                 timeout_seconds=OPENAI_REQUEST_TIMEOUT_SECONDS,
+                reasoning_effort=EVIDENCE_REASONING_EFFORT,
             ),
         ).build
     )
