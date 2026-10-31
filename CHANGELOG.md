@@ -11,17 +11,15 @@ This file records implemented Luna milestones. The implementation spec remains t
 - **A evidence and review intelligence — [PR #3](https://github.com/jaxwong/decodex/pull/3):** frozen evidence contract and synthetic fixtures, mock catalog provider, exact-variant specification extraction, cited review analysis, failure behavior, and executed synthetic evaluation artifacts.
 - **B2 deterministic sessions and decision tools — [PR #5](https://github.com/jaxwong/decodex/pull/5):** authenticated comparison state, provider-backed catalog and evidence creation, deterministic ranking, exactly four decision tools, optimistic revisions, and stable HTTP errors.
 - **B3 bounded Responses text agent — [PR #7](https://github.com/jaxwong/decodex/pull/7):** authenticated comparison chat over the same four tools, bounded conversation history, revision-safe mutations, evidence-bound answers, and a paid local end-to-end verification.
+- **B4 GPT-Live server delegation — [PR #9](https://github.com/jaxwong/decodex/pull/9):** authenticated WebRTC session creation, one no-retry server sideband executor over the same four tools, revision-safe corrections, and paid provider create-and-attach verification. Browser microphone/audio remained C5 work and was not claimed complete.
 
-### Implemented on `b4-gpt-live-delegation`
+### Implemented on `b5-api-hardening`
 
-- Authenticated `POST /api/comparisons/{comparison_id}/live/session` returns only the provider's Live session ID and WebRTC answer SDP.
-- One `gpt-live-1` create call and one server-side sideband attach, both with SDK retries disabled; the browser never receives the API key or executes tools.
-- Responses delegation reuses B3's exact four strict schemas and Python executor, with one call at a time and at most three tool rounds per delegation.
-- Completed function calls are deduplicated, validated, saved before their output is returned, and followed by exactly one continuation; raw argument deltas never execute.
-- A successful preference change refreshes the delegated tool schema and UI context to the newly committed revision, so a later correction cannot reuse a stale revision.
-- Full behavior suite: **136 tests passed**; automated B4 tests make no provider calls.
-- One paid local flow passed health → session → catalog → comparison → Live session creation and server-side attach, returning a WebRTC answer.
-- Genuine microphone input, spoken output, and a real provider delegation-driven mutation remain C5 integration work; the full voice DoD is not yet claimed.
+- Plain `make api-test` now resolves root `eval.*` modules under strict mypy without an environment override or ignored imports.
+- Live hardening covers create failure with no orphaned session, concurrent stale correction without overwrite, and protocol failure with guaranteed sideband close.
+- Existing text and Live success-boundary logs now record actual external-call counts and monotonic elapsed milliseconds without adding a second state/metrics owner.
+- Full API gate: **54 files formatted, lint passed, 52 sources strictly typed, and 139 tests passed**.
+- Screenshot matching was not started because G4 still requires C5's real microphone → tool → revision proof; aggregate E2E and deployment remain blocked on C's absent Host B/build outputs.
 
 ### Not yet merged
 

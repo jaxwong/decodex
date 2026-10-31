@@ -336,3 +336,63 @@ HTTP 201, session_id_present=true, transport_type=webrtc, answer_sdp_present=tru
 ```
 
 This verifies the real provider accepted the delegated session configuration and the API attached its server-side sideband before returning. It does **not** prove microphone audio, a real provider-emitted delegation, spoken output, or the joint visible mutation. Those require C5's browser path, so B4 does not claim the full F5 voice DoD yet.
+
+## B5: API gate, failure-path and latency hardening — 31 October 2026
+
+**Why this block:** The optional screenshot feature is gated on G2–G4. G4 has no real C5 microphone → delegated tool → visible revision proof, so starting screenshot matching would violate the spec's cut rule. Root deployment/E2E work is also blocked because `minimal-host` and its build/test commands do not exist. B therefore took the specified fallback: harden tests and latency without blocking another developer.
+
+**Outcome:** Plain `make api-test` now passes without a temporary import-path environment override. Live tests cover provider creation failure, concurrent stale correction and protocol failure. Existing text-turn and Live-create success logs now include actual external-call counts and monotonic elapsed milliseconds; no queue, metrics store, API field or configurable timing knob was added.
+
+**Ownership and limits:**
+
+- `services/luna-api/pyproject.toml` remains the only Python tool configuration owner. Its mypy path now matches pytest's already-configured repository-root path; no import was ignored and strict mode remains enabled.
+- A failed Live create makes one attempt, never attaches a sideband and leaves no session-owned task. A concurrent winning revision is preserved; the stale call receives a structured non-retryable result. A provider protocol error closes the one sideband without fallback.
+- Text logs report `provider_calls=tool_rounds+1` with the existing four-call ceiling. Live creation reports its fixed create-plus-attach count of two. Wall time is observed at the owning boundary and is not presented as an accuracy, cost or production-SLO claim.
+
+**Files changed:**
+
+- `services/luna-api/pyproject.toml`
+- `services/luna-api/app/openai/text_agent.py`
+- `services/luna-api/app/openai/live_agent.py`
+- `services/luna-api/tests/openai/test_text_agent.py`
+- `services/luna-api/tests/openai/test_live_agent.py`
+- `services/luna-api/README.md`
+- `CHANGELOG.md`
+- `docs/codex-build-log/B.md`
+
+**Red-to-green verification:**
+
+```text
+UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+54 files already formatted
+All checks passed!
+tests/evidence/test_evaluation.py:7: error: Cannot find implementation or library stub for module named "eval.metrics"
+tests/evidence/test_evaluation.py:8: error: Cannot find implementation or library stub for module named "eval.run"
+Found 2 errors in 1 file (checked 52 source files)
+exit 2
+
+UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+54 files already formatted
+All checks passed!
+Success: no issues found in 52 source files
+........................................................................ [ 51%]
+...................................................................      [100%]
+139 passed in 0.70s
+exit 0
+```
+
+**Focused verification:**
+
+```text
+uv run --frozen ruff format --check app/openai/text_agent.py app/openai/live_agent.py tests/openai/test_text_agent.py tests/openai/test_live_agent.py
+4 files already formatted
+uv run --frozen ruff check app/openai/text_agent.py app/openai/live_agent.py tests/openai/test_text_agent.py tests/openai/test_live_agent.py
+All checks passed!
+uv run --frozen mypy app/openai/text_agent.py app/openai/live_agent.py tests/openai/test_text_agent.py tests/openai/test_live_agent.py
+Success: no issues found in 4 source files
+uv run --frozen pytest -q tests/openai/test_text_agent.py tests/openai/test_live_agent.py
+15 passed in 0.31s
+exit 0
+```
+
+No paid provider call, browser E2E, screenshot feature or deployment was run in B5. Those are unnecessary for this deterministic hardening block or remain gated as described above.
