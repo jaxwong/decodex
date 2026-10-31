@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from app.contracts.evidence import Aspect, Sentiment
 from app.evidence.model import (
     CandidateFact,
     CandidateMention,
@@ -10,7 +11,7 @@ from app.evidence.model import (
     SpecCandidates,
 )
 from app.evidence.normalize import extract_source_values
-from app.evidence.schema import SCHEMA_FIELDS, Aspect, Sentiment
+from app.evidence.schema import SCHEMA_FIELDS
 
 
 class FakeModelClient:
@@ -30,7 +31,7 @@ class FakeModelClient:
             for source in request["seller_evidence"]:
                 if source["variant_id"] != request["variant_id"]:
                     continue
-                for raw in extract_source_values(field["field_key"], source["source_text"]):
+                for raw in extract_source_values(field.field_key, source["source_text"]):
                     claims.append(
                         Claim(
                             raw_value=raw,
@@ -41,7 +42,7 @@ class FakeModelClient:
                     )
             facts.append(
                 CandidateFact(
-                    field_key=field["field_key"],
+                    field_key=field.field_key,
                     status="supported" if claims else "missing",
                     claims=claims,
                 )

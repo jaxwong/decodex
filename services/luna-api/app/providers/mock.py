@@ -8,6 +8,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Any
 
+from app.contracts.evidence import CatalogListing, CatalogVariant
 from app.errors import ApiFailure, ErrorCode
 
 from .base import CatalogProvider
@@ -99,9 +100,9 @@ class MockCatalogProvider:
         self._listings = {listing["listing_id"]: listing for listing in listings}
         self._reviews = json.loads((data_root / "reviews.json").read_text())["reviews"]
 
-    async def list_listings(self, query: str | None = None) -> list[dict[str, Any]]:
+    async def list_listings(self, query: str | None = None) -> list[CatalogListing]:
         return [
-            dict(
+            CatalogListing(
                 id=listing["listing_id"],
                 listing_id=listing["listing_id"],
                 title=listing["title"],
@@ -109,7 +110,7 @@ class MockCatalogProvider:
                 image_url=None,
                 preview="Fabricated demo listing; exact variant selection required.",
                 variants=[
-                    dict(
+                    CatalogVariant(
                         id=v["variant_id"],
                         variant_id=v["variant_id"],
                         label=v["label"],

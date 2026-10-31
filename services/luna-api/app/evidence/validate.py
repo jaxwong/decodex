@@ -9,7 +9,8 @@ from .schema import SCHEMA_FIELDS, UNITS
 
 def unresolved_facts() -> list[Fact]:
     return [
-        Fact(field_key=f["field_key"], status="unresolved", unit=f["unit"]) for f in SCHEMA_FIELDS
+        Fact(field_key=field.field_key, status="unresolved", unit=field.unit)
+        for field in SCHEMA_FIELDS
     ]
 
 
@@ -27,7 +28,7 @@ def validate_facts(
         by_field.setdefault(candidate.field_key, []).append(candidate)
     facts = []
     for field in SCHEMA_FIELDS:
-        field_key = field["field_key"]
+        field_key = field.field_key
         matches = by_field.get(field_key, [])
         if len(matches) != 1:
             facts.append(Fact(field_key=field_key, status="unresolved", unit=UNITS[field_key]))

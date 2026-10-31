@@ -5,11 +5,10 @@ HTTP routes, frontend, session state, recommendations or preferences.
 
 ## Frozen contract
 
-`app.contracts.evidence` exports `Evidence`, `Fact`, `ReviewMention`,
-`ReviewAspectSummary`, `ComparisonEvidence`, `Status`, `SourceType`, with the exact
-v3.2 fields/defaults. The schema has not changed since A1 (`e946f4e`). Validators
-also check references and counts. Models prevent assignment; nested collections
-remain the prescribed lists/dicts and must be treated as immutable snapshots.
+`app.contracts.evidence` owns the typed catalog, selection, comparison-item, fact,
+review, and evidence graph models. Validators also check references and counts.
+Models prevent assignment; nested collections remain the prescribed lists/dicts
+and must be treated as immutable snapshots.
 
 B/C can load `data/sample_comparison_evidence.json` at the repository root:
 
@@ -36,12 +35,13 @@ Run Python with `services/luna-api` on the import path. The exact public interfa
 ```python
 from app.evidence import build_comparison_evidence, evidence_dependencies
 from app.evidence import OpenAIModelClient
+from app.contracts.evidence import ComparisonSelection
 from app.providers import provider_factory
 
 selections = [
-    {"listing_id": "listingA", "variant_id": "100w"},
-    {"listing_id": "listingB", "variant_id": "65w"},
-    {"listing_id": "listingC", "variant_id": "87w"},
+    ComparisonSelection(listing_id="listingA", variant_id="100w"),
+    ComparisonSelection(listing_id="listingB", variant_id="65w"),
+    ComparisonSelection(listing_id="listingC", variant_id="87w"),
 ]
 
 # Inside B's asynchronous route/service:

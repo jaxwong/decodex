@@ -65,11 +65,13 @@ def test_baseline_input_does_not_contain_labels() -> None:
     # Provider methods expose raw source only, not ground truth or expected mentions.
     catalog = asyncio.run(MockCatalogProvider().list_listings())
     assert all(
-        "attributes" not in v and "description" not in listing
+        not hasattr(variant, "attributes") and not hasattr(listing, "description")
         for listing in catalog
-        for v in listing["variants"]
+        for variant in listing.variants
     )
-    assert "ground_truth" not in json.dumps(catalog)
+    assert "ground_truth" not in json.dumps(
+        [listing.model_dump(mode="json") for listing in catalog]
+    )
 
 
 def test_unavailable_metric_has_no_guessed_zero() -> None:

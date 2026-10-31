@@ -3,8 +3,8 @@ from collections.abc import Sequence
 
 import pytest
 
-from app.contracts.evidence import ComparisonEvidence
-from app.contracts.session import ComparisonSelection, Preferences
+from app.contracts.evidence import ComparisonEvidence, ComparisonSelection
+from app.contracts.session import Preferences
 from app.decision.comparisons import ComparisonNotFound, create_comparison
 from app.decision.sessions import DemoSessionStore, create_demo_session, require_active_demo_session
 from app.decision.tools import (
@@ -39,9 +39,9 @@ def test_create_comparison_calls_evidence_builder_once() -> None:
     build_calls: list[list[dict[str, str]]] = []
 
     async def counting_builder(
-        requested_selections: Sequence[dict[str, str]],
+        requested_selections: Sequence[ComparisonSelection],
     ) -> ComparisonEvidence:
-        build_calls.append(list(requested_selections))
+        build_calls.append([selection.model_dump() for selection in requested_selections])
         return await build_fixture_evidence(requested_selections)
 
     comparison = asyncio.run(

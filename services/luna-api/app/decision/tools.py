@@ -48,26 +48,6 @@ class RevisionConflict(ApiFailure):
         )
 
 
-def _required_item_string(item: dict[str, object], field_name: str) -> str:
-    value = item.get(field_name)
-    if not isinstance(value, str):
-        raise RuntimeError(
-            "ComparisonEvidence item field must be a string in get_comparison: "
-            f"field={field_name!r}, value={value!r}"
-        )
-    return value
-
-
-def _required_price_minor(item: dict[str, object]) -> int:
-    value = item.get("price_minor")
-    if type(value) is not int or value < 0:
-        raise RuntimeError(
-            "ComparisonEvidence price_minor must be a nonnegative integer in get_comparison: "
-            f"value={value!r}"
-        )
-    return value
-
-
 def get_comparison(
     session_state: DemoSessionState,
     comparison_id: str,
@@ -76,12 +56,12 @@ def get_comparison(
     comparison = require_comparison(session_state, comparison_id)
     snapshot_items = [
         ComparisonSnapshotItem(
-            item_key=_required_item_string(item, "item_key"),
-            title=_required_item_string(item, "title"),
-            variant_label=_required_item_string(item, "variant_label"),
-            price_minor=_required_price_minor(item),
-            currency=_required_item_string(item, "currency"),
-            facts=comparison.evidence.facts_by_item[_required_item_string(item, "item_key")],
+            item_key=item.item_key,
+            title=item.title,
+            variant_label=item.variant_label,
+            price_minor=item.price_minor,
+            currency=item.currency,
+            facts=comparison.evidence.facts_by_item[item.item_key],
         )
         for item in comparison.evidence.items
     ]
@@ -103,7 +83,7 @@ def get_review_aspect(
 ) -> ReviewAspectResult:
     """Return bounded review aggregates and literal mentions for known items and one aspect."""
     comparison = require_comparison(session_state, comparison_id)
-    known_item_keys = {item["item_key"] for item in comparison.evidence.items}
+    known_item_keys = {item.item_key for item in comparison.evidence.items}
     unknown_item_keys = set(item_keys) - known_item_keys
     if unknown_item_keys:
         raise UnknownItem(f"unknown item keys: {sorted(unknown_item_keys)!r}")

@@ -10,7 +10,12 @@ import pytest
 from openai import AsyncOpenAI, DefaultAsyncHttpxClient
 from pydantic import ValidationError
 
-from app.contracts.evidence import ComparisonEvidence, Fact
+from app.contracts.evidence import (
+    AnalyzedComparisonItem,
+    ComparisonEvidence,
+    ComparisonSelection,
+    Fact,
+)
 from app.evidence import EvidenceBuilder, build_comparison_evidence, evidence_dependencies
 from app.evidence.index import build_evidence_index
 from app.evidence.model import (
@@ -27,9 +32,9 @@ from app.providers import CatalogError, CatalogProvider, MockCatalogProvider, pr
 from tests.evidence.fakes import FakeModelClient
 
 SELECTIONS = [
-    {"listing_id": "listingA", "variant_id": "100w"},
-    {"listing_id": "listingB", "variant_id": "65w"},
-    {"listing_id": "listingC", "variant_id": "87w"},
+    ComparisonSelection(listing_id="listingA", variant_id="100w"),
+    ComparisonSelection(listing_id="listingB", variant_id="65w"),
+    ComparisonSelection(listing_id="listingC", variant_id="87w"),
 ]
 
 
@@ -39,7 +44,7 @@ def run[T](coroutine: Coroutine[Any, Any, T]) -> T:
 
 def comparison(
     model: ModelClient | None = None,
-    selections: list[dict[str, Any]] = SELECTIONS,
+    selections: list[ComparisonSelection] = SELECTIONS,
     provider: CatalogProvider | None = None,
 ) -> ComparisonEvidence:
     return run(
@@ -94,7 +99,10 @@ def test_missing_weight_abstains() -> None:
 def test_invalid_identifiers(listing_id: str, variant_id: str, code: str) -> None:
     model = FakeModelClient()
     with pytest.raises(CatalogError, match=code):
-        comparison(model, [dict(listing_id=listing_id, variant_id=variant_id), SELECTIONS[1]])
+        comparison(
+            model,
+            [ComparisonSelection(listing_id=listing_id, variant_id=variant_id), SELECTIONS[1]],
+        )
     assert not model.spec_requests
 
 
@@ -111,7 +119,10 @@ def test_bucket_bounds(count: int) -> None:
 
 def test_two_distinct_variants_same_listing() -> None:
     result = comparison(
-        selections=[SELECTIONS[0], {"listing_id": "listingA", "variant_id": "130w"}]
+        selections=[
+            SELECTIONS[0],
+            ComparisonSelection(listing_id="listingA", variant_id="130w"),
+        ]
     )
     assert fact(result, "listingA:100w", "max_output_w").value == 100
     assert fact(result, "listingA:130w", "max_output_w").value == 130
@@ -231,7 +242,10 @@ def test_model_timeout_and_partial_extraction_failure() -> None:
 
 def test_four_items_at_most_four_spec_requests() -> None:
     model = FakeModelClient()
-    comparison(model, [*SELECTIONS, {"listing_id": "listingA", "variant_id": "130w"}])
+    comparison(
+        model,
+        [*SELECTIONS, ComparisonSelection(listing_id="listingA", variant_id="130w")],
+    )
     assert len(model.spec_requests) == 4
 
 
@@ -326,7 +340,10 @@ def test_no_credentials_returns_unresolved_without_fallback(
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     result = comparison(OpenAIModelClient())
     assert all(f.status == "unresolved" for group in result.facts_by_item.values() for f in group)
-    assert all(item["review_status"] == "unresolved" for item in result.items)
+    assert all(
+        isinstance(item, AnalyzedComparisonItem) and item.review_status == "unresolved"
+        for item in result.items
+    )
 
 
 def test_provider_pagination_and_stable_snapshots() -> None:

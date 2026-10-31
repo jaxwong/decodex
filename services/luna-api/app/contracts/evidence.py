@@ -1,15 +1,103 @@
-"""Frozen v3.2 evidence wire contract. Session state belongs to the API owner."""
+"""Frozen v3.2 evidence, selection, and catalog wire contracts."""
 
-from typing import Any, Literal, Self
+from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 Status = Literal["supported", "missing", "conflicting", "unresolved"]
 SourceType = Literal["title", "description", "attribute", "variant", "review", "image", "external"]
+FieldKey = Literal[
+    "capacity_mah",
+    "max_output_w",
+    "usb_c_ports",
+    "weight_g",
+    "max_input_w",
+    "pd_supported",
+    "included_cable",
+    "warranty_months",
+]
+Aspect = Literal["heat", "portability", "charging", "reliability", "value", "other"]
+Sentiment = Literal["positive", "negative", "neutral"]
 
 
 class _EvidenceModel(BaseModel):
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", strict=True)
+
+
+class ComparisonSelection(_EvidenceModel):
+    """One exact listing variant selected by its provider-owned identity."""
+
+    listing_id: str = Field(min_length=1)
+    variant_id: str = Field(min_length=1)
+
+
+class CatalogVariant(_EvidenceModel):
+    """One exact provider variant selectable by the frontend."""
+
+    id: str
+    variant_id: str
+    label: str
+    price_minor: int = Field(ge=0)
+    currency: str
+
+
+class CatalogListing(_EvidenceModel):
+    """A bounded listing preview whose complete evidence remains server-side."""
+
+    id: str
+    listing_id: str
+    title: str
+    synthetic: bool
+    image_url: str | None
+    preview: str
+    variants: list[CatalogVariant]
+
+
+class CatalogResponse(_EvidenceModel):
+    """The provider-backed catalog projection returned to authenticated hosts."""
+
+    listings: list[CatalogListing]
+
+
+class ReviewCoverage(_EvidenceModel):
+    """Exact-variant review inclusion and rejection counts for one analyzed item."""
+
+    exact_reviews_analyzed: int = Field(ge=0)
+    exact_reviews_available: int = Field(ge=0)
+    unknown_variant_reviews_excluded: int = Field(ge=0)
+    sibling_variant_reviews_excluded: int = Field(ge=0)
+    rejected_mentions: int = Field(ge=0)
+
+
+class ComparisonItem(_EvidenceModel):
+    """Provider-owned identity and price for one exact compared variant."""
+
+    listing_id: str
+    variant_id: str
+    item_key: str
+    title: str
+    variant_label: str
+    price_minor: int = Field(ge=0)
+    currency: Literal["SGD"]
+    snapshot_version: str
+    synthetic: bool
+
+
+class AnalyzedComparisonItem(ComparisonItem):
+    """An exact comparison item plus the evidence pipeline's completed status."""
+
+    analysis_status: Literal["completed", "unresolved"]
+    analysis_error: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    review_status: Literal["completed", "unresolved"]
+    review_coverage: ReviewCoverage
+
+
+class SchemaField(_EvidenceModel):
+    """One fixed normalized comparison dimension."""
+
+    field_key: FieldKey
+    label: str
+    unit: str | None
 
 
 class Evidence(_EvidenceModel):
@@ -47,8 +135,8 @@ class ReviewMention(_EvidenceModel):
     id: str
     review_id: str
     item_key: str
-    aspect: Literal["heat", "portability", "charging", "reliability", "value", "other"]
-    sentiment: Literal["positive", "negative", "neutral"]
+    aspect: Aspect
+    sentiment: Sentiment
     excerpt: str
 
 
@@ -63,8 +151,8 @@ class ReviewAspectSummary(_EvidenceModel):
 
 
 class ComparisonEvidence(_EvidenceModel):
-    items: list[dict[str, Any]]
-    schema_fields: list[dict[str, Any]]
+    items: list[ComparisonItem | AnalyzedComparisonItem]
+    schema_fields: list[SchemaField]
     facts_by_item: dict[str, list[Fact]]
     evidence: dict[str, Evidence]
     review_summaries: list[ReviewAspectSummary]
@@ -72,19 +160,13 @@ class ComparisonEvidence(_EvidenceModel):
 
     @model_validator(mode="after")
     def check_relationships(self) -> Self:
-        items = {item["item_key"]: item for item in self.items}
+        items = {item.item_key: item for item in self.items}
         if len(items) != len(self.items) or set(items) != set(self.facts_by_item):
             raise ValueError("Items must be unique and match fact groups")
-        fields = {field["field_key"] for field in self.schema_fields}
+        fields = {field.field_key for field in self.schema_fields}
         for key, item in items.items():
-            if key != f"{item['listing_id']}:{item['variant_id']}":
+            if key != f"{item.listing_id}:{item.variant_id}":
                 raise ValueError("Invalid exact-SKU identity")
-            if (
-                type(item["price_minor"]) is not int
-                or item["price_minor"] < 0
-                or item["currency"] != "SGD"
-            ):
-                raise ValueError("Prices require nonnegative integer SGD minor units")
             facts = self.facts_by_item[key]
             if len(facts) != len(fields) or {f.field_key for f in facts} != fields:
                 raise ValueError("Every item must contain every schema field exactly once")
@@ -94,7 +176,7 @@ class ComparisonEvidence(_EvidenceModel):
                     if source is None or source.item_key != key:
                         raise ValueError("Unknown or wrong-item evidence reference")
                     if fact.status in ("supported", "conflicting") and (
-                        source.variant_id != item["variant_id"]
+                        source.variant_id != item.variant_id
                         or source.source_type in ("review", "external", "image")
                     ):
                         raise ValueError("Fact source must apply to the exact selected variant")
@@ -112,7 +194,7 @@ class ComparisonEvidence(_EvidenceModel):
                 or not mention.excerpt
                 or not any(
                     s.source_type == "review"
-                    and s.variant_id == items[mention.item_key]["variant_id"]
+                    and s.variant_id == items[mention.item_key].variant_id
                     and mention.excerpt in s.source_text
                     for s in sources
                 )

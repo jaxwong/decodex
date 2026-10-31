@@ -14,8 +14,8 @@ import httpx2
 from openai import AsyncOpenAI, OpenAIError
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from app.contracts.evidence import Evidence, Status
-from app.evidence.schema import SCHEMA_FIELDS, FieldKey
+from app.contracts.evidence import Evidence, FieldKey, Status
+from app.evidence.schema import SCHEMA_FIELDS
 
 MAX_LIVE_REQUESTS = 36
 REQUEST_TIMEOUT_SECONDS = 30
@@ -76,7 +76,7 @@ class FreeFormPrediction(BaseModel):
 
     @model_validator(mode="after")
     def check_fields(self) -> "FreeFormPrediction":
-        expected = {f["field_key"] for f in SCHEMA_FIELDS}
+        expected = {field.field_key for field in SCHEMA_FIELDS}
         if len(self.facts) != len(expected) or {f.field_key for f in self.facts} != expected:
             raise ValueError("One prediction per fixed schema field is required")
         return self
@@ -108,7 +108,9 @@ async def free_form_specs(
                             {
                                 "item_key": item_key,
                                 "variant_id": item_key.rsplit(":", 1)[1],
-                                "schema_fields": SCHEMA_FIELDS,
+                                "schema_fields": [
+                                    field.model_dump(mode="json") for field in SCHEMA_FIELDS
+                                ],
                                 "seller_evidence": [s.model_dump() for s in evidence.values()],
                             }
                         ),
@@ -121,11 +123,21 @@ async def free_form_specs(
         usage = response.usage.model_dump() if response.usage is not None else None
         raw = response.output_text
         if response.status != "completed":
-            return {"status": "incomplete", "facts": [], "usage": usage, "raw_output": raw}
+            return {
+                "status": "incomplete",
+                "facts": [],
+                "usage": usage,
+                "raw_output": raw,
+            }
         try:
             parsed = FreeFormPrediction.model_validate_json(raw)
         except ValueError:
-            return {"status": "invalid_output", "facts": [], "usage": usage, "raw_output": raw}
+            return {
+                "status": "invalid_output",
+                "facts": [],
+                "usage": usage,
+                "raw_output": raw,
+            }
         return {
             "status": "completed",
             "response_model": response.model,

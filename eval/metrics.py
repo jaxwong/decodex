@@ -7,6 +7,8 @@ extraction normalizer to decide whether a citation actually supports a claim.
 from collections import Counter
 from typing import Any
 
+from app.contracts.evidence import ComparisonSelection
+
 
 def ratio(numerator: int, denominator: int) -> dict[str, Any]:
     return {
@@ -23,9 +25,11 @@ def values_equal(left: object, right: object) -> bool:
 
 
 def score(
-    prediction: dict[str, Any], ground_truth: dict[str, Any], selections: list[dict[str, Any]]
+    prediction: dict[str, Any],
+    ground_truth: dict[str, Any],
+    selections: list[ComparisonSelection],
 ) -> dict[str, Any]:
-    selected_keys = {f"{s['listing_id']}:{s['variant_id']}" for s in selections}
+    selected_keys = {f"{selection.listing_id}:{selection.variant_id}" for selection in selections}
     predicted_items = {item["item_key"]: item for item in prediction["items"]}
     identity_correct = sum(
         predicted_items.get(key, {}).get("listing_id") == key.rsplit(":", 1)[0]
@@ -111,7 +115,12 @@ def score(
             gold.setdefault(unit, []).append(mention["excerpt"])
     emitted, matched = set(), set()
     for mention in prediction["review_mentions"].values():
-        unit = (mention["item_key"], mention["review_id"], mention["aspect"], mention["sentiment"])
+        unit = (
+            mention["item_key"],
+            mention["review_id"],
+            mention["aspect"],
+            mention["sentiment"],
+        )
         emitted.add(unit)
         sources = [
             source

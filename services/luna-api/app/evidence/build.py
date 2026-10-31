@@ -6,12 +6,16 @@ import os
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
-from copy import deepcopy
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import ValidationError
 
-from app.contracts.evidence import ComparisonEvidence, ReviewMention
+from app.contracts.evidence import (
+    AnalyzedComparisonItem,
+    ComparisonEvidence,
+    ComparisonSelection,
+    ReviewMention,
+)
 from app.providers import CatalogError, CatalogProvider, provider_factory
 
 from .index import build_evidence_index
@@ -21,12 +25,6 @@ from .schema import SCHEMA_FIELDS
 from .validate import unresolved_facts, validate_facts
 
 logger = logging.getLogger(__name__)
-
-
-class Selection(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
-    listing_id: str
-    variant_id: str
 
 
 class EvidenceBuilder:
@@ -44,19 +42,15 @@ class EvidenceBuilder:
         self.model_client = model_client
         self.timeout_seconds = timeout_seconds
 
-    async def build(self, selections: Sequence[dict[str, Any] | Selection]) -> ComparisonEvidence:
+    async def build(self, selections: Sequence[ComparisonSelection]) -> ComparisonEvidence:
         if not 2 <= len(selections) <= 4:
             raise CatalogError("invalid_bucket")
-        selected = [
-            Selection.model_validate(s.model_dump() if isinstance(s, BaseModel) else s)
-            for s in selections
-        ]
-        keys = [(s.listing_id, s.variant_id) for s in selected]
+        keys = [(selection.listing_id, selection.variant_id) for selection in selections]
         if len(keys) != len(set(keys)):
             raise CatalogError("duplicate_selection")
         # Resolve all provider-owned identities and prices before any model requests.
         resolved = []
-        for selection in selected:
+        for selection in selections:
             listing = await self.provider.get_listing(selection.listing_id)
             if listing is None:
                 raise CatalogError("unknown_listing")
@@ -68,8 +62,8 @@ class EvidenceBuilder:
         analyses = await asyncio.gather(*(self._analyze(*source) for source in resolved))
         return ComparisonEvidence(
             items=[a["item"] for a in analyses],
-            schema_fields=deepcopy(SCHEMA_FIELDS),
-            facts_by_item={a["item"]["item_key"]: a["facts"] for a in analyses},
+            schema_fields=SCHEMA_FIELDS,
+            facts_by_item={a["item"].item_key: a["facts"] for a in analyses},
             evidence={key: value for a in analyses for key, value in a["evidence"].items()},
             review_summaries=[summary for a in analyses for summary in a["summaries"]],
             review_mentions={key: value for a in analyses for key, value in a["mentions"].items()},
@@ -94,7 +88,7 @@ class EvidenceBuilder:
         request = {
             "item_key": key,
             "variant_id": variant["variant_id"],
-            "schema_fields": SCHEMA_FIELDS,
+            "schema_fields": [field.model_dump(mode="json") for field in SCHEMA_FIELDS],
             "seller_evidence": [source.model_dump() for source in evidence.values()],
         }
         try:
@@ -167,7 +161,7 @@ class EvidenceBuilder:
             "rejected_mentions": rejected_count,
         }
         return {
-            "item": item,
+            "item": AnalyzedComparisonItem.model_validate(item),
             "facts": facts,
             "evidence": evidence,
             "mentions": mentions,
@@ -196,7 +190,7 @@ def evidence_dependencies(
 
 
 async def build_comparison_evidence(
-    selections: Sequence[dict[str, Any] | Selection],
+    selections: Sequence[ComparisonSelection],
 ) -> ComparisonEvidence:
     """Build exact-variant evidence with injected or server-configured dependencies.
 
