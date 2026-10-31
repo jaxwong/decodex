@@ -125,6 +125,8 @@ def test_get_comparison_returns_compact_normalized_snapshot() -> None:
     ]
     assert snapshot.items[0].facts[0].evidence_ids
     assert "source_text" not in snapshot.model_dump_json()
+    assert "exclusion_reasons" not in snapshot.model_dump_json()
+    assert "uncertain_fields" not in snapshot.model_dump_json()
 
 
 def test_get_review_aspect_returns_counts_and_literal_mentions() -> None:
@@ -189,6 +191,8 @@ def test_preferences_revision_conflict_preserves_newer_correction() -> None:
     assert first_update.ui_patch.new_revision == 1
     assert first_update.ui_patch.highlight_item_key == "listingB:65w"
     assert first_update.recommendation.uncertain_item_keys == ["listingC:87w"]
+    assert "exclusion_reasons" not in first_update.model_dump_json()
+    assert "uncertain_fields" not in first_update.model_dump_json()
 
     correction = apply_preferences(
         session_state,
