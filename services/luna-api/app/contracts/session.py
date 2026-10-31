@@ -184,3 +184,42 @@ class AskComparisonResponse(_SessionModel):
     cited_ids: list[str]
     recommendation: Recommendation
     ui_patch: UiPatch | None
+
+
+class LiveSessionRequest(_SessionModel):
+    """One bounded WebRTC offer containing the required audio and event channels."""
+
+    sdp: str = Field(min_length=1, max_length=131_072)
+
+    @field_validator("sdp")
+    @classmethod
+    def require_audio_and_data_media(cls, sdp: str) -> str:
+        media_lines = [line.strip() for line in sdp.splitlines() if line.startswith("m=")]
+        if not any(line.startswith("m=audio ") for line in media_lines):
+            raise ValueError("sdp must contain an audio media section")
+        if not any(
+            line.startswith("m=application ") and "webrtc-datachannel" in line
+            for line in media_lines
+        ):
+            raise ValueError("sdp must contain a WebRTC data channel")
+        return sdp
+
+
+class LiveSessionReference(_SessionModel):
+    """The unchanged provider session identity used by the browser transport."""
+
+    id: str
+
+
+class LiveSessionTransport(_SessionModel):
+    """The unchanged provider WebRTC answer applied by the browser peer connection."""
+
+    type: Literal["webrtc"]
+    sdp: str
+
+
+class LiveSessionResponse(_SessionModel):
+    """The public subset of a created GPT-Live WebRTC session."""
+
+    session: LiveSessionReference
+    transport: LiveSessionTransport
