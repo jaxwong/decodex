@@ -32,6 +32,7 @@ from app.contracts.evidence import ComparisonSelection
 from app.evidence import EvidenceBuilder, OpenAIModelClient
 from app.evidence.index import build_evidence_index
 from app.evidence.reviews import review_batches
+from app.openai.runtime import OPENAI_REQUEST_TIMEOUT_SECONDS
 from app.providers import CatalogProvider, MockCatalogProvider
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -102,11 +103,12 @@ async def live_predictions(
     provider: CatalogProvider,
     selections: list[ComparisonSelection],
     transport: httpx2.AsyncBaseTransport | None,
+    *,
+    model_name: str,
 ) -> dict[str, Any]:
     """Smoke first, then one grounded run and one text-only run; never repair/retry."""
     plan = await request_plan(provider, selections)
     budget = RequestBudget()
-    model_name = os.environ.get("OPENAI_TEXT_MODEL", "gpt-6-luna")
     report: dict[str, Any] = {
         "model": model_name,
         "request_plan": plan,
@@ -119,7 +121,7 @@ async def live_predictions(
     }
     async with AsyncOpenAI(
         max_retries=0,
-        timeout=30,
+        timeout=OPENAI_REQUEST_TIMEOUT_SECONDS,
         http_client=DefaultAsyncHttpxClient(
             transport=transport, event_hooks={"request": [budget.track]}
         ),
@@ -197,8 +199,13 @@ async def live_predictions(
 async def evaluate(
     *, live: bool = False, transport: httpx2.AsyncBaseTransport | None = None
 ) -> dict[str, Any]:
-    if live and not os.environ.get("OPENAI_API_KEY"):
-        raise RuntimeError("OPENAI_API_KEY is required for explicit --live evaluation")
+    model_name = None
+    if live:
+        if not os.environ.get("OPENAI_API_KEY"):
+            raise RuntimeError("OPENAI_API_KEY is required for explicit --live evaluation")
+        model_name = os.environ.get("OPENAI_TEXT_MODEL")
+        if model_name is None or not model_name.strip():
+            raise RuntimeError("OPENAI_TEXT_MODEL is required for explicit --live evaluation")
     provider = MockCatalogProvider()
     listings = await provider.list_listings()
     selections = [
@@ -210,7 +217,11 @@ async def evaluate(
     start = perf_counter()
     baseline = await predict(provider, selections)
     elapsed_ms = (perf_counter() - start) * 1000
-    measured = await live_predictions(provider, selections, transport) if live else None
+    measured = (
+        await live_predictions(provider, selections, transport, model_name=model_name)
+        if model_name is not None
+        else None
+    )
     labels = json.loads((ROOT / "data/ground_truth.json").read_text())
     try:
         agent_benchmark = load_agent_benchmark()

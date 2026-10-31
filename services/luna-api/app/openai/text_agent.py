@@ -1,14 +1,12 @@
 """Own Luna's bounded Responses tool loop and validated buyer-facing answer."""
 
 import logging
-import os
 import secrets
-from collections.abc import Awaitable, Callable
 from http import HTTPStatus
 from time import perf_counter
 from typing import Any, cast
 
-from openai import APITimeoutError, AsyncOpenAI, OpenAIError
+from openai import APITimeoutError, OpenAIError
 from openai.lib._pydantic import to_strict_json_schema
 from openai.types.responses import (
     FunctionToolParam,
@@ -38,16 +36,14 @@ from app.decision.tools import (
     inspect_evidence,
 )
 from app.errors import ApiFailure, ErrorCode
+from app.openai import runtime as openai_runtime
 
 logger = logging.getLogger(__name__)
 
 MAX_TOOL_ROUNDS = 3
 MAX_PROVIDER_CALLS = MAX_TOOL_ROUNDS + 1
 MAX_HISTORY_TURNS = 4
-OPENAI_REQUEST_TIMEOUT_SECONDS = 30.0
 MAX_OUTPUT_TOKENS = 800
-
-type CreateModelResponse = Callable[..., Awaitable[Response]]
 
 EVIDENCE_POLICY = """You are Luna, an evidence-bound shopping comparison assistant.
 Use only the four supplied functions for comparison facts, reviews, evidence, and preference
@@ -235,26 +231,6 @@ class LunaAgentConfigurationError(ApiFailure):
     http_status = HTTPStatus.SERVICE_UNAVAILABLE
     public_message = "Luna model access is not configured on this server."
     retryable = False
-
-
-def create_runtime_openai_client() -> AsyncOpenAI:
-    """Create a no-retry client or raise an explicit configuration failure."""
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if api_key is None or not api_key.strip():
-        raise LunaAgentConfigurationError("OPENAI_API_KEY is not set")
-    return AsyncOpenAI(
-        api_key=api_key,
-        max_retries=0,
-        timeout=OPENAI_REQUEST_TIMEOUT_SECONDS,
-    )
-
-
-def require_runtime_text_model() -> str:
-    """Return the configured Responses model or raise instead of inventing a default."""
-    model = os.environ.get("OPENAI_TEXT_MODEL")
-    if model is None or not model.strip():
-        raise LunaAgentConfigurationError("OPENAI_TEXT_MODEL is not set")
-    return model
 
 
 def _tool_schema(
@@ -476,7 +452,7 @@ def _record_successful_turn(
 
 
 async def _create_response(
-    create_response: CreateModelResponse,
+    create_response: openai_runtime.CreateModelResponse,
     *,
     model: str,
     model_input: ResponseInputParam,
@@ -581,7 +557,7 @@ async def run_luna(
     conversation_id: str,
     message: str,
     expected_revision: int,
-    create_response: CreateModelResponse,
+    create_response: openai_runtime.CreateModelResponse,
     model: str,
 ) -> AskComparisonResponse:
     """Run at most three tool rounds and return only validated server-owned state."""

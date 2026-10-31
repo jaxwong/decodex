@@ -26,10 +26,10 @@ from app.contracts.session import Preferences
 from app.decision.comparisons import create_comparison, require_comparison
 from app.decision.sessions import DemoSessionState
 from app.decision.tools import RevisionConflict, apply_preferences
+from app.openai.runtime import OPENAI_REQUEST_TIMEOUT_SECONDS, CreateModelResponse
 from app.openai.text_agent import (
     MAX_PROVIDER_CALLS,
     ConversationComparisonMismatch,
-    CreateModelResponse,
     LunaAgentContractError,
     LunaAgentTimeout,
     LunaAgentUnavailable,
@@ -44,8 +44,6 @@ AGENT_REPORT_PATH = ROOT / "eval" / "agent-results.json"
 TEXT_AGENT_PATH = ROOT / "services" / "luna-api" / "app" / "openai" / "text_agent.py"
 SCENARIO_SUITE_VERSION: Literal[1] = 1
 MAX_AGENT_REQUESTS = 44
-REQUEST_TIMEOUT_SECONDS = 30.0
-
 type ToolName = Literal[
     "get_comparison",
     "get_review_aspect",
@@ -669,7 +667,7 @@ def main() -> None:
         async with AsyncOpenAI(
             api_key=api_key,
             max_retries=0,
-            timeout=REQUEST_TIMEOUT_SECONDS,
+            timeout=OPENAI_REQUEST_TIMEOUT_SECONDS,
         ) as sdk:
             return await run_agent_benchmark(sdk.responses.create, model=model)
 

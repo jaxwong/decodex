@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from fastapi.testclient import TestClient
+from openai import AsyncOpenAI
 from openai.types.live import LiveCreateResponse
 
 from app.main import create_app
@@ -51,34 +52,24 @@ def test_live_session_route_authenticates_and_returns_provider_projection(
         )
 
     class FakeRuntimeClient:
-        async def __aenter__(self) -> "FakeRuntimeClient":
-            return self
+        class Responses:
+            async def create(self, **request: object) -> None:
+                del request
 
-        async def __aexit__(self, *args: object) -> None:
-            del args
+        def __init__(self) -> None:
+            self.responses = self.Responses()
 
     import app.routes.comparisons as comparison_routes
 
     monkeypatch.setattr(comparison_routes, "start_live_session", fake_start_live_session)
-    monkeypatch.setattr(
-        comparison_routes,
-        "create_runtime_openai_client",
-        FakeRuntimeClient,
-    )
-    monkeypatch.setattr(
-        comparison_routes,
-        "require_runtime_live_model",
-        lambda: "gpt-live-1",
-    )
-    monkeypatch.setattr(
-        comparison_routes,
-        "require_runtime_text_model",
-        lambda: "gpt-6-luna",
-    )
+    runtime_client = FakeRuntimeClient()
     client = TestClient(
         create_app(
             catalog_provider=MockCatalogProvider(),
             build_evidence=build_fixture_evidence,
+            openai_client=cast(AsyncOpenAI, runtime_client),
+            text_model="gpt-6-luna",
+            live_model="gpt-live-1",
         )
     )
     token = client.post("/api/demo-sessions").json()["token"]
@@ -103,6 +94,7 @@ def test_live_session_route_authenticates_and_returns_provider_projection(
         "transport": {"type": "webrtc", "sdp": "provider-answer-sdp"},
     }
     assert captured_request["comparison_id"] == comparison["comparison_id"]
+    assert captured_request["client"] is runtime_client
     assert captured_request["offer_sdp"] == offer_sdp
     assert captured_request["live_model"] == "gpt-live-1"
     assert captured_request["text_model"] == "gpt-6-luna"

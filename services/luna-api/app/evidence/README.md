@@ -45,7 +45,8 @@ selections = [
 ]
 
 # Inside B's asynchronous route/service:
-with evidence_dependencies(provider_factory({"provider": "mock"}), OpenAIModelClient()):
+model_client = OpenAIModelClient(shared_sdk_client, model=resolved_text_model)
+with evidence_dependencies(provider_factory({"provider": "mock"}), model_client):
     evidence = await build_comparison_evidence(selections)
 ```
 
@@ -55,9 +56,9 @@ provider settings; context-manager bindings are task-local. Test doubles impleme
 `ModelClient.extract_specs(request)` and `extract_reviews(request)`; they live
 only under `tests/evidence` and cannot be enabled by runtime configuration.
 
-No injection uses `LUNA_CATALOG_PROVIDER=mock` and server-side `OPENAI_API_KEY`,
-with `OPENAI_TEXT_MODEL=gpt-6-luna` by default. There is no offline-answer fallback.
-Absent credentials or malformed/failed Responses output produce unresolved facts.
+The API composition root resolves credentials and models once and injects one shared SDK
+client. There is no model default or offline-answer fallback. Missing configuration or
+malformed/failed Responses output produces unresolved facts.
 Catalog errors raise `CatalogError` with stable typed `.code` values; the API returns these in
 its HTTP envelope. Selection validation can raise Pydantic `ValidationError`.
 Only two to four unique exact variants are accepted, including different variants

@@ -142,6 +142,7 @@ def test_budget_blocks_before_37th_transport_request() -> None:
 
 def test_full_live_runner_offline_transport(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OPENAI_API_KEY", "offline-test-key")
+    monkeypatch.setenv("OPENAI_TEXT_MODEL", "gpt-6-luna")
     server = OfflineResponses()
     read_text = Path.read_text
 
@@ -185,6 +186,7 @@ def test_full_live_runner_offline_transport(monkeypatch: pytest.MonkeyPatch) -> 
 
 def test_failed_smoke_stops_benchmarks_and_does_not_retry(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OPENAI_API_KEY", "offline-test-key")
+    monkeypatch.setenv("OPENAI_TEXT_MODEL", "gpt-6-luna")
     server = OfflineResponses(fail_request=1)
     report = asyncio.run(evaluate(live=True, transport=httpx2.MockTransport(server.handle)))
     assert report["live_run"]["status"] == "failed"
@@ -195,6 +197,7 @@ def test_failed_smoke_stops_benchmarks_and_does_not_retry(monkeypatch: pytest.Mo
 
 def test_partial_benchmark_reports_coverage(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OPENAI_API_KEY", "offline-test-key")
+    monkeypatch.setenv("OPENAI_TEXT_MODEL", "gpt-6-luna")
     server = OfflineResponses(fail_request=7)
     report = asyncio.run(evaluate(live=True, transport=httpx2.MockTransport(server.handle)))
     grounded = report["grounded_structured_outputs"]
