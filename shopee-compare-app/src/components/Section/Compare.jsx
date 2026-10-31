@@ -31,6 +31,9 @@ function Compare() {
                                 <p className="mt-1 text-lg font-semibold text-shopee">
                                     {viewedProduct.currency} {(viewedProduct.priceMinor / 100).toFixed(2)}
                                 </p>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Price source: trusted catalog variant {viewedProduct.listingId} · {viewedProduct.variantId}
+                                </p>
                             </div>
                             <button
                                 type="button"
@@ -45,6 +48,31 @@ function Compare() {
                                 ? 'Synthetic demo listing from Luna’s trusted backend catalog; no Shopee product URL is claimed.'
                                 : 'Canonical listing snapshot from Luna’s trusted backend catalog.'}
                         </p>
+                        <ul aria-label="Product specifications" className="mt-4 grid gap-3 md:grid-cols-2">
+                            {viewedProduct.specifications.map(specification => (
+                                <li key={specification.fieldKey} className="rounded border border-gray-200 bg-gray-50 p-3">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <span className="text-sm font-medium text-gray-700">{specification.label}</span>
+                                        <strong className={specification.status === 'conflicting' ? 'text-amber-700' : 'text-gray-900'}>
+                                            {specification.value}
+                                        </strong>
+                                    </div>
+                                    {specification.sources.length > 0 ? (
+                                        <ul aria-label={`Sources for ${specification.label}`} className="mt-2 space-y-2">
+                                            {specification.sources.map(source => (
+                                                <li key={source.evidenceId} className="border-l-2 border-shopee pl-2 text-xs text-gray-600">
+                                                    <span className="font-medium text-gray-700">{source.label}</span>
+                                                    <q className="mt-1 block">{source.text}</q>
+                                                    {source.location && <span className="mt-1 block font-mono text-[11px] text-gray-400">{source.location}</span>}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="mt-2 text-xs text-gray-500">No verified seller source. Luna does not guess.</p>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
                     </section>
                 )}
                 <LunaWidget adapter={lunaAdapter} apiBaseUrl="/api" />

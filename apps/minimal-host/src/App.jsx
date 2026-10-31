@@ -66,9 +66,27 @@ export default function App() {
       <h2>{viewedProduct.title}</h2>
       <p>{viewedProduct.variantLabel}</p>
       <p>{viewedProduct.currency} {(viewedProduct.priceMinor / 100).toFixed(2)}</p>
+      <p>Price source: trusted catalog variant {viewedProduct.listingId} · {viewedProduct.variantId}</p>
       <p>{viewedProduct.synthetic
         ? 'Synthetic demo listing from Luna’s trusted backend catalog.'
         : 'Canonical listing snapshot from Luna’s trusted backend catalog.'}</p>
+      <ul aria-label="Product specifications" className="product-specifications">
+        {viewedProduct.specifications.map(specification => <li key={specification.fieldKey}>
+          <div className="product-specification-value">
+            <span>{specification.label}</span>
+            <strong>{specification.value}</strong>
+          </div>
+          {specification.sources.length > 0
+            ? <ul aria-label={`Sources for ${specification.label}`} className="product-sources">
+              {specification.sources.map(source => <li key={source.evidenceId}>
+                <span>{source.label}</span>
+                <q>{source.text}</q>
+                {source.location && <code>{source.location}</code>}
+              </li>)}
+            </ul>
+            : <p>No verified seller source. Luna does not guess.</p>}
+        </li>)}
+      </ul>
       <button type="button" onClick={() => setViewedProduct(null)}>Close product view</button>
     </section>}
     <LunaWidget adapter={hostBridge.adapter} apiBaseUrl="/api" />

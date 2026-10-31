@@ -77,3 +77,42 @@ main {
   color: white;
   cursor: pointer;
 }
+
+.product-specifications,
+.product-sources {
+  list-style: none;
+  padding: 0;
+}
+
+.product-specifications {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.product-specifications > li {
+  padding: 12px;
+  border: 1px solid #b7c6ce;
+  background: #f7f9fa;
+}
+
+.product-specification-value {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.product-sources li {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  padding-left: 8px;
+  border-left: 2px solid #244f66;
+  font-size: 12px;
+}
+
+.product-sources q,
+.product-sources code {
+  display: block;
+}
