@@ -4,6 +4,7 @@ import { assertHostAdapter, selectionKey } from './hostAdapter.js';
 import { LiveVoiceControls } from './LiveVoiceControls.jsx';
 import { lunaClient } from './lunaClient.js';
 import { RecommendationCards, PreferenceChips, EvidenceViewer, Conversation } from './LunaPanels.jsx';
+import { SellerGapReport } from './SellerGapReport.jsx';
 
 const initialMessage = {
   role: 'assistant',
@@ -27,6 +28,8 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
   const [error, setError] = useState('');
   const [lastAnswer, setLastAnswer] = useState(null);
   const [showEvidence, setShowEvidence] = useState(false);
+  const [sellerReport, setSellerReport] = useState(null);
+  const [sellerEvidenceIds, setSellerEvidenceIds] = useState([]);
   const conversationId = useRef(`luna_${crypto.randomUUID().replaceAll('-', '')}`);
   const generation = useRef(0);
   const selectedItems = useMemo(() => catalog.flatMap(listing =>
@@ -151,6 +154,26 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
     } finally { setBusy(false); }
   }
 
+  async function openSellerReport(listingId) {
+    if (!session || busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      setSellerReport(await lunaClient.getListingGapReport(
+        apiBaseUrl,
+        session.token,
+        listingId,
+      ));
+      setSellerEvidenceIds([]);
+    } catch (err) { setError(errorText(err)); }
+    finally { setBusy(false); }
+  }
+
+  function openSellerEvidence(evidenceIds) {
+    setSellerEvidenceIds(evidenceIds);
+    setShowEvidence(true);
+  }
+
   const evidence = comparison?.evidence;
   const recommendation = comparison?.recommendation;
   const askSuggestion = (text) => { if (!busy && comparison) setInput(text); };
@@ -199,14 +222,18 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
       </div>
       <PreferenceChips preferences={comparison.preferences} onSuggestion={askSuggestion} />
       <RecommendationCards recommendation={recommendation} evidence={evidence} selectedItems={selectedItems}
-        onNavigateToListing={hostAdapter.navigateToListing}/>
+        onNavigateToListing={hostAdapter.navigateToListing} onOpenSellerReport={openSellerReport}/>
+      {sellerReport && <SellerGapReport report={sellerReport}
+        onClose={() => { setSellerReport(null); setSellerEvidenceIds([]); }}
+        onOpenEvidence={openSellerEvidence}/>}
       <div>
         <button type="button" onClick={() => setShowEvidence(old => !old)}
           aria-expanded={showEvidence}
           className="w-full text-left border rounded-lg p-3 text-sm font-semibold hover:bg-gray-50">
           {showEvidence ? '▾' : '▸'} Evidence, conflicting claims & sources
         </button>
-        {showEvidence && <EvidenceViewer evidence={evidence} citedIds={lastAnswer?.cited_ids || []}/>}
+        {showEvidence && <EvidenceViewer evidence={evidence}
+          citedIds={sellerEvidenceIds.length > 0 ? sellerEvidenceIds : lastAnswer?.cited_ids || []}/>}
       </div>
     </div>}
 

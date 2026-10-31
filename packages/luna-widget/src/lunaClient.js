@@ -39,6 +39,8 @@ export const lunaClient = {
     request(apiBaseUrl, '/comparisons', { token, method: 'POST', body: { items }, signal }),
   getComparison: (apiBaseUrl, token, comparisonId, signal) =>
     request(apiBaseUrl, `/comparisons/${encodeURIComponent(comparisonId)}`, { token, signal }),
+  getListingGapReport: (apiBaseUrl, token, listingId, signal) =>
+    request(apiBaseUrl, `/listings/${encodeURIComponent(listingId)}/gap-report`, { token, signal }),
   ask: (apiBaseUrl, token, comparisonId, payload, signal) =>
     request(apiBaseUrl, `/comparisons/${encodeURIComponent(comparisonId)}/ask`, {
       token, method: 'POST', body: payload, signal,

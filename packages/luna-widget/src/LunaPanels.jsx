@@ -24,7 +24,8 @@ export function PreferenceChips({ preferences, onSuggestion }) {
 }
 PreferenceChips.propTypes = { preferences: PropTypes.object, onSuggestion: PropTypes.func.isRequired };
 
-export function RecommendationCards({ recommendation, evidence, selectedItems, onNavigateToListing }) {
+export function RecommendationCards({ recommendation, evidence, selectedItems, onNavigateToListing,
+  onOpenSellerReport }) {
   const known = new Map(selectedItems.map(item => [`${item.listing_id}:${item.variant_id}`, item]));
   for (const item of evidence?.items || []) {
     known.set(item.item_key, { ...known.get(item.item_key), ...item });
@@ -51,8 +52,12 @@ export function RecommendationCards({ recommendation, evidence, selectedItems, o
           {money(item.price_minor, item.currency) && <p className="text-sm font-medium mt-2">{money(item.price_minor, item.currency)}</p>}
           {excluded.has(key) && <p className="text-xs text-red-700 mt-2">Excluded by constraints</p>}
           {uncertain.has(key) && <p className="text-xs text-amber-700 mt-2">Evidence incomplete</p>}
-          {item.listing_id && <button type="button" onClick={() => onNavigateToListing(item.listing_id)}
-            className="text-xs text-orange-700 underline mt-3">View in host</button>}
+          {item.listing_id && <div className="flex flex-wrap gap-2 mt-3">
+            <button type="button" onClick={() => onNavigateToListing(item.listing_id)}
+              className="text-xs text-orange-700 underline">View in host</button>
+            {excluded.has(key) && <button type="button" onClick={() => onOpenSellerReport(item.listing_id)}
+              className="text-xs text-orange-700 underline">Seller view</button>}
+          </div>}
         </article>;
       })}
     </div>
@@ -66,6 +71,7 @@ RecommendationCards.propTypes = {
   recommendation: PropTypes.object, evidence: PropTypes.object,
   selectedItems: PropTypes.arrayOf(PropTypes.object).isRequired,
   onNavigateToListing: PropTypes.func.isRequired,
+  onOpenSellerReport: PropTypes.func.isRequired,
 };
 
 function sourceText(source) {
