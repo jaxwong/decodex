@@ -33,6 +33,8 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  // True only while the comparison the host handed over (2–4 picks) is being built at start-up.
+  const [autoComparing, setAutoComparing] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState(null);
   const [sourceTarget, setSourceTarget] = useState(null);
@@ -44,6 +46,8 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
   const generation = useRef(0);
   const inputRef = useRef(null);
   const selectedItems = useMemo(() => comparisonItems(catalog, selection), [catalog, selection]);
+  const imagesByListing = useMemo(
+    () => new Map(catalog.map(listing => [listing.listing_id, listing.image_url])), [catalog]);
 
   function showError(failure) {
     // Keep the API's diagnostic detail for developers; shoppers get plain text.
@@ -56,6 +60,7 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
     const epoch = ++generation.current;
     async function initialize() {
       setBusy(true);
+      setAutoComparing(false);
       setError('');
       try {
         const issued = await lunaClient.createSession(apiBaseUrl, controller.signal);
@@ -83,6 +88,7 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
           // The host already chose a full comparison (Host A's cart), so skip the picker. The
           // session was issued moments ago in this call, so there is no stale token to renew.
           // If this fails, the picker stays open with the same picks for a manual Compare.
+          setAutoComparing(true);
           const created = await lunaClient.createComparison(
             apiBaseUrl, issued.token, comparisonItems(listings, pickedKeys), controller.signal,
           );
@@ -93,7 +99,10 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
       } catch (err) {
         if (!controller.signal.aborted) showError(err);
       } finally {
-        if (epoch === generation.current) setBusy(false);
+        if (epoch === generation.current) {
+          setBusy(false);
+          setAutoComparing(false);
+        }
       }
     }
     initialize();
@@ -285,6 +294,21 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
     } finally { setBusy(false); }
   }
 
+  // The shopper's explicit pick. The host decides what follows; Luna never buys anything.
+  async function choose(item) {
+    setError('');
+    try {
+      const result = await hostAdapter.requestAddToCart({
+        listingId: item.listing_id,
+        variantId: item.variant_id,
+      });
+      if (typeof result?.ok !== 'boolean') {
+        throw new TypeError(`Luna host adapter requestAddToCart() must resolve to { ok: boolean }, got ${JSON.stringify(result)}`);
+      }
+      if (!result.ok) setError('The shop couldn’t take this product to checkout. Please try again.');
+    } catch (err) { showError(err); }
+  }
+
   function draftQuestion(text) {
     setSourceTarget(null);
     setInput(text);
@@ -299,7 +323,8 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
     data-revision={comparison ? comparison.revision : undefined}>
     <header className="luna-header">
       <span className="luna-brand"><SparkleIcon/>Luna</span>
-      <h2 className="luna-title">{comparison ? `Comparing ${evidence.items.length} products` : 'Compare products'}</h2>
+      <h2 className="luna-title">{comparison ? `Comparing ${evidence.items.length} products`
+        : autoComparing ? `Comparing ${selectedItems.length} products` : 'Compare products'}</h2>
       {isDemoData && <span className="luna-demo-pill">Demo data</span>}
       {onClose && <button type="button" className="luna-link luna-close" onClick={onClose}>Close</button>}
     </header>
@@ -311,7 +336,25 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
     </div>}
 
     <div className="luna-body">
-      {!comparison && <div className="luna-picker">
+      {!comparison && autoComparing && <div className="luna-opening" role="status">
+        <span className="luna-spinner" aria-hidden="true"/>
+        <div>
+          <p className="luna-section-title">Lining up your {selectedItems.length} products…</p>
+          <ul className="luna-opening-list">
+            {selectedItems.map(({ listing_id: listingId, variant_id: variantId }) => {
+              const listing = catalog.find(candidate => candidate.listing_id === listingId);
+              const variant = listing.variants.find(candidate => candidate.variant_id === variantId);
+              return <li key={`${listingId}:${variantId}`}>
+                {listing.image_url && <img src={listing.image_url} alt=""/>}
+                <span>{listing.title} · {variant.label}</span>
+              </li>;
+            })}
+          </ul>
+          <p className="luna-muted">Luna is reading each listing and its reviews. This can take a few seconds.</p>
+        </div>
+      </div>}
+
+      {!comparison && !autoComparing && <div className="luna-picker">
         <h3 className="luna-section-title">Pick 2–4 products to compare</h3>
         <p className="luna-muted">Luna lines them up side by side and shows where every value comes from.</p>
         <div className="luna-picker-grid">
@@ -351,7 +394,9 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
               field={evidence.schema_fields.find(field => field.field_key === sellerDraft.field_key)}
               onBack={() => setSellerDraft(null)}/>
             : <ComparisonTable comparison={comparison} onOpenCell={setSourceTarget}
-              onNavigateToListing={hostAdapter.navigateToListing} onAskSeller={askSeller}/>}
+              imagesByListing={imagesByListing}
+              onNavigateToListing={hostAdapter.navigateToListing} onAskSeller={askSeller}
+              onChoose={hostAdapter.requestAddToCart ? choose : undefined}/>}
         </div>
         <aside aria-label="Ask Luna" className="luna-chat">
           <h3 className="luna-chat-title">Ask Luna</h3>

@@ -64,67 +64,82 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await expect(sourcePanel.getByText('SGD 69.65')).toBeVisible();
   await expect(sourcePanel.getByText('SGD 81.65')).toHaveCount(2);
   await sourcePanel.getByRole('button', { name: 'Close', exact: true }).click();
-  await page.getByRole('button', { name: 'View product' }).first().click();
-  const productView = page.getByRole('region', { name: 'Host product view' });
-  await expect(productView.getByRole('heading', { name: 'Atlas Portable Power Bank' })).toBeVisible();
-  await expect(productView.getByText('100W', { exact: true })).toBeVisible();
-  await expect(productView.getByText('Delivered SGD 75.00', { exact: true })).toBeVisible();
-  const priceBreakdown = productView.locator('dl[aria-label="Price breakdown"]');
-  await expect(priceBreakdown).toContainText('List priceSGD 60.00');
-  await expect(priceBreakdown).toContainText('Shop voucher− SGD 0.00');
-  await expect(priceBreakdown).toContainText('Shipping+ SGD 15.00');
-  await expect(priceBreakdown).toContainText('Delivered totalSGD 75.00');
-  const priceSources = productView.getByRole('list', { name: 'Sources for price' });
-  await expect(priceSources.getByRole('listitem')).toHaveCount(3);
-  for (const [text, location] of [
-    ['List price: SGD 60.00', 'variants/100w/price_minor'],
-    ['Shop voucher: SGD 0.00', 'variants/100w/shop_voucher_minor'],
-    ['Shipping: SGD 15.00', 'variants/100w/shipping_minor'],
-  ]) {
-    await expect(priceSources.getByText(text, { exact: true })).toBeVisible();
-    await expect(priceSources.getByText(location, { exact: true })).toBeVisible();
-  }
-  const specifications = productView.getByRole('list', { name: 'Product specifications' });
-  const specificationRows = specifications.locator(':scope > li');
-  await expect(specificationRows).toHaveCount(8);
-  for (const [label, value] of [
-    ['Capacity', '20,000 mAh'],
-    ['Max output', '100 W'],
-    ['USB-C ports', '2'],
-    ['Weight', '420 g'],
-    ['Max input', '65 W'],
-    ['USB PD', 'Yes'],
-    ['Included cable', 'Yes'],
-    ['Warranty', '12 months'],
-  ]) {
-    const specification = specificationRows.filter({ hasText: label });
-    await expect(specification.getByText(value, { exact: true })).toBeVisible();
-  }
-  const capacity = specificationRows.filter({ hasText: 'Capacity' });
-  const capacitySources = capacity.getByRole('list', { name: 'Sources for Capacity' });
-  await expect(capacitySources.getByRole('listitem')).toHaveCount(1);
-  await expect(capacitySources.getByText('Spec table', { exact: true })).toBeVisible();
-  await expect(capacitySources.getByText('Capacity: 20 Ah', { exact: true })).toBeVisible();
-  await expect(capacitySources.getByText('variants/100w/attributes/0', { exact: true })).toBeVisible();
-  await productView.getByRole('button', { name: 'Close product view' }).click();
-  await expect(productView).toHaveCount(0);
-  await expect(widget).toHaveAttribute('data-revision', '0');
+  // Host B keeps Luna's cited product preview; Host A shows its own storefront page.
+  if (testInfo.project.name === 'host-b-chromium') {
+    await page.getByRole('button', { name: 'View product' }).first().click();
+    const productView = page.getByRole('region', { name: 'Host product view' });
+    await expect(productView.getByRole('heading', { name: 'Atlas Portable Power Bank' })).toBeVisible();
+    await expect(productView.getByText('100W', { exact: true })).toBeVisible();
+    await expect(productView.getByText('Delivered SGD 75.00', { exact: true })).toBeVisible();
+    const priceBreakdown = productView.locator('dl[aria-label="Price breakdown"]');
+    await expect(priceBreakdown).toContainText('List priceSGD 60.00');
+    await expect(priceBreakdown).toContainText('Shop voucher− SGD 0.00');
+    await expect(priceBreakdown).toContainText('Shipping+ SGD 15.00');
+    await expect(priceBreakdown).toContainText('Delivered totalSGD 75.00');
+    const priceSources = productView.getByRole('list', { name: 'Sources for price' });
+    await expect(priceSources.getByRole('listitem')).toHaveCount(3);
+    for (const [text, location] of [
+      ['List price: SGD 60.00', 'variants/100w/price_minor'],
+      ['Shop voucher: SGD 0.00', 'variants/100w/shop_voucher_minor'],
+      ['Shipping: SGD 15.00', 'variants/100w/shipping_minor'],
+    ]) {
+      await expect(priceSources.getByText(text, { exact: true })).toBeVisible();
+      await expect(priceSources.getByText(location, { exact: true })).toBeVisible();
+    }
+    const specifications = productView.getByRole('list', { name: 'Product specifications' });
+    const specificationRows = specifications.locator(':scope > li');
+    await expect(specificationRows).toHaveCount(8);
+    for (const [label, value] of [
+      ['Capacity', '20,000 mAh'],
+      ['Max output', '100 W'],
+      ['USB-C ports', '2'],
+      ['Weight', '420 g'],
+      ['Max input', '65 W'],
+      ['USB PD', 'Yes'],
+      ['Included cable', 'Yes'],
+      ['Warranty', '12 months'],
+    ]) {
+      const specification = specificationRows.filter({ hasText: label });
+      await expect(specification.getByText(value, { exact: true })).toBeVisible();
+    }
+    const capacity = specificationRows.filter({ hasText: 'Capacity' });
+    const capacitySources = capacity.getByRole('list', { name: 'Sources for Capacity' });
+    await expect(capacitySources.getByRole('listitem')).toHaveCount(1);
+    await expect(capacitySources.getByText('Spec table', { exact: true })).toBeVisible();
+    await expect(capacitySources.getByText('Capacity: 20 Ah', { exact: true })).toBeVisible();
+    await expect(capacitySources.getByText('variants/100w/attributes/0', { exact: true })).toBeVisible();
+    await productView.getByRole('button', { name: 'Close product view' }).click();
+    await expect(productView).toHaveCount(0);
+    await expect(widget).toHaveAttribute('data-revision', '0');
 
-  await page.getByRole('button', { name: 'View product' }).last().click();
-  await expect(productView.getByRole('heading', { name: 'Comet Travel Power Bank' })).toBeVisible();
-  const cometSpecifications = productView.getByRole('list', { name: 'Product specifications' });
-  const cometSpecificationRows = cometSpecifications.locator(':scope > li');
-  const missingWeight = cometSpecificationRows.filter({ hasText: 'Weight' });
-  await expect(missingWeight.getByText('Not stated', { exact: true })).toBeVisible();
-  await expect(missingWeight.getByText('No verified seller source. Luna does not guess.', { exact: true })).toBeVisible();
-  const conflictingWarranty = cometSpecificationRows.filter({ hasText: 'Warranty' });
-  await expect(conflictingWarranty.getByText('Listing disagrees: 12 vs 24 months', { exact: true })).toBeVisible();
-  const warrantySources = conflictingWarranty.getByRole('list', { name: 'Sources for Warranty' });
-  await expect(warrantySources.getByRole('listitem')).toHaveCount(2);
-  await expect(warrantySources.getByText('Warranty: 1 year', { exact: true })).toBeVisible();
-  await expect(warrantySources.getByText('Warranty: 24 months', { exact: true })).toBeVisible();
-  await productView.getByRole('button', { name: 'Close product view' }).click();
-  await expect(productView).toHaveCount(0);
+    await page.getByRole('button', { name: 'View product' }).last().click();
+    await expect(productView.getByRole('heading', { name: 'Comet Travel Power Bank' })).toBeVisible();
+    const cometSpecifications = productView.getByRole('list', { name: 'Product specifications' });
+    const cometSpecificationRows = cometSpecifications.locator(':scope > li');
+    const missingWeight = cometSpecificationRows.filter({ hasText: 'Weight' });
+    await expect(missingWeight.getByText('Not stated', { exact: true })).toBeVisible();
+    await expect(missingWeight.getByText('No verified seller source. Luna does not guess.', { exact: true })).toBeVisible();
+    const conflictingWarranty = cometSpecificationRows.filter({ hasText: 'Warranty' });
+    await expect(conflictingWarranty.getByText('Listing disagrees: 12 vs 24 months', { exact: true })).toBeVisible();
+    const warrantySources = conflictingWarranty.getByRole('list', { name: 'Sources for Warranty' });
+    await expect(warrantySources.getByRole('listitem')).toHaveCount(2);
+    await expect(warrantySources.getByText('Warranty: 1 year', { exact: true })).toBeVisible();
+    await expect(warrantySources.getByText('Warranty: 24 months', { exact: true })).toBeVisible();
+    await productView.getByRole('button', { name: 'Close product view' }).click();
+    await expect(productView).toHaveCount(0);
+  } else {
+    // Host A opens its Shopee product page over the comparison; closing it keeps the comparison.
+    await page.getByRole('button', { name: 'View product' }).first().click();
+    const productPage = page.getByRole('dialog', { name: 'Product page' });
+    await expect(productPage.getByRole('heading', { name: 'Atlas Portable Power Bank', level: 1 })).toBeVisible();
+    await expect(productPage.getByRole('img', { name: 'Atlas Portable Power Bank' })).toBeVisible();
+    await expect(productPage.getByLabel('Price')).toHaveText('SGD 60.00');
+    await expect(productPage.getByRole('button', { name: '100W', pressed: true })).toBeVisible();
+    await expect(productPage.getByRole('region', { name: 'Product Specifications' })).toContainText('Capacity20 Ah');
+    await productPage.getByRole('button', { name: '< Back to comparison' }).click();
+    await expect(productPage).toHaveCount(0);
+    await expect(widget).toHaveAttribute('data-revision', '0');
+  }
   await page.getByRole('button', { name: /^Warranty for Comet Travel .*: Listing disagrees, 12 vs 24 months$/ }).click();
   await expect(sourcePanel.getByText('Listing disagrees with itself')).toBeVisible();
   await expect(sourcePanel.getByText('Warranty: 1 year')).toBeVisible();
@@ -220,11 +235,28 @@ test('Host A cart lists catalog variants and compares the ticked ones in Luna', 
   const tickComet = cart.getByRole('checkbox', { name: 'Select Comet Travel Power Bank 87W' });
 
   // Two or more ticked products are a full comparison, so Luna opens straight on the table.
+  // While the real API builds it (seconds), the shopper sees those products loading, never the
+  // picker; hold the request open to observe that state.
+  let releaseComparison;
+  const comparisonHeld = new Promise(resolve => { releaseComparison = resolve; });
+  await page.route('**/api/comparisons', async route => {
+    await comparisonHeld;
+    await route.continue();
+  });
   await page.getByRole('button', { name: 'Compare now' }).click();
   await expect(page).toHaveURL(/#\/Compare$/);
+  const opening = page.getByRole('status').filter({ hasText: 'Lining up your 3 products…' });
+  await expect(opening).toBeVisible();
+  for (const name of ['Atlas Portable Power Bank · 100W', 'Breeze Slim Power Bank · 65W', 'Comet Travel Power Bank · 87W']) {
+    await expect(opening.getByText(name, { exact: true })).toBeVisible();
+  }
+  await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toHaveCount(0);
+  releaseComparison();
   await expect(page.getByRole('heading', { name: 'Comparing 3 products' })).toBeVisible();
   await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
+  await expect(opening).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toHaveCount(0);
+  await page.unroute('**/api/comparisons');
 
   // Luna asks for exactly the ticked products. This request meets a simulated outage, so the
   // picker stays open with the picks.
@@ -272,6 +304,95 @@ test('Host A cart lists catalog variants and compares the ticked ones in Luna', 
   await expect(atlas).toBeVisible();
   await expect(atlas).not.toBeChecked();
   await expect(page.getByText('0 of 4 picked')).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+});
+
+test('Host A search and product page add an exact model to the cart', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'host-a-chromium', 'Search and product pages are Host A storefront pages');
+  const consoleErrors = [];
+  page.on('console', message => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+
+  await page.goto('/#/');
+  const searchBox = page.getByRole('searchbox', { name: 'Search products' });
+  await searchBox.fill('iPhone');
+  await searchBox.press('Enter');
+  await expect(page.getByText("No results for 'iPhone'.")).toBeVisible();
+  await searchBox.fill('power bank');
+  await searchBox.press('Enter');
+  await expect(page).toHaveURL(/#\/Search\?q=power%20bank$/);
+  const results = page.getByRole('list', { name: 'Search results' });
+  await expect(results.getByRole('listitem')).toHaveCount(3);
+  await expect(results.locator('img')).toHaveCount(3);
+  await results.getByRole('link', { name: /Breeze Slim Power Bank/ }).click();
+
+  // Before a model is picked the page shows the listing's price range and cannot add to cart.
+  await expect(page).toHaveURL(/#\/Product\/listingB$/);
+  await expect(page.getByRole('heading', { name: 'Breeze Slim Power Bank', level: 1 })).toBeVisible();
+  await expect(page.getByLabel('Price')).toHaveText('SGD 69.45 – SGD 70.30');
+  await expect(page.getByRole('button', { name: 'Add To Cart' })).toBeDisabled();
+  const ratings = page.getByRole('region', { name: 'Product Ratings' });
+  await expect(ratings).toContainText('3.2 out of 5');
+  await ratings.getByRole('button', { name: '2 Star (10)' }).click();
+  await expect(ratings.getByRole('list', { name: 'Reviews' }).getByRole('listitem')).toHaveCount(6);
+  await ratings.getByRole('button', { name: 'Review page 2' }).click();
+  await expect(ratings.getByRole('list', { name: 'Reviews' }).getByRole('listitem')).toHaveCount(4);
+
+  await page.getByRole('group', { name: 'Model' }).getByRole('button', { name: '100W' }).click();
+  await expect(page).toHaveURL(/#\/Product\/listingB\?variant=100w$/);
+  await expect(page.getByLabel('Price')).toHaveText('SGD 70.00');
+  await expect(page.getByText('SGD 5.00 OFF')).toBeVisible();
+  await expect(page.getByText('Shipping fee SGD 17.00')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Product Specifications' })).toContainText('Weight310 g');
+  await page.getByRole('button', { name: 'Increase quantity' }).click();
+  await page.getByRole('button', { name: 'Add To Cart' }).click();
+  await expect(page.getByRole('status')).toContainText('Added 2 × 100W to your cart.');
+  await expect(page.getByRole('link', { name: 'Cart, 4 items' })).toBeVisible();
+
+  await page.getByRole('link', { name: 'View cart' }).click();
+  const added = page.getByRole('region', { name: 'Cart products' }).locator('article')
+    .filter({ hasText: 'Variation: 100W' }).filter({ hasText: 'Breeze Slim Power Bank' });
+  await expect(added).toContainText('SGD 140.00');
+  await added.getByRole('link', { name: /Breeze Slim Power Bank/ }).click();
+  await expect(page).toHaveURL(/#\/Product\/listingB\?variant=100w$/);
+  await expect(page.getByRole('button', { name: '100W', pressed: true })).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+});
+
+test('Host A checks out the cart or the product chosen in Luna', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'host-a-chromium', 'Checkout is a Host A storefront page');
+  const consoleErrors = [];
+  page.on('console', message => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  const ordered = page.getByRole('region', { name: 'Products ordered' });
+  const summary = page.locator('dl[aria-label="Order summary"]');
+
+  // Each listing's voucher and shipping apply once to its order line.
+  await page.goto('/#/Cart');
+  await page.getByRole('button', { name: 'Check Out' }).click();
+  await expect(ordered.getByRole('article')).toHaveCount(3);
+  await expect(summary).toContainText('Merchandise SubtotalSGD 209.52');
+  await expect(summary).toContainText('Shipping TotalSGD 35.00');
+  await expect(summary).toContainText('Shop Voucher Discount−SGD 15.00');
+  await expect(summary).toContainText('Total PaymentSGD 229.52');
+
+  await page.goto('/#/Cart');
+  await page.getByRole('button', { name: 'Compare now' }).click();
+  await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
+  await page.getByRole('button', { name: 'Choose Comet Travel Power Bank · 87W' }).click();
+  await expect(page).toHaveURL(/#\/Checkout$/);
+  await expect(ordered.getByRole('article')).toHaveCount(1);
+  await expect(ordered).toContainText('Comet Travel Power Bank');
+  await expect(ordered).toContainText('Variation: 87W');
+  // One unit at checkout costs exactly Luna's delivered total for that variant.
+  await expect(summary).toContainText('Total PaymentSGD 72.87');
+  await page.getByRole('button', { name: 'Place Order' }).click();
+  await expect(page.getByRole('heading', { name: 'Order placed' })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Ordered products' })).toContainText('Comet Travel Power Bank · 87W');
+  await expect(page.getByText('Total Payment SGD 72.87')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Cart, 2 items' })).toBeVisible();
   expect(consoleErrors).toEqual([]);
 });
 
