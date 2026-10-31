@@ -455,6 +455,11 @@ test('Seller Centre counts an excluded listing from another buyer session', asyn
   })).json();
   const comparisons = baseline.comparisons_count + 1;
   const overBudget = (baseline.exclusion_counts.over_budget ?? 0) + 1;
+  // This buyer ranks by weight and picks Atlas; Comet states no weight, so that is the reason.
+  const isLostToAtlas = entry => entry.item_key === 'listingC:87w'
+    && entry.competitor_item_key === 'listingA:100w'
+    && entry.reason === 'not_stated' && entry.field_key === 'weight_g';
+  const lostToAtlas = (baseline.lost_picks.find(isLostToAtlas)?.count ?? 0) + 1;
 
   // The cart's three ticked products open straight on one comparison.
   await openLuna(page, testInfo.project.name);
@@ -464,7 +469,23 @@ test('Seller Centre counts an excluded listing from another buyer session', asyn
   await page.getByRole('button', { name: 'Send' }).click();
   await expect(widget).toHaveAttribute('data-revision', '1');
 
-  await page.getByRole('banner').getByRole('link', { name: 'Seller Centre' }).click();
+  // The pick is recorded against the revision on screen before the host hears about it.
+  const pickRequests = [];
+  await page.route('**/api/comparisons/*/pick', async route => {
+    pickRequests.push(route.request().postDataJSON());
+    await route.continue();
+  });
+  const pickResponse = page.waitForResponse(response =>
+    response.request().method() === 'POST' && /\/api\/comparisons\/[^/]+\/pick$/.test(response.url()));
+  await page.getByRole('button', { name: 'Pick Atlas Portable Power Bank · 100W' }).click();
+  expect((await pickResponse).status()).toBe(204);
+  expect(pickRequests).toEqual([{ item_key: 'listingA:100w', expected_revision: 1 }]);
+  await page.unroute('**/api/comparisons/*/pick');
+
+  // Where the host goes after a pick is its own decision, so open Seller Centre as a fresh
+  // document instead of racing that navigation with a hash change.
+  await page.goto('about:blank');
+  await page.goto('/#/SellerCentre');
   await expect(page).toHaveURL(/#\/SellerCentre$/);
   // Seller Centre is its own product: no buyer search, cart or account links.
   await expect(page.getByRole('link', { name: 'Switch to buyer view >' })).toBeVisible();
@@ -477,6 +498,8 @@ test('Seller Centre counts an excluded listing from another buyer session', asyn
   await seller.getByRole('button', { name: 'Comet Travel Power Bank' }).click();
   const report = seller.getByRole('region', { name: 'Seller report' });
   await expect(report.getByText(`In ${comparisons} buyer comparison${comparisons === 1 ? '' : 's'}`)).toBeVisible();
+  // This buyer picked Atlas, so Comet's own pick count is unchanged.
+  await expect(report.getByText(`Picked over competitors: ${baseline.picked_count}`)).toBeVisible();
   await expect(report.getByRole('region', { name: 'Buyer questions' })).toContainText('No open questions from buyers.');
   const overBudgetRow = report.locator('.luna-seller-row').filter({ hasText: 'Over budget' });
   await expect(overBudgetRow).toContainText(`${overBudget} buyer${overBudget === 1 ? '' : 's'}`);
@@ -488,6 +511,9 @@ test('Seller Centre counts an excluded listing from another buyer session', asyn
   await expect(warrantyText.getByText('Warranty: 24 months')).toBeVisible();
   await expect(report.getByRole('list', { name: 'Competitors stating Weight' }))
     .toContainText('Atlas Portable Power Bank · 100W');
+  const lostPick = report.locator('.luna-seller-row').filter({ hasText: 'Lost a pick' })
+    .filter({ hasText: 'picked Atlas Portable Power Bank · 100W because they ranked by Weight' });
+  await expect(lostPick).toContainText(`${lostToAtlas} buyer${lostToAtlas === 1 ? '' : 's'} picked Atlas Portable Power Bank · 100W because they ranked by Weight and your 87W model doesn’t state it`);
   expect(consoleErrors).toEqual([]);
 });
 

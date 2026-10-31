@@ -51,6 +51,10 @@ export const lunaClient = {
     request(apiBaseUrl, `/listings/${encodeURIComponent(listingId)}/variants/${encodeURIComponent(variantId)}/seller-replies`, {
       token, method: 'POST', body: { field_key: fieldKey, answer }, signal,
     }),
+  pick: (apiBaseUrl, token, comparisonId, payload, signal) =>
+    request(apiBaseUrl, `/comparisons/${encodeURIComponent(comparisonId)}/pick`, {
+      token, method: 'POST', body: payload, signal,
+    }),
   ask: (apiBaseUrl, token, comparisonId, payload, signal) =>
     request(apiBaseUrl, `/comparisons/${encodeURIComponent(comparisonId)}/ask`, {
       token, method: 'POST', body: payload, signal,

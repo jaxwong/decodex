@@ -364,9 +364,26 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
     } finally { setBusy(false); }
   }
 
-  // The shopper's explicit pick. The host decides what follows; Luna never buys anything.
+  // The shopper's explicit pick. Luna records it against the revision on screen, so Seller
+  // Centre can say why; then the host decides what follows. Luna never buys anything.
   async function pick(item) {
+    if (!comparison || !session) return;
     setError('');
+    try {
+      await lunaClient.pick(apiBaseUrl, session.token, comparison.comparison_id, {
+        item_key: item.item_key,
+        expected_revision: comparison.revision,
+      });
+    } catch (err) {
+      if (err?.status === 401) await recoverLostComparison();
+      else if (err?.status === 409) {
+        // The server moved on since this table was drawn. Show the current state; the shopper
+        // picks again from it. A refresh failure keeps its own message.
+        await refreshComparison();
+        setError(previous => previous || errorText(err));
+      } else showError(err);
+      return;
+    }
     try {
       const result = await hostAdapter.requestAddToCart({
         listingId: item.listing_id,
