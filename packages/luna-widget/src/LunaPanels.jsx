@@ -176,7 +176,15 @@ export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing, o
                 <span className="luna-product-variant">{item.variant_label}</span>
                 <span className="luna-product-price">{money(item.price_minor, item.currency)}</span>
                 <span className="luna-product-actions">
-                  <button type="button" className="luna-link" onClick={() => onNavigateToListing(item.listing_id)}>
+                  <button type="button" className="luna-link" onClick={() => onNavigateToListing({
+                    listingId: item.listing_id,
+                    variantId: item.variant_id,
+                    title: item.title,
+                    variantLabel: item.variant_label,
+                    priceMinor: item.price_minor,
+                    currency: item.currency,
+                    synthetic: item.synthetic,
+                  })}>
                     View product
                   </button>
                   {status?.tone === 'out' && <button type="button" className="luna-link"

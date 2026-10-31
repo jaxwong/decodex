@@ -51,6 +51,14 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
 
   await expect(widget).toHaveAttribute('data-revision', '0');
   await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
+  await page.getByRole('button', { name: 'View product' }).first().click();
+  const productView = page.getByRole('region', { name: 'Host product view' });
+  await expect(productView.getByRole('heading', { name: 'SYNTHETIC Atlas power bank family' })).toBeVisible();
+  await expect(productView.getByText('100W synthetic SKU', { exact: true })).toBeVisible();
+  await expect(productView.getByText('SGD 60.00', { exact: true })).toBeVisible();
+  await productView.getByRole('button', { name: 'Close product view' }).click();
+  await expect(productView).toHaveCount(0);
+  await expect(widget).toHaveAttribute('data-revision', '0');
   await page.getByRole('button', { name: /^Warranty for SYNTHETIC Comet .*: Listing disagrees, 12 vs 24 months$/ }).click();
   await expect(sourcePanel.getByText('Listing disagrees with itself')).toBeVisible();
   await expect(sourcePanel.getByText('Warranty: 1 year')).toBeVisible();

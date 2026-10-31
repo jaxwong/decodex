@@ -11,8 +11,8 @@ export function createMinimalHostAdapter(onNavigate) {
         subscribers.add(subscriber);
         return () => subscribers.delete(subscriber);
       },
-      navigateToListing(listingId) {
-        onNavigate(listingId);
+      navigateToListing(product) {
+        onNavigate(product);
       },
     },
     select(nextSelection) {
