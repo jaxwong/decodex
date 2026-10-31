@@ -64,9 +64,38 @@ class Recommendation(_SessionModel):
     ranked_item_keys: list[str]
     excluded_item_keys: list[str]
     uncertain_item_keys: list[str]
-    exclusion_reasons: dict[str, ExclusionReason]
-    uncertain_fields: dict[str, list[str]]
+    exclusion_reasons: dict[str, ExclusionReason] = Field(exclude=True)
+    uncertain_fields: dict[str, list[str]] = Field(exclude=True)
     limitations: list[str]
+
+
+class ListingGapField(_SessionModel):
+    """One unsupported listing field projected from canonical comparison evidence."""
+
+    item_key: str
+    field_key: str
+    status: Literal["missing", "conflicting", "unresolved"]
+    conflicting_values: list[str]
+    evidence_ids: list[str]
+
+
+class ListingBeatenBy(_SessionModel):
+    """Competitors with supported evidence where this listing has a gap."""
+
+    item_key: str
+    field_key: str
+    competitor_item_keys: list[str]
+
+
+class ListingGapReport(_SessionModel):
+    """Read-only seller projection over current comparisons in one demo session."""
+
+    listing_id: str
+    comparisons_count: int = Field(ge=0)
+    gaps: list[ListingGapField]
+    beaten_by: list[ListingBeatenBy]
+    exclusion_counts: dict[ExclusionReason, int]
+    uncertainty_counts: dict[str, int]
 
 
 class UiPatch(_SessionModel):

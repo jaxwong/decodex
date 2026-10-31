@@ -19,6 +19,7 @@ from app.routes.catalog import router as catalog_router
 from app.routes.comparisons import router as comparisons_router
 from app.routes.demo_sessions import router as demo_sessions_router
 from app.routes.health import router as health_router
+from app.routes.listings import router as listings_router
 
 
 def create_app(
@@ -108,6 +109,7 @@ def create_app(
     app.include_router(health_router)
     app.include_router(demo_sessions_router)
     app.include_router(catalog_router)
+    app.include_router(listings_router)
     app.include_router(comparisons_router)
     return app
 
