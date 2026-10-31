@@ -12,6 +12,7 @@ from app.decision.sessions import (
     DemoSessionRequired,
 )
 from app.decision.tools import RevisionConflict
+from app.openai.live_agent import LunaLiveProtocolError, LunaLiveUnavailable
 from app.openai.text_agent import (
     ConversationComparisonMismatch,
     LunaAgentConfigurationError,
@@ -198,7 +199,31 @@ def register_exception_handlers(app: FastAPI) -> None:
         return _error_response(
             http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
             code="LUNA_NOT_CONFIGURED",
-            message="Luna text chat is not configured on this server.",
+            message="Luna model access is not configured on this server.",
+            retryable=False,
+        )
+
+    @app.exception_handler(LunaLiveUnavailable)
+    async def handle_luna_live_unavailable(
+        request: Request, failure: LunaLiveUnavailable
+    ) -> JSONResponse:
+        del request, failure
+        return _error_response(
+            http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="LIVE_UNAVAILABLE",
+            message="Luna voice is temporarily unavailable; no Live session was returned.",
+            retryable=True,
+        )
+
+    @app.exception_handler(LunaLiveProtocolError)
+    async def handle_luna_live_protocol(
+        request: Request, failure: LunaLiveProtocolError
+    ) -> JSONResponse:
+        del request, failure
+        return _error_response(
+            http_status=status.HTTP_502_BAD_GATEWAY,
+            code="LIVE_INVALID_RESPONSE",
+            message="The Live provider returned an invalid session response.",
             retryable=False,
         )
 

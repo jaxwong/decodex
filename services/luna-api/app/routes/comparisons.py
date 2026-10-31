@@ -9,6 +9,8 @@ from app.contracts.session import (
     AskComparisonResponse,
     ComparisonResponse,
     CreateComparisonRequest,
+    LiveSessionRequest,
+    LiveSessionResponse,
 )
 from app.decision.comparisons import (
     BuildComparisonEvidence,
@@ -17,6 +19,7 @@ from app.decision.comparisons import (
 )
 from app.decision.sessions import DemoSessionState
 from app.errors import ErrorResponse
+from app.openai.live_agent import require_runtime_live_model, start_live_session
 from app.openai.text_agent import (
     CreateModelResponse,
     create_runtime_openai_client,
@@ -117,3 +120,36 @@ async def post_comparison_ask(
             create_response=openai_client.responses.create,
             model=text_model,
         )
+
+
+@router.post(
+    "/comparisons/{comparison_id}/live/session",
+    response_model=LiveSessionResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        422: {"model": ErrorResponse},
+        502: {"model": ErrorResponse},
+        503: {"model": ErrorResponse},
+    },
+)
+async def post_comparison_live_session(
+    comparison_id: str,
+    live_request: LiveSessionRequest,
+    session_state: Annotated[DemoSessionState, Depends(require_demo_session_state)],
+) -> LiveSessionResponse:
+    """Create a comparison-bound GPT-Live WebRTC session with its sideband attached."""
+    require_comparison(session_state, comparison_id)
+    live_model = require_runtime_live_model()
+    text_model = require_runtime_text_model()
+    async with create_runtime_openai_client() as openai_client:
+        live_response = await start_live_session(
+            openai_client,
+            session_state,
+            comparison_id=comparison_id,
+            offer_sdp=live_request.sdp,
+            live_model=live_model,
+            text_model=text_model,
+        )
+    return LiveSessionResponse.model_validate(live_response.model_dump())
