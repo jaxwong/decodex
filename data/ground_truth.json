@@ -1179,5 +1179,427 @@
         }
       ]
     }
-  ]
+  ],
+  "source_claims": {
+    "listingA:100w": {
+      "variants/100w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/100w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 100
+      },
+      "variants/100w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/100w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 420
+      },
+      "variants/100w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/100w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/100w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/100w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      }
+    },
+    "listingA:130w": {
+      "variants/130w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/130w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 130
+      },
+      "variants/130w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/130w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 420
+      },
+      "variants/130w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/130w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/130w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/130w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      },
+      "description/0": {
+        "field_key": "max_output_w",
+        "value": 130
+      }
+    },
+    "listingA:65w": {
+      "variants/65w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/65w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 65
+      },
+      "variants/65w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/65w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 420
+      },
+      "variants/65w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/65w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/65w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/65w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      }
+    },
+    "listingA:30w": {
+      "variants/30w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/30w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 30
+      },
+      "variants/30w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/30w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 420
+      },
+      "variants/30w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/30w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/30w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/30w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      }
+    },
+    "listingB:65w": {
+      "variants/65w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/65w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 65
+      },
+      "variants/65w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/65w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 310
+      },
+      "variants/65w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/65w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/65w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/65w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      }
+    },
+    "listingB:100w": {
+      "variants/100w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/100w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 100
+      },
+      "variants/100w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/100w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 310
+      },
+      "variants/100w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/100w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/100w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/100w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      }
+    },
+    "listingB:130w": {
+      "variants/130w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/130w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 130
+      },
+      "variants/130w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/130w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 310
+      },
+      "variants/130w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/130w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/130w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/130w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      },
+      "description/0": {
+        "field_key": "max_output_w",
+        "value": 130
+      }
+    },
+    "listingB:45w": {
+      "variants/45w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/45w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 45
+      },
+      "variants/45w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/45w/attributes/3": {
+        "field_key": "weight_g",
+        "value": 310
+      },
+      "variants/45w/attributes/4": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/45w/attributes/5": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/45w/attributes/6": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/45w/attributes/7": {
+        "field_key": "warranty_months",
+        "value": 12
+      }
+    },
+    "listingC:87w": {
+      "variants/87w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/87w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 87
+      },
+      "variants/87w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/87w/attributes/3": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/87w/attributes/4": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/87w/attributes/5": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/87w/attributes/6": {
+        "field_key": "warranty_months",
+        "value": 12
+      },
+      "description/2": {
+        "field_key": "warranty_months",
+        "value": 24
+      }
+    },
+    "listingC:100w": {
+      "variants/100w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/100w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 100
+      },
+      "variants/100w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/100w/attributes/3": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/100w/attributes/4": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/100w/attributes/5": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/100w/attributes/6": {
+        "field_key": "warranty_months",
+        "value": 12
+      },
+      "description/3": {
+        "field_key": "warranty_months",
+        "value": 24
+      }
+    },
+    "listingC:130w": {
+      "variants/130w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/130w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 130
+      },
+      "variants/130w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/130w/attributes/3": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/130w/attributes/4": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/130w/attributes/5": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/130w/attributes/6": {
+        "field_key": "warranty_months",
+        "value": 12
+      },
+      "description/0": {
+        "field_key": "max_output_w",
+        "value": 130
+      },
+      "description/4": {
+        "field_key": "warranty_months",
+        "value": 24
+      }
+    },
+    "listingC:65w": {
+      "variants/65w/attributes/0": {
+        "field_key": "capacity_mah",
+        "value": 20000
+      },
+      "variants/65w/attributes/1": {
+        "field_key": "max_output_w",
+        "value": 65
+      },
+      "variants/65w/attributes/2": {
+        "field_key": "usb_c_ports",
+        "value": 2
+      },
+      "variants/65w/attributes/3": {
+        "field_key": "max_input_w",
+        "value": 65
+      },
+      "variants/65w/attributes/4": {
+        "field_key": "pd_supported",
+        "value": true
+      },
+      "variants/65w/attributes/5": {
+        "field_key": "included_cable",
+        "value": true
+      },
+      "variants/65w/attributes/6": {
+        "field_key": "warranty_months",
+        "value": 12
+      },
+      "description/5": {
+        "field_key": "warranty_months",
+        "value": 24
+      }
+    }
+  }
 }

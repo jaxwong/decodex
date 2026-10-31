@@ -60,7 +60,7 @@ def _validate_field(candidate: CandidateFact, evidence: dict[str, Evidence],
             return abstain('unresolved')
         try:
             normalized = normalize_value(field_key, claim.raw_value)
-            source_values = [normalize_value(field_key, raw) for raw in extract_source_values(field_key, claim.quote)]
+            source_values = [normalize_value(field_key, raw) for raw in extract_source_values(field_key, source.source_text)]
             if normalized not in source_values:
                 return abstain('unresolved')
         except ValueError:

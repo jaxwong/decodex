@@ -75,3 +75,38 @@ access, human user study, production evaluation or deployed integration is claim
 - `OPENAI_API_KEY` is absent from the process environment. No .env file was read,
   credentials requested, or live request attempted. API smoke and real model quality,
   token/cost and latency measurements remain pending.
+
+## A4 held-out scorer, actual baseline execution and integration documentation
+
+- Codex implemented `eval/{baselines,metrics,run}.py`, evaluation documentation,
+  independent source-support labels, scorer tests and an explicitly invoked live
+  smoke script. Labels are loaded only after inference; no labels are sent to the
+  model. Sources and labels are fabricated together, not independently human-rated.
+- Actual execution:
+  `PYTHONPATH=services/luna-api:. /tmp/luna-evidence-venv/bin/python -m eval.run`
+  generated `eval/results.json` for 12 exact SKUs, 96 field cells, 54 source reviews.
+  Regex baseline: supported-field accuracy **55/88 (62.5%)**, evidence precision
+  **56/92 (60.87%)**, unsupported claims **36/92 (39.13%)**, missing recall **4/4**,
+  contradiction recall **0/4**, variant leakage **9/12**. Keyword baseline review
+  precision **51/54 (94.44%)**, recall **51/51**. Explicit ID preservation **12/12**
+  is not product-recognition accuracy. Baseline elapsed corpus time is observed in
+  the artifact, not a model latency measurement.
+- Grounded real-model, ungrounded free-form, B's agent, real token/cost and model
+  latency measurements remain explicitly unavailable. The fake client is used for
+  deterministic correctness tests only, never reported as an evaluated model.
+- `PYTHONPATH=services/luna-api /tmp/luna-evidence-venv/bin/python services/luna-api/tests/evidence/live_smoke.py --live`
+  exited **2**: `OPENAI_API_KEY missing: live smoke not executed.` No API request
+  was made. Server credentials/project access are needed to complete this check.
+- Final targeted suite at this milestone:
+  `PYTHONPATH=services/luna-api:. /tmp/luna-evidence-venv/bin/python -m pytest services/luna-api/tests/evidence -q`
+  → **87 passed**. Includes actual installed SDK JSON-schema serialization and
+  response parsing over mock HTTP transport; all network calls remain offline.
+- Codex review found and corrected a quote-truncation risk: normalization now
+  checks the full original source clause, preventing an excerpt from cutting away
+  sibling qualifications. Added a regression test. Catalog summaries now omit raw
+  claims and expose public card metadata; complete sources stay server-side.
+- Integration instructions and known limits are recorded in A-owned
+  `app/evidence/README.md`. B must supply dependency configuration, API/session
+  composition and agent outputs; C must render the wrapper and verify both hosts.
+  Whole-app tests, browser E2E and deployment were not run on this A-only branch.
+- Human corrections: none provided. Human review and B/C integration remain pending.

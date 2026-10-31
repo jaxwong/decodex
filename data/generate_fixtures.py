@@ -19,7 +19,7 @@ def write(name, value):
 
 
 def generate():
-    listings, reviews, labels = [], [], {'synthetic': True, 'items': {}, 'reviews': []}
+    listings, reviews, labels = [], [], {'synthetic': True, 'items': {}, 'reviews': [], 'source_claims': {}}
     for index, (name, powers, demo) in enumerate([
         ('Atlas', [100, 130, 65, 30], 100), ('Breeze', [65, 100, 130, 45], 65),
         ('Comet', [87, 100, 130, 65], 87),
@@ -40,6 +40,16 @@ def generate():
             variant = {'variant_id': vid, 'label': f'{power}W synthetic SKU', 'price_minor': 5900 + index * 1000 + power,
                        'currency': 'SGD', 'attributes': [{'field_key': k, 'text': t} for k, t in attributes]}
             variants.append(variant)
+            normalized_values = dict(zip(FIELDS, values))
+            labels['source_claims'][f'{lid}:{vid}'] = {
+                f'variants/{vid}/attributes/{n}': {'field_key': field, 'value': normalized_values[field]}
+                for n, (field, _) in enumerate(attributes)
+            }
+            if power == 130:
+                labels['source_claims'][f'{lid}:{vid}']['description/0'] = {'field_key': 'max_output_w', 'value': 130}
+            if index == 2:
+                labels['source_claims'][f'{lid}:{vid}'][f'description/{2 + powers.index(power)}'] = {
+                    'field_key': 'warranty_months', 'value': 24}
             labels['items'][f'{lid}:{vid}'] = {
                 k: {'status': 'missing' if k == 'weight_g' and index == 2 else 'conflicting' if k == 'warranty_months' and index == 2 else 'supported',
                     'value': None if index == 2 and k in ('weight_g', 'warranty_months') else val,

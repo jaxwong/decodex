@@ -25,8 +25,13 @@ class MockCatalogProvider:
         self._reviews = json.loads((data_root / 'reviews.json').read_text())['reviews']
 
     async def list_listings(self, query: str | None = None) -> list[dict]:
-        return deepcopy([listing for listing in self._listings.values()
-                         if not query or query.casefold() in listing['title'].casefold()])
+        return [dict(id=listing['listing_id'], listing_id=listing['listing_id'],
+                     title=listing['title'], synthetic=listing['synthetic'], image_url=None,
+                     preview='Fabricated demo listing; exact variant selection required.',
+                     variants=[dict(id=v['variant_id'], variant_id=v['variant_id'], label=v['label'],
+                                    price_minor=v['price_minor'], currency=v['currency']) for v in listing['variants']])
+                for listing in self._listings.values()
+                if not query or query.casefold() in listing['title'].casefold()]
 
     async def get_listing(self, listing_id: str) -> dict | None:
         return deepcopy(self._listings.get(listing_id))

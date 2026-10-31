@@ -272,3 +272,58 @@ def test_wrong_variant_reference_rejected_by_final_contract():
     result['evidence'][source_id]['variant_id'] = '130w'
     with pytest.raises(ValidationError):
         ComparisonEvidence.model_validate(result)
+
+
+def test_real_sdk_schema_serialization_with_mock_transport():
+    # Exercise the installed SDK's actual JSON schema and response parser offline.
+    import httpx2
+    from openai import AsyncOpenAI, DefaultAsyncHttpxClient
+
+    requests = []
+
+    def handle(request):
+        body = json.loads(request.content)
+        requests.append(body)
+        assert body['text']['format']['type'] == 'json_schema'
+        assert body['text']['format']['strict'] is True
+        return httpx2.Response(200, json={
+            'id': 'resp_offline', 'object': 'response', 'created_at': 0,
+            'model': 'gpt-6-luna', 'status': 'completed',
+            'output': [{'id': 'msg_offline', 'type': 'message', 'role': 'assistant', 'status': 'completed',
+                        'content': [{'type': 'output_text', 'text': '{"facts": []}', 'annotations': []}]}],
+            'usage': {'input_tokens': 10, 'output_tokens': 5, 'total_tokens': 15},
+        })
+
+    async def scenario():
+        async with AsyncOpenAI(api_key='offline-test-key', max_retries=0,
+            http_client=DefaultAsyncHttpxClient(transport=httpx2.MockTransport(handle))) as sdk:
+            model = OpenAIModelClient(sdk)
+            result = await model.extract_specs({'item_key': 'listingA:100w'})
+            assert result == SpecCandidates(facts=[])
+            assert model.observations[0]['usage']['total_tokens'] == 15
+    run(scenario())
+    assert len(requests) == 1
+
+
+def test_truncated_quote_cannot_erase_sibling_context():
+    from app.contracts.evidence import Evidence
+    source = Evidence(id='s1', item_key='listingA:100w', variant_id='100w', source_type='attribute',
+                      source_text='Max output: 130 W (for sibling only)')
+    candidate = SpecCandidates(facts=[CandidateFact(field_key='max_output_w', status='supported', claims=[
+        Claim(evidence_id='s1', variant_id='100w', raw_value='130 W', quote='Max output: 130 W')])])
+    result = validate_facts(candidate, {'s1': source}, 'listingA:100w', '100w')
+    assert next(f for f in result if f.field_key == 'max_output_w').status == 'unresolved'
+
+
+def test_unlabelled_variant_claim_is_unresolved():
+    from app.contracts.evidence import Evidence
+    source = Evidence(id='s1', item_key='listingA:100w', variant_id=None, source_type='description', source_text='Weight: 300 g')
+    candidate = SpecCandidates(facts=[CandidateFact(field_key='weight_g', status='missing', claims=[])])
+    result = validate_facts(candidate, {'s1': source}, 'listingA:100w', '100w')
+    assert next(f for f in result if f.field_key == 'weight_g').status == 'unresolved'
+
+
+def test_duplicate_candidate_fields_are_unresolved():
+    candidate = CandidateFact(field_key='weight_g', status='missing', claims=[])
+    result = validate_facts(SpecCandidates(facts=[candidate, candidate]), {}, 'listingA:100w', '100w')
+    assert all(f.status == 'unresolved' for f in result)
