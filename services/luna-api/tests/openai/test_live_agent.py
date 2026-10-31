@@ -11,7 +11,7 @@ from openai import AsyncOpenAI
 from openai.resources.live.sideband import AsyncSidebandConnection
 from openai.types.live import DelegationCreatedEvent, LiveCreateResponse, ResponseEvent
 
-from app.contracts.session import ComparisonSelection, PreferencePatch
+from app.contracts.session import ComparisonSelection, Preferences
 from app.decision.comparisons import create_comparison, require_comparison
 from app.decision.sessions import DemoSessionState
 from app.decision.tools import apply_preferences
@@ -226,7 +226,7 @@ def test_sideband_executes_only_completed_calls_and_supports_second_correction()
             "apply_preferences",
             {
                 "comparison_id": comparison_id,
-                "patch": {
+                "preferences": {
                     "max_price_minor": 8000,
                     "min_output_w": 65,
                     "priorities": ["weight_g", "price_minor"],
@@ -239,7 +239,7 @@ def test_sideband_executes_only_completed_calls_and_supports_second_correction()
             "apply_preferences",
             {
                 "comparison_id": comparison_id,
-                "patch": {
+                "preferences": {
                     "max_price_minor": 8000,
                     "min_output_w": 65,
                     "priorities": ["price_minor"],
@@ -317,7 +317,7 @@ def test_sideband_deduplicates_call_id_before_second_execution() -> None:
             "apply_preferences",
             {
                 "comparison_id": comparison_id,
-                "patch": {
+                "preferences": {
                     "max_price_minor": 8000,
                     "min_output_w": None,
                     "priorities": ["price_minor"],
@@ -486,7 +486,7 @@ def test_sideband_returns_stale_error_when_concurrent_correction_wins() -> None:
         winning_update = apply_preferences(
             session_state,
             comparison_id,
-            patch=PreferencePatch(
+            preferences=Preferences(
                 max_price_minor=7000,
                 min_output_w=65,
                 priorities=["price_minor"],
@@ -498,7 +498,7 @@ def test_sideband_returns_stale_error_when_concurrent_correction_wins() -> None:
             "apply_preferences",
             {
                 "comparison_id": comparison_id,
-                "patch": {
+                "preferences": {
                     "max_price_minor": 8000,
                     "min_output_w": 65,
                     "priorities": ["weight_g"],

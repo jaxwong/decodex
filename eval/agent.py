@@ -24,7 +24,6 @@ from pydantic import BaseModel, ConfigDict
 from app.contracts.evidence import ComparisonEvidence
 from app.contracts.session import (
     ComparisonSelection,
-    PreferencePatch,
     Preferences,
 )
 from app.decision.comparisons import create_comparison, require_comparison
@@ -73,7 +72,7 @@ class AgentScenario:
 
     scenario_id: str
     message: str
-    setup_patch: PreferencePatch | None
+    setup_preferences: Preferences | None
     expected_request_revision: int
     expected_preferences: Preferences
     expected_revision: int
@@ -107,7 +106,7 @@ AGENT_SCENARIOS = (
         message=(
             "Set my maximum budget to S$70. Keep minimum power unset and use no ranking priorities."
         ),
-        setup_patch=None,
+        setup_preferences=None,
         expected_request_revision=0,
         expected_preferences=_preferences(max_price_minor=7000),
         expected_revision=1,
@@ -120,7 +119,7 @@ AGENT_SCENARIOS = (
     AgentScenario(
         scenario_id="power_threshold",
         message=("Require at least 87 watts. Keep the budget unset and use no ranking priorities."),
-        setup_patch=None,
+        setup_preferences=None,
         expected_request_revision=0,
         expected_preferences=_preferences(min_output_w=87),
         expected_revision=1,
@@ -133,7 +132,7 @@ AGENT_SCENARIOS = (
     AgentScenario(
         scenario_id="priority_correction",
         message="Actually prioritize price only. Keep budget and minimum power unset.",
-        setup_patch=PreferencePatch(priorities=["weight_g"]),
+        setup_preferences=Preferences(priorities=["weight_g"]),
         expected_request_revision=1,
         expected_preferences=_preferences(priorities=["price_minor"]),
         expected_revision=2,
@@ -147,7 +146,7 @@ AGENT_SCENARIOS = (
     AgentScenario(
         scenario_id="unclear_intent",
         message="Which one is best?",
-        setup_patch=None,
+        setup_preferences=None,
         expected_request_revision=0,
         expected_preferences=_preferences(),
         expected_revision=0,
@@ -163,7 +162,7 @@ AGENT_SCENARIOS = (
             "What do the analyzed reviews mention about heat for all three items? "
             "Use review evidence and cite supporting review mention IDs."
         ),
-        setup_patch=None,
+        setup_preferences=None,
         expected_request_revision=0,
         expected_preferences=_preferences(),
         expected_revision=0,
@@ -179,7 +178,7 @@ AGENT_SCENARIOS = (
             "Why is listingC:87w warranty conflicting? Inspect the stored evidence and cite "
             "both conflicting source IDs."
         ),
-        setup_patch=None,
+        setup_preferences=None,
         expected_request_revision=0,
         expected_preferences=_preferences(),
         expected_revision=0,
@@ -195,7 +194,7 @@ AGENT_SCENARIOS = (
             "Does listingC:87w have a verified weight? Do not infer it. Cite evidence only "
             "if weight evidence exists."
         ),
-        setup_patch=None,
+        setup_preferences=None,
         expected_request_revision=0,
         expected_preferences=_preferences(),
         expected_revision=0,
@@ -208,7 +207,7 @@ AGENT_SCENARIOS = (
     AgentScenario(
         scenario_id="stale_turn",
         message="Actually raise my maximum budget to S$80.",
-        setup_patch=PreferencePatch(max_price_minor=7000),
+        setup_preferences=Preferences(max_price_minor=7000),
         expected_request_revision=0,
         expected_preferences=_preferences(max_price_minor=7000),
         expected_revision=1,
@@ -222,7 +221,7 @@ AGENT_SCENARIOS = (
     AgentScenario(
         scenario_id="invalid_item",
         message=("What is the maximum output of invented:999w? Do not substitute another item."),
-        setup_patch=None,
+        setup_preferences=None,
         expected_request_revision=0,
         expected_preferences=_preferences(),
         expected_revision=0,
@@ -237,7 +236,7 @@ AGENT_SCENARIOS = (
         message=(
             "Set my maximum budget to S$50. Keep minimum power unset and use no ranking priorities."
         ),
-        setup_patch=None,
+        setup_preferences=None,
         expected_request_revision=0,
         expected_preferences=_preferences(max_price_minor=5000),
         expected_revision=1,
@@ -253,7 +252,7 @@ AGENT_SCENARIOS = (
             "Prioritize review reliability only. If it cannot determine a winner, do not "
             "invent one."
         ),
-        setup_patch=None,
+        setup_preferences=None,
         expected_request_revision=0,
         expected_preferences=_preferences(priorities=["review_reliability"]),
         expected_revision=1,
@@ -269,7 +268,7 @@ AGENT_SCENARIOS = (
             "Why is the current recommendation best for portability? Use comparison facts "
             "and cite stored evidence."
         ),
-        setup_patch=PreferencePatch(priorities=["weight_g"]),
+        setup_preferences=Preferences(priorities=["weight_g"]),
         expected_request_revision=1,
         expected_preferences=_preferences(priorities=["weight_g"]),
         expected_revision=1,
@@ -356,9 +355,9 @@ def _scenario_suite_sha256() -> str:
             {
                 "scenario_id": scenario.scenario_id,
                 "message": scenario.message,
-                "setup_patch": (
-                    scenario.setup_patch.model_dump(mode="json", exclude_unset=True)
-                    if scenario.setup_patch is not None
+                "setup_preferences": (
+                    scenario.setup_preferences.model_dump(mode="json")
+                    if scenario.setup_preferences is not None
                     else None
                 ),
                 "expected_request_revision": scenario.expected_request_revision,
@@ -408,11 +407,11 @@ async def _create_scenario_state(
         selections,
         build_evidence=_build_sample_evidence,
     )
-    if scenario.setup_patch is not None:
+    if scenario.setup_preferences is not None:
         apply_preferences(
             session_state,
             comparison.comparison_id,
-            patch=scenario.setup_patch,
+            preferences=scenario.setup_preferences,
             expected_revision=0,
         )
     return session_state, comparison.comparison_id

@@ -293,7 +293,7 @@ def test_timeout_after_update_preserves_mutation_and_prevents_retry() -> None:
                         "arguments": json.dumps(
                             {
                                 "comparison_id": comparison["comparison_id"],
-                                "patch": {
+                                "preferences": {
                                     "max_price_minor": 8000,
                                     "min_output_w": None,
                                     "priorities": ["price_minor"],
@@ -380,7 +380,7 @@ def test_invalid_answer_after_update_returns_committed_revision() -> None:
                         "arguments": json.dumps(
                             {
                                 "comparison_id": comparison["comparison_id"],
-                                "patch": {
+                                "preferences": {
                                     "max_price_minor": 8000,
                                     "min_output_w": None,
                                     "priorities": ["price_minor"],

@@ -5,9 +5,10 @@ import os
 import secrets
 from collections.abc import Awaitable, Callable
 from time import perf_counter
-from typing import Any
+from typing import Any, cast
 
 from openai import APITimeoutError, AsyncOpenAI, OpenAIError
+from openai.lib._pydantic import to_strict_json_schema
 from openai.types.responses import (
     FunctionToolParam,
     Response,
@@ -20,7 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 from app.contracts.session import (
     AskComparisonResponse,
-    PreferencePatch,
+    Preferences,
     PreferenceUpdate,
 )
 from app.decision.comparisons import require_comparison
@@ -63,29 +64,6 @@ TRUSTED_INSTRUCTIONS = EVIDENCE_POLICY + (
     "without another tool call. Return only the requested JSON answer shape.\n"
 )
 
-ANSWER_TEXT_CONFIG: ResponseTextConfigParam = {
-    "format": {
-        "type": "json_schema",
-        "name": "luna_answer",
-        "description": "A concise buyer-facing answer with stored citation identifiers.",
-        "strict": True,
-        "schema": {
-            "type": "object",
-            "properties": {
-                "answer": {"type": "string"},
-                "cited_ids": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "maxItems": 12,
-                },
-            },
-            "required": ["answer", "cited_ids"],
-            "additionalProperties": False,
-        },
-    },
-    "verbosity": "low",
-}
-
 
 class _AgentModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
@@ -103,7 +81,7 @@ class GetReviewAspectArguments(_AgentModel):
 
 class ApplyPreferencesArguments(_AgentModel):
     comparison_id: str
-    patch: PreferencePatch
+    preferences: Preferences
     expected_revision: int = Field(ge=0)
 
 
@@ -129,6 +107,18 @@ class LunaAnswer(_AgentModel):
         if len(cited_ids) != len(set(cited_ids)):
             raise ValueError("cited_ids must not contain duplicates")
         return cited_ids
+
+
+ANSWER_TEXT_CONFIG: ResponseTextConfigParam = {
+    "format": {
+        "type": "json_schema",
+        "name": "luna_answer",
+        "description": "A concise buyer-facing answer with stored citation identifiers.",
+        "strict": True,
+        "schema": to_strict_json_schema(LunaAnswer),
+    },
+    "verbosity": "low",
+}
 
 
 class ConversationComparisonMismatch(PermissionError):
@@ -213,36 +203,42 @@ def _tool_schema(
     *,
     name: str,
     description: str,
-    properties: dict[str, object],
-    required: list[str],
+    parameters: dict[str, Any],
 ) -> FunctionToolParam:
-    return {
-        "type": "function",
-        "name": name,
-        "description": description,
-        "strict": True,
-        "parameters": {
-            "type": "object",
-            "properties": properties,
-            "required": required,
-            "additionalProperties": False,
+    return cast(
+        FunctionToolParam,
+        {
+            "type": "function",
+            "name": name,
+            "description": description,
+            "strict": True,
+            "parameters": parameters,
         },
-    }
+    )
 
 
 def build_luna_tools(comparison_id: str, expected_revision: int) -> list[FunctionToolParam]:
     """Return exactly four strict tools, structurally bound to the authorized comparison."""
-    bound_comparison_id = {
-        "type": "string",
-        "enum": [comparison_id],
-        "description": "The comparison ID supplied in the current trusted context.",
-    }
+    argument_schemas = [
+        to_strict_json_schema(argument_model)
+        for argument_model in (
+            GetComparisonArguments,
+            GetReviewAspectArguments,
+            ApplyPreferencesArguments,
+            InspectEvidenceArguments,
+        )
+    ]
+    for parameters in argument_schemas:
+        properties = cast(dict[str, dict[str, Any]], parameters["properties"])
+        properties["comparison_id"]["enum"] = [comparison_id]
+    apply_properties = cast(dict[str, dict[str, Any]], argument_schemas[2]["properties"])
+    apply_properties["expected_revision"]["enum"] = [expected_revision]
+
     return [
         _tool_schema(
             name="get_comparison",
             description="Read normalized comparison facts, preferences, and deterministic ranking.",
-            properties={"comparison_id": bound_comparison_id},
-            required=["comparison_id"],
+            parameters=argument_schemas[0],
         ),
         _tool_schema(
             name="get_review_aspect",
@@ -250,73 +246,19 @@ def build_luna_tools(comparison_id: str, expected_revision: int) -> list[Functio
                 "Read bounded review summaries and literal mentions for one aspect. "
                 "For review claims, cite each returned mention ID; never cite its review ID."
             ),
-            properties={
-                "comparison_id": bound_comparison_id,
-                "aspect": {"type": "string"},
-                "item_keys": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "minItems": 1,
-                    "maxItems": 4,
-                },
-            },
-            required=["comparison_id", "aspect", "item_keys"],
+            parameters=argument_schemas[1],
         ),
         _tool_schema(
             name="apply_preferences",
             description=(
                 "Apply the complete desired buyer preference state once at the expected revision."
             ),
-            properties={
-                "comparison_id": bound_comparison_id,
-                "patch": {
-                    "type": "object",
-                    "properties": {
-                        "max_price_minor": {
-                            "type": ["integer", "null"],
-                            "minimum": 0,
-                        },
-                        "min_output_w": {
-                            "type": ["integer", "null"],
-                            "minimum": 0,
-                        },
-                        "priorities": {
-                            "type": "array",
-                            "items": {
-                                "type": "string",
-                                "enum": [
-                                    "weight_g",
-                                    "price_minor",
-                                    "max_output_w",
-                                    "review_reliability",
-                                ],
-                            },
-                            "maxItems": 4,
-                        },
-                    },
-                    "required": ["max_price_minor", "min_output_w", "priorities"],
-                    "additionalProperties": False,
-                },
-                "expected_revision": {
-                    "type": "integer",
-                    "enum": [expected_revision],
-                },
-            },
-            required=["comparison_id", "patch", "expected_revision"],
+            parameters=argument_schemas[2],
         ),
         _tool_schema(
             name="inspect_evidence",
             description="Read exact stored source details for already-known citation IDs.",
-            properties={
-                "comparison_id": bound_comparison_id,
-                "evidence_ids": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "minItems": 1,
-                    "maxItems": 12,
-                },
-            },
-            required=["comparison_id", "evidence_ids"],
+            parameters=argument_schemas[3],
         ),
     ]
 
@@ -376,7 +318,7 @@ def execute_luna_tool(
             update = apply_preferences(
                 session_state,
                 comparison_id,
-                patch=preference_arguments.patch,
+                preferences=preference_arguments.preferences,
                 expected_revision=preference_arguments.expected_revision,
             )
             return update.model_dump_json(), update
