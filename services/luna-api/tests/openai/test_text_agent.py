@@ -10,7 +10,7 @@ from openai import APITimeoutError
 from openai.lib._pydantic import to_strict_json_schema
 from openai.types.responses import Response
 
-from app.contracts.session import ComparisonSelection
+from app.contracts.evidence import ComparisonSelection
 from app.decision.comparisons import create_comparison, require_comparison
 from app.decision.sessions import DemoSessionState
 from app.openai.text_agent import (

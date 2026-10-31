@@ -8,10 +8,9 @@ from typing import Any, Protocol, TypeVar
 from openai import AsyncOpenAI, OpenAIError
 from pydantic import BaseModel, ConfigDict
 
-from app.contracts.evidence import Status
+from app.contracts.evidence import Aspect, FieldKey, Sentiment, Status
 
 from .prompt import REVIEW_PROMPT, SPEC_PROMPT
-from .schema import Aspect, FieldKey, Sentiment
 
 
 class CandidateModel(BaseModel):

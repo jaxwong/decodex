@@ -28,6 +28,7 @@ from eval.metrics import score
 from eval.smoke import SMOKE_SELECTIONS, run_smoke
 from openai import AsyncOpenAI, DefaultAsyncHttpxClient
 
+from app.contracts.evidence import ComparisonSelection
 from app.evidence import EvidenceBuilder, OpenAIModelClient
 from app.evidence.index import build_evidence_index
 from app.evidence.reviews import review_batches
@@ -58,11 +59,11 @@ def merge_predictions(predictions: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 async def request_plan(
-    provider: CatalogProvider, selections: list[dict[str, Any]]
+    provider: CatalogProvider, selections: list[ComparisonSelection]
 ) -> dict[str, int]:
     """Calculate the full ceiling from immutable provider snapshots before spending."""
     reviews: dict[str, list[dict[str, Any]]] = {}
-    for listing_id in {s["listing_id"] for s in selections}:
+    for listing_id in {selection.listing_id for selection in selections}:
         cursor = None
         reviews[listing_id] = []
         while True:
@@ -72,14 +73,18 @@ async def request_plan(
             if cursor is None:
                 break
 
-    def calls(items: list[dict[str, Any]]) -> int:
+    def calls(items: list[ComparisonSelection]) -> int:
         return len(items) + sum(
             len(
                 review_batches(
-                    [r for r in reviews[s["listing_id"]] if r["variant_id"] == s["variant_id"]]
+                    [
+                        review
+                        for review in reviews[selection.listing_id]
+                        if review["variant_id"] == selection.variant_id
+                    ]
                 )
             )
-            for s in items
+            for selection in items
         )
 
     plan = {
@@ -95,7 +100,7 @@ async def request_plan(
 
 async def live_predictions(
     provider: CatalogProvider,
-    selections: list[dict[str, Any]],
+    selections: list[ComparisonSelection],
     transport: httpx2.AsyncBaseTransport | None,
 ) -> dict[str, Any]:
     """Smoke first, then one grounded run and one text-only run; never repair/retry."""
@@ -159,18 +164,16 @@ async def live_predictions(
             }
             outputs, timings = {}, []
             for selection in selections:
-                listing = await provider.get_listing(selection["listing_id"])
-                variant = await provider.get_variant(
-                    selection["listing_id"], selection["variant_id"]
-                )
+                listing = await provider.get_listing(selection.listing_id)
+                variant = await provider.get_variant(selection.listing_id, selection.variant_id)
                 if listing is None or variant is None:
                     raise ValueError("Evaluation source disappeared after preflight")
-                key = f"{selection['listing_id']}:{selection['variant_id']}"
+                key = f"{selection.listing_id}:{selection.variant_id}"
                 evidence = build_evidence_index(listing, variant)
                 start = perf_counter()
                 output = await free_form_specs(sdk, model_name, key, evidence)
                 timings.append((perf_counter() - start) * 1000)
-                predictions["items"].append({"item_key": key, **selection})
+                predictions["items"].append({"item_key": key, **selection.model_dump()})
                 predictions["facts_by_item"][key] = output["facts"]
                 predictions["evidence"].update({k: v.model_dump() for k, v in evidence.items()})
                 outputs[key] = output
@@ -199,9 +202,9 @@ async def evaluate(
     provider = MockCatalogProvider()
     listings = await provider.list_listings()
     selections = [
-        dict(listing_id=listing["listing_id"], variant_id=variant["variant_id"])
+        ComparisonSelection(listing_id=listing.listing_id, variant_id=variant.variant_id)
         for listing in listings
-        for variant in listing["variants"]
+        for variant in listing.variants
     ]
     # Inference finishes before the scorer loads the held-out labels.
     start = perf_counter()
@@ -324,7 +327,9 @@ async def evaluate(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--live", action="store_true", help="Spend API credits using real Structured Outputs"
+        "--live",
+        action="store_true",
+        help="Spend API credits using real Structured Outputs",
     )
     parser.add_argument("--output", type=Path, default=ROOT / "eval/results.json")
     args = parser.parse_args()

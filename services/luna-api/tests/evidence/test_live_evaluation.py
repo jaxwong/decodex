@@ -13,7 +13,7 @@ from eval.run import evaluate, request_plan
 from eval.smoke import check_smoke
 from openai import AsyncOpenAI, DefaultAsyncHttpxClient
 
-from app.contracts.evidence import ComparisonEvidence, Evidence
+from app.contracts.evidence import ComparisonEvidence, ComparisonSelection, Evidence
 from app.evidence.validate import validate_facts
 from app.providers import MockCatalogProvider
 from tests.evidence.fakes import FakeModelClient
@@ -111,9 +111,9 @@ def test_request_plan_matches_approved_36_calls() -> None:
     async def scenario() -> None:
         provider = MockCatalogProvider()
         selections = [
-            {"listing_id": listing["listing_id"], "variant_id": v["variant_id"]}
+            ComparisonSelection(listing_id=listing.listing_id, variant_id=variant.variant_id)
             for listing in await provider.list_listings()
-            for v in listing["variants"]
+            for variant in listing.variants
         ]
         assert await request_plan(provider, selections) == {
             "smoke": 6,

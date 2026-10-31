@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from app.contracts.evidence import ComparisonEvidence
+from app.contracts.evidence import AnalyzedComparisonItem, ComparisonEvidence
 from app.evidence.model import ReviewCandidates
 from app.evidence.reviews import (
     ReviewValidation,
@@ -52,7 +52,9 @@ def test_review_unknown_variant_not_exact_sku() -> None:
     assert validate(variant_id=None).mentions == {}
     result = comparison()
     assert all(
-        item["review_coverage"]["unknown_variant_reviews_excluded"] == 2 for item in result.items
+        isinstance(item, AnalyzedComparisonItem)
+        and item.review_coverage.unknown_variant_reviews_excluded == 2
+        for item in result.items
     )
     for mention in result.review_mentions.values():
         sources = [
@@ -107,7 +109,10 @@ def test_failed_review_batch_not_counted_as_analyzed() -> None:
     result = comparison(model)
     assert not result.review_mentions
     assert all(s.analyzed_reviews == 0 for s in result.review_summaries)
-    assert all(item["review_status"] == "unresolved" for item in result.items)
+    assert all(
+        isinstance(item, AnalyzedComparisonItem) and item.review_status == "unresolved"
+        for item in result.items
+    )
     assert fact(result, "listingA:100w", "weight_g").value == 420
 
 
@@ -124,7 +129,10 @@ def test_review_provider_failure_preserves_specs() -> None:
 
     result = comparison(provider=UnavailableReviewProvider())
     assert fact(result, "listingA:100w", "max_output_w").value == 100
-    assert all(item["review_status"] == "unresolved" for item in result.items)
+    assert all(
+        isinstance(item, AnalyzedComparisonItem) and item.review_status == "unresolved"
+        for item in result.items
+    )
 
 
 def test_changed_snapshot_excludes_review_batch() -> None:
@@ -142,7 +150,10 @@ def test_changed_snapshot_excludes_review_batch() -> None:
 
     result = comparison(provider=ChangedProvider())
     assert not result.review_mentions
-    assert all(item["review_status"] == "unresolved" for item in result.items)
+    assert all(
+        isinstance(item, AnalyzedComparisonItem) and item.review_status == "unresolved"
+        for item in result.items
+    )
 
 
 def test_unknown_review_variant_classification_before_model() -> None:
@@ -185,7 +196,10 @@ def test_malformed_review_output_abstains() -> None:
 
     result = comparison(InvalidReviewClient())
     assert not result.review_mentions
-    assert all(item["review_status"] == "unresolved" for item in result.items)
+    assert all(
+        isinstance(item, AnalyzedComparisonItem) and item.review_status == "unresolved"
+        for item in result.items
+    )
 
 
 def test_partially_failed_review_batches_keep_successful_denominator() -> None:
@@ -200,9 +214,7 @@ def test_partially_failed_review_batches_keep_successful_denominator() -> None:
             page = await super().get_reviews(listing_id, variant_id, cursor=cursor, limit=limit)
             if cursor is None:
                 review = (
-                    next(
-                        r for r in page["reviews"] if r["variant_id"] == SELECTIONS[0]["variant_id"]
-                    )
+                    next(r for r in page["reviews"] if r["variant_id"] == SELECTIONS[0].variant_id)
                     if listing_id == "listingA"
                     else None
                 )
@@ -221,5 +233,7 @@ def test_partially_failed_review_batches_keep_successful_denominator() -> None:
         s for s in result.review_summaries if s.item_key == "listingA:100w" and s.aspect == "heat"
     )
     assert summary.analyzed_reviews == 12
-    assert result.items[0]["review_status"] == "unresolved"
-    assert result.items[0]["review_coverage"]["exact_reviews_available"] == 24
+    first_item = result.items[0]
+    assert isinstance(first_item, AnalyzedComparisonItem)
+    assert first_item.review_status == "unresolved"
+    assert first_item.review_coverage.exact_reviews_available == 24

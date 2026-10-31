@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from openai import APITimeoutError
 from openai.types.responses import Response
 
-from app.contracts.evidence import ComparisonEvidence
+from app.contracts.evidence import ComparisonEvidence, ComparisonSelection
 from app.decision.sessions import DemoSessionStore, create_demo_session
 from app.main import create_app
 from app.providers import CatalogError, MockCatalogProvider
@@ -133,7 +133,7 @@ def test_invalid_comparison_request_uses_stable_error_envelope() -> None:
 
 def test_catalog_identity_failure_is_mapped_without_fallback() -> None:
     async def reject_variant(
-        selections: Sequence[dict[str, str]],
+        selections: Sequence[ComparisonSelection],
     ) -> ComparisonEvidence:
         del selections
         raise CatalogError("unknown_variant")
@@ -173,6 +173,9 @@ def test_openapi_exposes_bearer_auth_and_canonical_comparison_contract() -> None
     assert "/api/comparisons/{comparison_id}/ask" in schema["paths"]
     assert "HTTPBearer" in schema["components"]["securitySchemes"]
     assert "ComparisonResponse" in schema["components"]["schemas"]
+    assert "ComparisonItem" in schema["components"]["schemas"]
+    assert "ComparisonSelection" in schema["components"]["schemas"]
+    assert "CatalogListing" in schema["components"]["schemas"]
     assert "AskComparisonRequest" in schema["components"]["schemas"]
     assert "AskComparisonResponse" in schema["components"]["schemas"]
     assert set(schema["components"]["schemas"]["ErrorCode"]["enum"]) >= {

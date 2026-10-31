@@ -115,7 +115,7 @@ def _backend_instructions(session_state: DemoSessionState, comparison_id: str) -
         "revision": snapshot.revision,
         "preferences": snapshot.preferences.model_dump(mode="json"),
         "recommendation": snapshot.recommendation.model_dump(mode="json"),
-        "item_keys": [item["item_key"] for item in snapshot.evidence.items],
+        "item_keys": [item.item_key for item in snapshot.evidence.items],
         "active_tab": snapshot.ui_patch.active_tab if snapshot.ui_patch is not None else "specs",
     }
     return (

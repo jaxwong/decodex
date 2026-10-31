@@ -5,10 +5,9 @@ import secrets
 from collections.abc import Awaitable, Callable, Sequence
 from http import HTTPStatus
 
-from app.contracts.evidence import ComparisonEvidence
+from app.contracts.evidence import ComparisonEvidence, ComparisonSelection
 from app.contracts.session import (
     ComparisonResponse,
-    ComparisonSelection,
     Preferences,
 )
 from app.decision.ranking import rank_comparison
@@ -17,7 +16,9 @@ from app.errors import ApiFailure, ErrorCode
 
 logger = logging.getLogger(__name__)
 
-type BuildComparisonEvidence = Callable[[Sequence[dict[str, str]]], Awaitable[ComparisonEvidence]]
+type BuildComparisonEvidence = Callable[
+    [Sequence[ComparisonSelection]], Awaitable[ComparisonEvidence]
+]
 
 
 class ComparisonNotFound(ApiFailure):
@@ -36,12 +37,11 @@ async def create_comparison(
     build_evidence: BuildComparisonEvidence,
 ) -> ComparisonResponse:
     """Build evidence exactly once and save one canonical comparison response."""
-    selection_values = [selection.model_dump() for selection in selections]
-    evidence = await build_evidence(selection_values)
+    evidence = await build_evidence(selections)
     requested_item_keys = {
         f"{selection.listing_id}:{selection.variant_id}" for selection in selections
     }
-    evidence_item_keys = {item["item_key"] for item in evidence.items}
+    evidence_item_keys = {item.item_key for item in evidence.items}
     if evidence_item_keys != requested_item_keys:
         raise RuntimeError(
             "Evidence builder returned different exact variants in create_comparison: "

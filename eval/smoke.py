@@ -2,38 +2,38 @@
 
 from typing import Any
 
-from app.contracts.evidence import ComparisonEvidence
+from app.contracts.evidence import ComparisonEvidence, ComparisonSelection
 from app.evidence import EvidenceBuilder, ModelClient
 from app.providers import CatalogProvider
 
 SMOKE_SELECTIONS = [
-    {"listing_id": "listingA", "variant_id": "100w"},
-    {"listing_id": "listingB", "variant_id": "65w"},
-    {"listing_id": "listingC", "variant_id": "87w"},
+    ComparisonSelection(listing_id="listingA", variant_id="100w"),
+    ComparisonSelection(listing_id="listingB", variant_id="65w"),
+    ComparisonSelection(listing_id="listingC", variant_id="87w"),
 ]
 
 
 def check_smoke(comparison: ComparisonEvidence) -> list[str]:
     """Return failed spec acceptance checks; a completed request alone is insufficient."""
     failures = []
-    expected = {f"{s['listing_id']}:{s['variant_id']}" for s in SMOKE_SELECTIONS}
-    if {item["item_key"] for item in comparison.items} != expected:
+    expected = {f"{selection.listing_id}:{selection.variant_id}" for selection in SMOKE_SELECTIONS}
+    if {item.item_key for item in comparison.items} != expected:
         return ["exact_demo_selection"]
     for item in comparison.items:
-        key = item["item_key"]
-        if item.get("analysis_status") != "completed":
+        key = item.item_key
+        if getattr(item, "analysis_status", None) != "completed":
             failures.append(f"{key}:spec_analysis_completed")
-        if item.get("review_status") != "completed":
+        if getattr(item, "review_status", None) != "completed":
             failures.append(f"{key}:review_analysis_completed")
-        coverage = item.get("review_coverage", {})
+        coverage = getattr(item, "review_coverage", None)
         exact_ids = {
             source.review_id
             for source in comparison.evidence.values()
             if source.item_key == key
             and source.source_type == "review"
-            and source.variant_id == item["variant_id"]
+            and source.variant_id == item.variant_id
         }
-        if not exact_ids or coverage.get("exact_reviews_analyzed") != len(exact_ids):
+        if not exact_ids or coverage is None or coverage.exact_reviews_analyzed != len(exact_ids):
             failures.append(f"{key}:exact_review_coverage")
         summaries = [s for s in comparison.review_summaries if s.item_key == key]
         if len(summaries) != 6 or any(s.analyzed_reviews != len(exact_ids) for s in summaries):
@@ -63,7 +63,10 @@ def check_smoke(comparison: ComparisonEvidence) -> list[str]:
     if missing.status != "missing" or missing.value is not None:
         failures.append("missing_weight_abstains")
     warranty = facts["listingC:87w"]["warranty_months"]
-    if warranty.status != "conflicting" or set(warranty.conflicting_values) != {"12", "24"}:
+    if warranty.status != "conflicting" or set(warranty.conflicting_values) != {
+        "12",
+        "24",
+    }:
         failures.append("warranty_conflict_preserved")
     # Revalidate the entire graph: known source IDs, exact variants, literal review
     # excerpts, and unique-review sentiment counts are canonical contract invariants.

@@ -11,7 +11,8 @@ from openai import AsyncOpenAI
 from openai.resources.live.sideband import AsyncSidebandConnection
 from openai.types.live import DelegationCreatedEvent, LiveCreateResponse, ResponseEvent
 
-from app.contracts.session import ComparisonSelection, Preferences
+from app.contracts.evidence import ComparisonSelection
+from app.contracts.session import Preferences
 from app.decision.comparisons import create_comparison, require_comparison
 from app.decision.sessions import DemoSessionState
 from app.decision.tools import apply_preferences

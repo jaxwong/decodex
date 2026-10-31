@@ -21,11 +21,8 @@ from openai import AsyncOpenAI
 from openai.types.responses import Response, ResponseFunctionToolCall
 from pydantic import BaseModel, ConfigDict
 
-from app.contracts.evidence import ComparisonEvidence
-from app.contracts.session import (
-    ComparisonSelection,
-    Preferences,
-)
+from app.contracts.evidence import ComparisonEvidence, ComparisonSelection
+from app.contracts.session import Preferences
 from app.decision.comparisons import create_comparison, require_comparison
 from app.decision.sessions import DemoSessionState
 from app.decision.tools import RevisionConflict, apply_preferences
@@ -381,13 +378,13 @@ def _scenario_suite_sha256() -> str:
 
 
 async def _build_sample_evidence(
-    selections: Sequence[dict[str, str]],
+    selections: Sequence[ComparisonSelection],
 ) -> ComparisonEvidence:
     evidence = ComparisonEvidence.model_validate_json(EVIDENCE_PATH.read_text(encoding="utf-8"))
     requested_item_keys = {
-        f"{selection['listing_id']}:{selection['variant_id']}" for selection in selections
+        f"{selection.listing_id}:{selection.variant_id}" for selection in selections
     }
-    evidence_item_keys = {item["item_key"] for item in evidence.items}
+    evidence_item_keys = {item.item_key for item in evidence.items}
     if requested_item_keys != evidence_item_keys:
         raise RuntimeError("Agent benchmark selections differ from sample_comparison_evidence.json")
     return evidence
@@ -398,7 +395,7 @@ async def _create_scenario_state(
 ) -> tuple[DemoSessionState, str]:
     evidence = ComparisonEvidence.model_validate_json(EVIDENCE_PATH.read_text(encoding="utf-8"))
     selections = [
-        ComparisonSelection(listing_id=item["listing_id"], variant_id=item["variant_id"])
+        ComparisonSelection(listing_id=item.listing_id, variant_id=item.variant_id)
         for item in evidence.items
     ]
     session_state = DemoSessionState(expires_at=datetime.max.replace(tzinfo=UTC))

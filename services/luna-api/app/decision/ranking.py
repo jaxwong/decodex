@@ -11,27 +11,12 @@ OBJECTIVE_PRIORITY_DIRECTIONS: dict[RankingPriority, int] = {
 
 
 def _item_keys(evidence: ComparisonEvidence) -> list[str]:
-    item_keys: list[str] = []
-    for item in evidence.items:
-        item_key = item.get("item_key")
-        if not isinstance(item_key, str):
-            raise RuntimeError(
-                "ComparisonEvidence item_key must be a string in rank_comparison; "
-                f"received {item_key!r}"
-            )
-        item_keys.append(item_key)
-    return item_keys
+    return [item.item_key for item in evidence.items]
 
 
 def _price_minor(evidence: ComparisonEvidence, item_key: str) -> int:
-    item = next(item for item in evidence.items if item.get("item_key") == item_key)
-    price_minor = item.get("price_minor")
-    if type(price_minor) is not int or price_minor < 0:
-        raise RuntimeError(
-            "ComparisonEvidence price_minor must be a nonnegative integer in rank_comparison: "
-            f"item_key={item_key!r}, price_minor={price_minor!r}"
-        )
-    return price_minor
+    item = next(item for item in evidence.items if item.item_key == item_key)
+    return item.price_minor
 
 
 def _supported_number(

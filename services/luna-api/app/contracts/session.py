@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from app.contracts.evidence import (
     ComparisonEvidence,
+    ComparisonSelection,
     Evidence,
     Fact,
     ReviewAspectSummary,
@@ -23,13 +24,6 @@ class DemoSession(_SessionModel):
 
     token: str
     expires_at: datetime
-
-
-class ComparisonSelection(_SessionModel):
-    """One exact listing variant selected by its provider-owned identity."""
-
-    listing_id: str = Field(min_length=1)
-    variant_id: str = Field(min_length=1)
 
 
 class CreateComparisonRequest(_SessionModel):
