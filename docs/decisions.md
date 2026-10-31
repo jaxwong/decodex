@@ -108,13 +108,16 @@ general plugin/tool framework. A new mutation requires an explicit architecture 
 ## D-06 — Bounded Responses text agent
 
 **Decision:** Use the Responses API with strict functions, `parallel_tool_calls=false`, at most
-three tool rounds, at most four provider calls, and validated structured final text.
+three tool rounds, at most four provider calls, and validated structured final text. Gather
+evidence before mutation; after `apply_preferences`, force the final continuation with
+`tool_choice: "none"`.
 
 **Why:** This preserves agentic intent handling while bounding cost, latency and duplicate action
 risk.
 
-**Consequences:** SDK retries are zero. A tool-limit or provider failure is explicit. Conversation
-history stores only four successful turns.
+**Consequences:** SDK retries are zero. A tool-limit or provider failure is explicit. No tool can
+run after a committed text mutation. A post-mutation contract failure exposes the saved revision
+and is non-retryable. Conversation history stores only four successful turns.
 
 ## D-07 — GPT-Live with one server sideband
 
@@ -165,7 +168,9 @@ requiring explicit `--live` may write measured artifacts.
 **Why:** A fake transport is useful for behavior tests but cannot support a model-quality claim.
 
 **Consequences:** Missing live metrics remain unavailable. Paid artifacts include limitations,
-request counts, usage coverage and source hashes. Failed measured scenarios remain visible.
+request counts, usage coverage and evidence/scenario/implementation hashes. Failed measured
+scenarios remain visible. A source change makes the prior agent artifact historical and the
+current projection unavailable until a newly authorized run.
 
 ## D-12 — Separate evidence and agent request budgets
 
@@ -176,8 +181,9 @@ evaluator has a separate 44-request ceiling and artifact.
 budgets would obscure which operation spent credits or failed.
 
 **Consequences:** `eval/live-results.json` owns evidence measurements;
-`eval/agent-results.json` owns agent measurements. `eval.run` validates and projects the agent
-artifact into `eval/results.json`; it does not rerun or rewrite the agent measurement.
+`eval/agent-results.json` owns agent measurements. `eval.run` validates and projects only a
+current agent artifact into `eval/results.json`; it does not rerun or rewrite the agent
+measurement.
 
 ## D-13 — One-origin demo deployment
 

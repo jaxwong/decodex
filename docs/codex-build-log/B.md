@@ -476,3 +476,76 @@ exit 0
 No paid provider call was made by either final verification command. Browser E2E, real
 microphone input, Host B, Docker and deployment remain unverified because their C-owned inputs
 do not exist.
+
+## B7: terminal mutation and current evaluation ownership — 31 October 2026
+
+**Outcome:** Made a successful text preference mutation the last possible tool action, clarified
+the review citation identifier at the model boundary, and preserved committed revision context
+for invalid post-mutation output. Bound agent measurements to the evaluated text-agent source so
+the pre-B7 paid artifact cannot be presented as current.
+
+**Ownership and limits:**
+
+- Text `apply_preferences` remains the same sole mutation. Its continuation retains the same
+  tool definitions for prompt caching but sets `tool_choice: "none"`; an impossible provider
+  function call is rejected before execution.
+- Live still uses the same tool schemas and executor. B7 does not change its multi-round
+  sideband protocol; only the text-turn continuation becomes terminal.
+- The citation allowlist is unchanged. Prompt and tool text now say that review claims cite a
+  review mention ID, never the related review ID.
+- The B6 paid artifact is not deleted, rewritten or claimed as B7 evidence. `make eval` reports
+  it unavailable after the implementation hash changes. No paid rerun occurred.
+
+**Files changed:**
+
+- `services/luna-api/app/openai/text_agent.py`
+- `services/luna-api/app/errors.py`
+- `services/luna-api/tests/openai/test_text_agent.py`
+- `services/luna-api/tests/routes/test_comparisons.py`
+- `services/luna-api/tests/evidence/test_evaluation.py`
+- `services/luna-api/tests/openai/test_agent_evaluation.py`
+- `eval/agent.py`
+- `eval/run.py`
+- `eval/results.json`
+- `eval/README.md`
+- `docs/{architecture,invariants,decisions}.md`
+- `CHANGELOG.md`
+- `docs/codex-build-log/B.md`
+
+**Red-to-green verification:**
+
+```text
+pytest -q tests/openai/test_text_agent.py::test_agent_executes_one_mutation_and_returns_only_valid_citations tests/openai/test_text_agent.py::test_agent_rejects_provider_tool_call_after_terminal_mutation tests/routes/test_comparisons.py::test_invalid_answer_after_update_returns_committed_revision
+3 failed in 0.43s
+exit 1
+
+pytest -q tests/openai/test_text_agent.py::test_agent_executes_one_mutation_and_returns_only_valid_citations tests/openai/test_text_agent.py::test_agent_rejects_provider_tool_call_after_terminal_mutation tests/routes/test_comparisons.py::test_invalid_answer_after_update_returns_committed_revision
+3 passed in 0.48s
+exit 0
+
+pytest -q tests/openai/test_text_agent.py tests/routes/test_comparisons.py
+18 passed in 0.37s
+exit 0
+
+pytest -q tests/evidence/test_evaluation.py tests/openai/test_agent_evaluation.py
+11 passed in 0.52s
+exit 0
+```
+
+**Final deterministic verification:**
+
+```text
+UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+56 files already formatted
+All checks passed!
+Success: no issues found in 54 source files
+159 passed in 0.96s
+exit 0
+
+UV_CACHE_DIR=/tmp/decodex-uv-cache make eval
+agent=false
+exit 0
+```
+
+No paid provider call, browser E2E, Live microphone flow, Host B, Docker or deployment was run.
+The existing `eval/agent-results.json` remains the unmodified B6 historical measurement.

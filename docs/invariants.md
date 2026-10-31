@@ -47,7 +47,7 @@ stateDiagram-v2
 | I-18 | Text and Live use the same four schemas and the same Python executor. | `openai/text_agent.py`, `openai/live_agent.py` |
 | I-19 | Only `get_comparison`, `get_review_aspect`, `inspect_evidence` and `apply_preferences` are callable. | Strict tool schema and `execute_luna_tool` allowlist |
 | I-20 | Tool arguments are bound to the authorized comparison and validated again in Python. | Tool schema enums and Pydantic argument models |
-| I-21 | `parallel_tool_calls=false`; one turn/delegation cannot mutate twice. | Model configuration and mutation guard |
+| I-21 | `parallel_tool_calls=false`; one turn/delegation cannot mutate twice. In text, `apply_preferences` is the final tool and the continuation uses `tool_choice: "none"`. | Model configuration and mutation guard |
 | I-22 | Product-specific answer citations must exist in stored evidence or review mentions. Unsupported IDs are removed with a conservative answer. | `_safe_answer` |
 | I-23 | Conversation history contains at most four successful text turns and is permanently bound to one comparison. | `ConversationState`, `_conversation_history` |
 | I-24 | Private provider IDs, reasoning and credentials are never returned through application response contracts. | Response models and projection at routes |
@@ -62,7 +62,7 @@ stateDiagram-v2
 | I-28 | One Live delegation executes at most three tool calls and deduplicates provider `call_id`. | `run_live_sideband` |
 | I-29 | Live executes only completed function-call items, never argument deltas. | Sideband event filter |
 | I-30 | State is committed before a function-call output claims that mutation succeeded. | Text/Live tool loops |
-| I-31 | A timeout after mutation is non-retryable; the client refreshes instead of repeating intent. | `LunaAgentTimeout` HTTP mapping |
+| I-31 | Any typed text-provider failure or invalid response after mutation is non-retryable and includes the committed revision; the client refreshes instead of repeating intent. | Agent exceptions and HTTP mapping |
 | I-32 | Expected external failures have one typed boundary and explicit behavior. Programmer errors raise. | Evidence failure handling and `app.errors` |
 | I-33 | Streamed or partial provider output is not durable state. Only validated completed output is used. | Response/status validation |
 
@@ -92,7 +92,7 @@ stateDiagram-v2
 | I-43 | Paid evaluation requires explicit `--live`, has a structural request ceiling and never retries. | `eval/run.py`, `eval/agent.py` |
 | I-44 | Test-double output is never written as a measured benchmark artifact. | Test-only call sites and fixed production artifact paths |
 | I-45 | Missing observations remain unavailable; they are never reported as zero. | Evaluation report models |
-| I-46 | Agent artifacts are rejected when the evidence or scenario-suite hash changes. | `load_agent_benchmark` |
+| I-46 | Agent artifacts are rejected when the evidence, scenario suite or text-agent implementation hash changes. A stale artifact is unavailable, never current. | `load_agent_benchmark`, `eval.run` |
 | I-47 | Failed measured scenarios remain in the report; a different prompt/model run is not a fallback repair. | Agent evaluator status and artifact |
 
 ## Ownership invariants

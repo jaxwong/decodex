@@ -280,8 +280,10 @@ sequenceDiagram
 ```
 
 One text turn makes at most four provider calls: the initial request plus three continuations.
-SDK retries are disabled. A timeout after a completed mutation returns a non-retryable error
-that tells the client to refresh instead of repeating the action.
+SDK retries are disabled. The agent reads required evidence before mutation. After
+`apply_preferences` succeeds, the continuation uses `tool_choice: "none"`; the provider can
+only produce the final answer. Any invalid response after the committed mutation returns the
+new revision in a non-retryable error so the client refreshes instead of repeating the action.
 
 ## GPT-Live flow
 
@@ -357,12 +359,14 @@ flowchart LR
 ```
 
 - `make api-test` is deterministic and makes no provider calls.
-- `make eval` runs the deterministic evaluator and projects a current, hash-validated paid
-  agent artifact when one exists.
+- `make eval` runs the deterministic evaluator and projects a paid agent artifact only when its
+  evidence, scenario suite and text-agent implementation hashes are current.
 - Paid evaluators require an explicit `--live`, use no retries and enforce request ceilings.
 - Missing metrics stay unavailable rather than becoming zero.
 - As of 31 October 2026, the first paid agent run used 28 of 44 allowed requests and passed
-  10 of 12 scenarios. It was not retried; failures remain in the artifact.
+  10 of 12 scenarios. It was not retried; failures remain in the artifact. B7 changed the agent
+  contract afterward, so this run is retained as historical and the current projection reports
+  the agent metric unavailable until another explicitly authorized paid run.
 
 ## Local operation
 

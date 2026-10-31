@@ -41,6 +41,21 @@ This file records implemented Luna milestones. The implementation spec remains t
 - The docs identify the main integration gap rather than hiding it: Host A still uses its legacy
   browser comparison/OpenAI path, and C3 has not connected it to the implemented Luna API.
 
+### Implemented on `b7-agent-boundary-hardening`
+
+- Text-agent preference mutation is now terminal for tool execution: the continuation uses
+  `tool_choice: "none"`, and a provider function call after mutation is rejected before another
+  application tool can run.
+- Review tool and trusted prompt language distinguish the citeable review mention ID from the
+  non-citeable review ID while preserving the server citation allowlist.
+- Invalid final output after a committed mutation remains non-retryable and now returns the
+  committed comparison revision so clients refresh instead of repeating intent.
+- Agent artifact validation now covers the text-agent implementation. The B6 paid artifact is
+  retained unchanged as historical evidence; `eval/results.json` reports the current agent
+  measurement unavailable until an explicitly authorized B7 paid run.
+- Full API gate: **56 files formatted, lint passed, 54 sources strictly typed, and 159 tests
+  passed**. No provider call was made.
+
 ### Not yet merged
 
 - C3 Host A API integration, including deletion of the browser API-key field, direct OpenAI call
