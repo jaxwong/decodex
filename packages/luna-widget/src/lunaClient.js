@@ -41,10 +41,12 @@ export const lunaClient = {
     request(apiBaseUrl, `/comparisons/${encodeURIComponent(comparisonId)}`, { token, signal }),
   getListingGapReport: (apiBaseUrl, token, listingId, signal) =>
     request(apiBaseUrl, `/listings/${encodeURIComponent(listingId)}/gap-report`, { token, signal }),
-  draftSellerQuestion: (apiBaseUrl, token, listingId, variantId, fieldKey, signal) =>
+  sendSellerQuestion: (apiBaseUrl, token, listingId, variantId, fieldKey, signal) =>
     request(apiBaseUrl, `/listings/${encodeURIComponent(listingId)}/variants/${encodeURIComponent(variantId)}/questions`, {
       token, method: 'POST', body: { field_key: fieldKey }, signal,
     }),
+  getSellerQuestions: (apiBaseUrl, token, listingId, signal) =>
+    request(apiBaseUrl, `/listings/${encodeURIComponent(listingId)}/questions`, { token, signal }),
   sendSellerReply: (apiBaseUrl, token, listingId, variantId, fieldKey, answer, signal) =>
     request(apiBaseUrl, `/listings/${encodeURIComponent(listingId)}/variants/${encodeURIComponent(variantId)}/seller-replies`, {
       token, method: 'POST', body: { field_key: fieldKey, answer }, signal,
