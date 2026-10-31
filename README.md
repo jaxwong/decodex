@@ -59,9 +59,11 @@ npm run dev --workspace minimal-host -- --port 5174
 ```
 
 Open Host A at `http://127.0.0.1:5173/` and Host B at
-`http://127.0.0.1:5174/`. Both hosts proxy relative `/api` calls to port 8000. Host A's demo
-walk is search → product page → cart → **Compare now** → **Choose this one** → checkout; see
-[its README](shopee-compare-app/README.md).
+`http://127.0.0.1:5174/`. Both hosts proxy relative `/api` calls to port 8000. Host A's buyer
+walk is search → product page → cart → **Compare now** → **Pick this one** → cart → checkout; the
+seller side is the top-bar **Seller Centre**, where buyer questions are answered. See
+[its README](shopee-compare-app/README.md). `make api-dev` reloads on every API file change and
+forgets in-memory sessions when it does; Luna then offers to build the comparison again.
 
 ## Honest current limits
 
