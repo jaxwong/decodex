@@ -37,8 +37,9 @@ Search asks `/api/catalog?q=`; the product page shows `/api/catalog/{listing_id}
 unverified listing text and reviews. **Compare now** hands the ticked listing/variant IDs to
 Luna, which shows those products loading and compares them immediately; Host A enables it only
 for 2–4 ticked products and never shows the widget's picker. **Pick this one** calls the host's
-`requestAddToCart`, which returns to the cart with only that variant ticked; picking is not
-buying. Seller Centre (`#/SellerCentre`) has its own header and holds the only seller-side UI:
+`requestAddToCart`, which ticks only that variant in the cart while the shopper stays on the
+comparison; the widget's **Your pick** bar offers **Check out**, which calls the host's optional
+`requestCheckout` with that one variant. Picking is not buying; checkout is its own press. Seller Centre (`#/SellerCentre`) has its own header and holds the only seller-side UI:
 the listing's open buyer questions and the gap report. No storefront page sends product text as evidence. The cart's
 three starting rows are demo contents; a real marketplace cart still needs an authorized catalog
 contract before its identities can be used.
@@ -304,7 +305,7 @@ The model can access exactly four functions:
 | Tool | Reads or writes | Boundary |
 |---|---|---|
 | `get_comparison` | Read | Compact facts, preferences and recommendation; no raw pages |
-| `get_review_aspect` | Read | One aspect, bounded item set and literal mentions |
+| `get_review_aspect` | Read | One or more of the six enumerated aspects, bounded item set and literal mentions |
 | `inspect_evidence` | Read | Exact stored evidence IDs only |
 | `apply_preferences` | **Write** | The only mutation; revision checked |
 

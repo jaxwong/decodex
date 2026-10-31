@@ -183,7 +183,7 @@ class ScriptedAgentResponses:
                 "get_review_aspect",
                 {
                     "comparison_id": comparison_id,
-                    "aspect": "heat",
+                    "aspects": ["heat"],
                     "item_keys": ["listingA:100w", "listingB:65w", "listingC:87w"],
                 },
             )

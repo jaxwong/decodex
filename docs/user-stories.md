@@ -207,9 +207,11 @@ Exact evidence excerpts and locations render for the three listed price componen
 supported/conflicting fact; delivered total is explicitly derived, while missing facts abstain.
 The view opens and closes without another API/model call or comparison reset. It is labelled
 synthetic where applicable. In Host A, **View product** opens the Shopee-style product page over
-the comparison instead, and **Pick this one** returns Mai to her cart with only that variant
-ticked; she checks out from there if she wants to (a demo checkout whose one-unit total equals
-Luna's delivered total, cash on delivery only). Picking is never buying. A real authorized
+the comparison instead, and **Pick this one** ticks only that variant in Mai's cart while she
+stays on the comparison: a **Your pick** bar shows the product and its delivered total with
+**Check out** and **Keep comparing**. She buys only by pressing **Check out** there or in the
+cart (a demo checkout whose one-unit total equals Luna's delivered total, cash on delivery
+only). Picking is never buying. A real authorized
 marketplace product URL, payment and checkout automation remain out of scope.
 
 ## The same decision by voice

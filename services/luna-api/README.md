@@ -105,7 +105,7 @@ The API can verify session creation and sideband attachment on its own, but genu
 `app/decision/tools.py` exposes exactly four Python tool functions for text and Live delegation:
 
 - `get_comparison` returns compact normalized facts without raw source text.
-- `get_review_aspect` returns bounded aggregates and literal supporting mentions.
+- `get_review_aspect` returns bounded aggregates and literal supporting mentions for one or more of the six enumerated aspects (a general reviews question reads all six in one call).
 - `apply_preferences` is the only mutation; it enforces optimistic revision checks.
 
 The seller question loop (`routes/seller_replies.py`) is plain routes, not a tool. A buyer opens

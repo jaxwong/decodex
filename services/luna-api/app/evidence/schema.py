@@ -1,6 +1,6 @@
 """Fixed power-bank dimensions; prices are provider-owned and never extracted."""
 
-from app.contracts.evidence import SchemaField
+from app.contracts.evidence import Aspect, SchemaField
 
 SCHEMA_FIELDS = [
     SchemaField(field_key="capacity_mah", label="Capacity", unit="mAh"),
@@ -14,5 +14,5 @@ SCHEMA_FIELDS = [
 ]
 # Distinct analysed reviews needed before a dispute attaches; one angry review never flips it.
 DISPUTE_MIN_REVIEWS = 2
-ASPECTS = ("heat", "portability", "charging", "reliability", "value", "other")
+ASPECTS: tuple[Aspect, ...] = ("heat", "portability", "charging", "reliability", "value", "other")
 UNITS = {field.field_key: field.unit for field in SCHEMA_FIELDS}

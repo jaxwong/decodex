@@ -213,7 +213,8 @@ function productSnapshot(evidence, item) {
 }
 
 export function ComparisonTable({
-  comparison, onOpenCell, imagesByListing, onNavigateToListing, onAskSeller, openQuestionKeys, onPick,
+  comparison, onOpenCell, imagesByListing, onNavigateToListing, onAskSeller, openQuestionKeys,
+  pickedItemKey, onPick,
 }) {
   const [differencesOnly, setDifferencesOnly] = useState(true);
   const { evidence, recommendation, preferences } = comparison;
@@ -288,10 +289,12 @@ export function ComparisonTable({
                     View product
                   </button>
                 </span>
-                {onPick && <button type="button" className="luna-button luna-button-small"
-                  aria-label={`Pick ${itemName(item)}`} onClick={() => onPick(item)}>
-                  Pick this one
-                </button>}
+                {onPick && (item.item_key === pickedItemKey
+                  ? <span className="luna-badge luna-badge-pick">Your pick</span>
+                  : <button type="button" className="luna-button luna-button-small"
+                    aria-label={`Pick ${itemName(item)}`} onClick={() => onPick(item)}>
+                    Pick this one
+                  </button>)}
               </th>;
             })}
           </tr>
@@ -353,6 +356,7 @@ ComparisonTable.propTypes = {
   onNavigateToListing: PropTypes.func.isRequired,
   onAskSeller: PropTypes.func.isRequired,
   openQuestionKeys: PropTypes.instanceOf(Set).isRequired,
+  pickedItemKey: PropTypes.string,
   onPick: PropTypes.func,
 };
 
@@ -519,7 +523,9 @@ function citationText(evidence, citationId) {
 
 export function Conversation({ messages, busy, evidence, onOpenCitation }) {
   return <div role="log" aria-live="polite" aria-label="Conversation with Luna" className="luna-messages">
-    {messages.map((message, index) => <div key={index} className={`luna-message is-${message.role}`}>
+    {messages.map((message, index) => <div key={index}
+      className={`luna-message is-${message.role}${message.isError ? ' is-error' : ''}`}
+      role={message.isError ? 'alert' : undefined}>
       <p><span className="luna-sr-only">{message.role === 'user' ? 'You' : 'Luna'}: </span>{message.text}</p>
       {message.citations?.length > 0 && <div className="luna-citations">
         <span className="luna-citations-label">Sources</span>
@@ -538,6 +544,7 @@ Conversation.propTypes = {
     role: PropTypes.oneOf(['user', 'assistant']).isRequired,
     text: PropTypes.string.isRequired,
     citations: PropTypes.arrayOf(PropTypes.string),
+    isError: PropTypes.bool,
   })).isRequired,
   busy: PropTypes.bool.isRequired,
   evidence: PropTypes.object.isRequired,

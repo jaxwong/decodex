@@ -3,9 +3,10 @@
 This Vite app is the Shopee-style Host A for the shared `@luna/widget` workspace package.
 The buyer walk is: search **power bank** on the home page → open a product → pick a model and
 **Add To Cart** → cart → tick 2–4 products → **Compare now** (Luna opens on their comparison) →
-**Pick this one** (back to the cart with only that product ticked) → **Check Out** → **Place
-Order**. Ticks keep Shopee's meaning, "what I'll check out"; comparing is a side step, never a
-purchase. The seller walk is the top-bar **Seller Centre**: its own header, the listing's open
+**Pick this one** (Luna shows a **Your pick** bar; the cart now has only that product ticked) →
+**Check out** in the bar, or **Back to Cart** → **Check Out** → **Place Order**. Ticks keep
+Shopee's meaning, "what I'll check out"; comparing is a side step, never a purchase, and
+checkout is always a separate press. The seller walk is the top-bar **Seller Centre**: its own header, the listing's open
 buyer questions to answer, and what buyers ran into.
 Luna uses only relative `/api` calls; model keys, evidence, ranking and seller counts remain on
 `services/luna-api`.
@@ -37,10 +38,15 @@ npm run dev --workspace shopee-compare  # http://localhost:5173/
   without 2–4 cart picks returns to the cart, and a lost or failed comparison offers **Build the
   comparison again** with the same picks instead of a picker. **View product** opens the same
   product page over the comparison, so closing it returns to the same comparison.
-- **Pick this one** (the widget's optional `requestAddToCart`) returns to the cart with only that
-  product ticked (adding it first if it was not in the cart). Checkout applies each listing's
-  voucher and shipping once per line, so one unit costs Luna's delivered total. Payment is cash
-  on delivery only; nothing is charged or shipped.
+- **Pick this one** (the widget's optional `requestAddToCart`) ticks only that product in the
+  cart (adding it first if it was not there) and keeps the shopper on the comparison, where a
+  sticky **Your pick** bar shows the product and its delivered total with **Check out** and
+  **Keep comparing**. **Check out** (the widget's optional `requestCheckout`) opens Host A's
+  checkout with that one line; **Back to Cart** shows the same pick already ticked. Cart ticks
+  live in `shop.jsx`, so they survive leaving and returning to the cart; re-ticking by hand clears
+  the pick notice. Checkout applies each listing's voucher and shipping once per line, so one
+  unit costs Luna's delivered total. Payment is cash on delivery only; nothing is charged or
+  shipped.
 - **Ask seller** on a missing cell sends one fixed-wording question. The buyer's comparison shows
   it as waiting and **Check for the seller's answer** rebuilds the comparison once the seller
   has answered. The answer form lives only in **Seller Centre** (`#/SellerCentre`, `SellerNav`
@@ -61,7 +67,7 @@ src/components/Section/Compare.jsx        #/Compare route that mounts @luna/widg
 src/components/Section/Checkout.jsx       checkout of the handed-over lines
 src/components/Section/SellerCentre.jsx   #/SellerCentre route that mounts SellerGapReport
 src/components/Navigation/SellerNav.jsx   Seller Centre header (no buyer search, cart or links)
-src/lunaHostAdapter.js                    cart selections in; product view and cart pick out
+src/lunaHostAdapter.js                    cart selections in; product view, cart pick and checkout out
 packages/luna-widget/                     canonical browser comparison UI
 services/luna-api/                        canonical catalog, evidence, ranking and model boundary
 ```

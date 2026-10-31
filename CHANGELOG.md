@@ -14,6 +14,31 @@ This file records implemented Luna milestones. The implementation spec remains t
 - Verified on the built image only: both hosts completed one real text turn, revision 0 to 1. No
   public deployment or public smoke proof exists yet.
 
+### Implemented on `fix/review-aspect-tool`
+
+- "What do reviews say?" failed with HTTP 502 `LUNA_INVALID_RESPONSE`: the `get_review_aspect`
+  tool schema declared `aspect` as a free string, the model asked for `"overall"`, and the
+  server only knows six aspects. The tool now takes `aspects`, an enumerated list of one to six
+  unique aspects, so the model cannot invent one and a general question reads every aspect in a
+  single bounded call instead of needing more tool rounds than the three allowed.
+- Rejected tool calls and invalid tool arguments are logged at the boundary with the tool name
+  and arguments; before, the 502 left no trace.
+- A failed answer now appears in the conversation as an inline error bubble instead of only in
+  the alert above the table, and the question is not left hanging.
+- `eval/agent-results.json` is hash-bound to `text_agent.py`, so the recorded paid agent
+  benchmark reports as unavailable until a new authorised run; metrics are unchanged.
+
+### Implemented on `fix/compare-button-border`
+
+- The cart's **Compare now (N)** renders as a real outlined button beside **Check Out**; on
+  phones the two sit on one row with the hint beneath.
+- A **Your pick** bar on the comparison (D-24, I-62): a successful **Pick this one** badges the
+  column and shows the product with its delivered total, **Keep comparing** and, when the host
+  supplies the new optional `requestCheckout`, **Check out**. Host A ticks only the picked
+  variant in its cart without leaving the comparison and opens checkout with that one line only
+  on **Check out**. Cart ticks now live in `shop.jsx`, so they survive navigation and the pick is
+  already ticked in the cart.
+
 ### Implemented on `feat/buyer-seller-separation`
 
 - Seller Centre is its own product: a `SellerNav` layout (Seller Centre wordmark, "Demo seller ·

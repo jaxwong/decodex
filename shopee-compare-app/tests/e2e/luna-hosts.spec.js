@@ -175,6 +175,12 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await expect(widget).toHaveAttribute('data-revision', '0');
   await expect(disputedCapacity).toContainText('20,000 mAh');
 
+  // The general reviews question reads every aspect in one tool call and cites mentions.
+  await page.getByRole('button', { name: 'What do reviews say?' }).click();
+  await expect(page.getByText(/heat is the most common complaint/)).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Source: .*review: / })).toHaveCount(4);
+  await expect(widget).toHaveAttribute('data-revision', '0');
+
   await page.getByLabel('Message Luna').fill(
     'Under S$80, at least 65W, prioritize portability.',
   );
@@ -379,20 +385,49 @@ test('Host A checks out the cart or the product chosen in Luna', async ({ page }
   await expect(summary).toContainText('Shop Voucher Discount−SGD 15.00');
   await expect(summary).toContainText('Total PaymentSGD 229.52');
 
-  // Picking in Luna is not buying: the shopper lands back in the cart with only that product
-  // ticked and checks out from there.
+  // Picking in Luna is not buying: the pick becomes the cart's only ticked line, the shopper
+  // stays on the comparison, and checkout is a separate explicit press in the pick bar.
   await page.goto('/#/Cart');
   await page.getByRole('button', { name: 'Compare now' }).click();
-  await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
+  const table = page.getByRole('table', { name: 'Product comparison' });
+  await expect(table).toBeVisible();
+  const pickBar = page.getByRole('region', { name: 'Your pick' });
   await page.getByRole('button', { name: 'Pick Comet Travel Power Bank · 87W' }).click();
-  await expect(page).toHaveURL(/#\/Cart$/);
-  await expect(page.getByRole('status')).toContainText('You picked Comet Travel Power Bank · 87W in Luna');
+  await expect(page).toHaveURL(/#\/Compare$/);
+  await expect(pickBar).toContainText('Comet Travel Power Bank · 87W');
+  await expect(pickBar).toContainText('Delivered SGD 72.87');
+  const cometColumn = page.getByRole('columnheader').filter({ hasText: 'Comet Travel' });
+  await expect(cometColumn.getByText('Your pick')).toBeVisible();
+  await expect(cometColumn.getByRole('button', { name: /^Pick / })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Pick / })).toHaveCount(2);
+
+  // Picking another column moves the pick; Keep comparing hides the bar but keeps the pick.
+  await page.getByRole('button', { name: 'Pick Atlas Portable Power Bank · 100W' }).click();
+  await expect(pickBar).toContainText('Atlas Portable Power Bank · 100W');
+  await expect(pickBar).toContainText('Delivered SGD 75.00');
+  await expect(cometColumn.getByRole('button', { name: 'Pick Comet Travel Power Bank · 87W' })).toBeVisible();
+  await pickBar.getByRole('button', { name: 'Keep comparing' }).click();
+  await expect(pickBar).toHaveCount(0);
+  await expect(page.getByRole('columnheader').filter({ hasText: 'Atlas Portable' }).getByText('Your pick')).toBeVisible();
+  await expect(table).toBeVisible();
+
+  // The cart already reflects the pick: only that line is ticked, and the shopper may re-tick.
+  await page.getByRole('link', { name: '< Back to Cart' }).click();
+  await expect(page.getByRole('status')).toContainText('You picked Atlas Portable Power Bank · 100W in Luna');
   const cart = page.getByRole('region', { name: 'Cart products' });
-  await expect(cart.getByRole('checkbox', { name: 'Select Comet Travel Power Bank 87W' })).toBeChecked();
-  await expect(cart.getByRole('checkbox', { name: 'Select Atlas Portable Power Bank 100W' })).not.toBeChecked();
+  await expect(cart.getByRole('checkbox', { name: 'Select Atlas Portable Power Bank 100W' })).toBeChecked();
   await expect(cart.getByRole('checkbox', { name: 'Select Breeze Slim Power Bank 65W' })).not.toBeChecked();
-  await expect(page.getByText('Total (1 items):')).toContainText('SGD 79.87');
-  await page.getByRole('button', { name: 'Check Out' }).click();
+  await expect(cart.getByRole('checkbox', { name: 'Select Comet Travel Power Bank 87W' })).not.toBeChecked();
+  await expect(page.getByText('Total (1 items):')).toContainText('SGD 60.00');
+  await expect(page.getByRole('button', { name: 'Compare now (1)' })).toBeDisabled();
+  await page.getByRole('checkbox', { name: /^Select All/ }).check();
+  await expect(page.getByRole('status')).toHaveCount(0);
+
+  // Check out from the pick bar opens checkout with exactly that variant.
+  await page.getByRole('button', { name: 'Compare now (3)' }).click();
+  await expect(table).toBeVisible();
+  await page.getByRole('button', { name: 'Pick Comet Travel Power Bank · 87W' }).click();
+  await pickBar.getByRole('button', { name: 'Check out' }).click();
   await expect(page).toHaveURL(/#\/Checkout$/);
   await expect(ordered.getByRole('article')).toHaveCount(1);
   await expect(ordered).toContainText('Comet Travel Power Bank');
@@ -591,6 +626,18 @@ test('a session the API has forgotten never blocks the shopper', async ({ page }
   await page.getByRole('button', { name: 'Compare now' }).click();
   await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
   const sessionsAtStart = sessionsCreated;
+
+  // A rejected answer is reported in the conversation itself, where the shopper is looking,
+  // and the comparison stays usable.
+  await page.route('**/api/comparisons/*/ask', route => route.fulfill({
+    status: 502,
+    contentType: 'application/json',
+    body: JSON.stringify({ error: { code: 'LUNA_INVALID_RESPONSE', message: 'Luna returned an invalid tool request or answer. Refresh the comparison before retrying.', retryable: false } }),
+  }), { times: 1 });
+  await page.getByRole('button', { name: 'What do reviews say?' }).click();
+  const conversation = page.getByRole('log', { name: 'Conversation with Luna' });
+  await expect(conversation.getByRole('alert')).toContainText('Luna ran into a problem on our side.');
+  await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
 
   // An ask meets the forgotten session: the comparison is gone, the picks are not, and Host A
   // never shows a picker.

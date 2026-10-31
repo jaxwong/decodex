@@ -20,6 +20,7 @@ from app.decision.sessions import (
     ConversationState,
     DemoSessionState,
 )
+from app.evidence.schema import ASPECTS
 from app.openai.text_agent import (
     ANSWER_TEXT_CONFIG,
     ApplyPreferencesArguments,
@@ -238,7 +239,7 @@ def test_agent_rejects_provider_tool_call_after_terminal_mutation() -> None:
                 "get_review_aspect",
                 {
                     "comparison_id": comparison_id,
-                    "aspect": "heat",
+                    "aspects": ["heat"],
                     "item_keys": ["listingA:100w"],
                 },
             ),
@@ -421,7 +422,7 @@ def test_agent_rejects_made_up_item_before_tool_execution() -> None:
                 "get_review_aspect",
                 {
                     "comparison_id": comparison_id,
-                    "aspect": "heat",
+                    "aspects": ["heat"],
                     "item_keys": ["invented:item"],
                 },
             )
@@ -587,5 +588,89 @@ def test_conversation_limit_rejects_before_provider_call() -> None:
 
         assert provider_calls == 0
         assert len(session_state.conversations) == MAX_CONVERSATIONS_PER_SESSION
+
+    asyncio.run(scenario())
+
+
+def test_review_tool_schema_enumerates_aspects_and_takes_several() -> None:
+    tools = build_luna_tools("cmp_schema", 0)
+    review_tool = next(tool for tool in tools if tool["name"] == "get_review_aspect")
+    parameters = cast(dict[str, Any], review_tool["parameters"])
+    aspects = cast(dict[str, Any], parameters["properties"]["aspects"])
+
+    assert aspects["items"]["enum"] == list(ASPECTS)
+    assert aspects["maxItems"] == len(ASPECTS)
+    assert "every aspect" in (review_tool["description"] or "")
+
+
+def test_agent_rejects_unknown_review_aspect_before_tool_execution() -> None:
+    async def scenario() -> None:
+        session_state, comparison_id = await create_comparison_state()
+
+        async def create_response(**request: Any) -> Response:
+            del request
+            return function_response(
+                "resp_overall",
+                "call_overall",
+                "get_review_aspect",
+                {
+                    "comparison_id": comparison_id,
+                    "aspects": ["overall"],
+                    "item_keys": ["listingA:100w"],
+                },
+            )
+
+        with pytest.raises(LunaToolCallRejected, match="invalid strict arguments"):
+            await run_luna(
+                session_state,
+                comparison_id=comparison_id,
+                conversation_id="conv-1",
+                message="What do reviews say?",
+                expected_revision=0,
+                create_response=create_response,
+                model="gpt-6-luna",
+            )
+
+    asyncio.run(scenario())
+
+
+def test_general_reviews_question_reads_every_aspect_in_one_call() -> None:
+    async def scenario() -> None:
+        session_state, comparison_id = await create_comparison_state()
+        comparison = require_comparison(session_state, comparison_id)
+        mention_id = next(iter(comparison.evidence.review_mentions))
+        item_keys = [item.item_key for item in comparison.evidence.items]
+        provider_responses = [
+            function_response(
+                "resp_reviews",
+                "call_reviews",
+                "get_review_aspect",
+                {"comparison_id": comparison_id, "aspects": list(ASPECTS), "item_keys": item_keys},
+            ),
+            answer_response(
+                "resp_answer", answer="Heat is the main complaint.", cited_ids=[mention_id]
+            ),
+        ]
+        provider_requests: list[dict[str, Any]] = []
+
+        async def create_response(**request: Any) -> Response:
+            provider_requests.append(request)
+            return provider_responses.pop(0)
+
+        result = await run_luna(
+            session_state,
+            comparison_id=comparison_id,
+            conversation_id="conv-1",
+            message="What do reviews say?",
+            expected_revision=0,
+            create_response=create_response,
+            model="gpt-6-luna",
+        )
+
+        assert result.cited_ids == [mention_id]
+        tool_output = json.loads(provider_requests[1]["input"][0]["output"])
+        assert tool_output["aspects"] == list(ASPECTS)
+        assert len(tool_output["summaries"]) == len(ASPECTS) * len(item_keys)
+        assert require_comparison(session_state, comparison_id).revision == 0
 
     asyncio.run(scenario())

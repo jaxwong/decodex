@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.contracts.evidence import (
+    Aspect,
     ComparisonEvidence,
     ComparisonSelection,
     Evidence,
@@ -186,9 +187,9 @@ class ComparisonSnapshot(_SessionModel):
 
 
 class ReviewAspectResult(_SessionModel):
-    """Bounded review aggregates and literal supporting mentions for one aspect."""
+    """Bounded review aggregates and literal supporting mentions for the requested aspects."""
 
-    aspect: str
+    aspects: list[Aspect]
     summaries: list[ReviewAspectSummary]
     mentions: list[ReviewMention]
 
