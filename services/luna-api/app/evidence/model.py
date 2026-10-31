@@ -102,6 +102,7 @@ class OpenAIModelClient:
             self.observations.append(
                 {
                     "response_id": getattr(response, "id", None),
+                    "response_model": getattr(response, "model", None),
                     "usage": usage.model_dump() if usage is not None else None,
                 }
             )

@@ -9,17 +9,28 @@ import argparse
 import asyncio
 import hashlib
 import json
+import logging
 import os
+from collections import Counter
+from datetime import UTC, datetime
+from importlib.metadata import version
 from pathlib import Path
 from statistics import median
 from time import perf_counter
 from typing import Any
 
+import httpx2
+from dotenv import load_dotenv
 from eval.baselines import predict
+from eval.live import MAX_LIVE_REQUESTS, RequestBudget, free_form_specs
 from eval.metrics import score
+from eval.smoke import SMOKE_SELECTIONS, run_smoke
+from openai import AsyncOpenAI, DefaultAsyncHttpxClient
 
 from app.evidence import EvidenceBuilder, OpenAIModelClient
-from app.providers import MockCatalogProvider
+from app.evidence.index import build_evidence_index
+from app.evidence.reviews import review_batches
+from app.providers import CatalogProvider, MockCatalogProvider
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,15 +40,177 @@ def unavailable(reason: str) -> dict[str, Any]:
 
 
 def merge_predictions(predictions: list[dict[str, Any]]) -> dict[str, Any]:
-    merged: dict[str, Any] = dict(items=[], facts_by_item={}, evidence={}, review_mentions={})
+    merged: dict[str, Any] = dict(
+        items=[],
+        schema_fields=predictions[0]["schema_fields"],
+        facts_by_item={},
+        evidence={},
+        review_mentions={},
+        review_summaries=[],
+    )
     for prediction in predictions:
         merged["items"].extend(prediction["items"])
+        merged["review_summaries"].extend(prediction["review_summaries"])
         for field in ("facts_by_item", "evidence", "review_mentions"):
             merged[field].update(prediction[field])
     return merged
 
 
-async def evaluate(*, live: bool = False) -> dict[str, Any]:
+async def request_plan(
+    provider: CatalogProvider, selections: list[dict[str, Any]]
+) -> dict[str, int]:
+    """Calculate the full ceiling from immutable provider snapshots before spending."""
+    reviews: dict[str, list[dict[str, Any]]] = {}
+    for listing_id in {s["listing_id"] for s in selections}:
+        cursor = None
+        reviews[listing_id] = []
+        while True:
+            page = await provider.get_reviews(listing_id, None, cursor=cursor)
+            reviews[listing_id].extend(page["reviews"])
+            cursor = page["next_cursor"]
+            if cursor is None:
+                break
+
+    def calls(items: list[dict[str, Any]]) -> int:
+        return len(items) + sum(
+            len(
+                review_batches(
+                    [r for r in reviews[s["listing_id"]] if r["variant_id"] == s["variant_id"]]
+                )
+            )
+            for s in items
+        )
+
+    plan = {
+        "smoke": calls(SMOKE_SELECTIONS),
+        "grounded": calls(selections),
+        "free_form": len(selections),
+    }
+    plan["total"] = sum(plan.values())
+    if plan["total"] > MAX_LIVE_REQUESTS:
+        raise RuntimeError("Fixture request plan exceeds the approved 36-request ceiling")
+    return plan
+
+
+def token_summary(usages: list[dict[str, Any] | None], attempted: int) -> dict[str, Any]:
+    """Report observed usage and coverage; absent token fields are never guessed."""
+    keys = ("input_tokens", "output_tokens", "total_tokens")
+    records = [u for u in usages if u is not None]
+    totals = {
+        key: sum(u[key] for u in records)
+        if records and all(type(u.get(key)) is int for u in records)
+        else None
+        for key in keys
+    }
+    return {
+        "observed_totals": totals,
+        "responses_with_usage": len(records),
+        "attempted_requests": attempted,
+        "complete": len(records) == attempted and all(v is not None for v in totals.values()),
+    }
+
+
+async def live_predictions(
+    provider: CatalogProvider,
+    selections: list[dict[str, Any]],
+    transport: httpx2.AsyncBaseTransport | None,
+) -> dict[str, Any]:
+    """Smoke first, then one grounded run and one text-only run; never repair/retry."""
+    plan = await request_plan(provider, selections)
+    budget = RequestBudget()
+    model_name = os.environ.get("OPENAI_TEXT_MODEL", "gpt-6-luna")
+    report: dict[str, Any] = {
+        "model": model_name,
+        "request_plan": plan,
+        "request_limit": budget.limit,
+        "executed_at_utc": datetime.now(UTC).isoformat(),
+        "sdk_version": version("openai"),
+        "status": "failed",
+        "grounded": None,
+        "free_form": None,
+    }
+    async with AsyncOpenAI(
+        max_retries=0,
+        timeout=30,
+        http_client=DefaultAsyncHttpxClient(
+            transport=transport, event_hooks={"request": [budget.track]}
+        ),
+    ) as sdk:
+        model = OpenAIModelClient(sdk, model=model_name)
+        report["smoke"] = await run_smoke(provider, model)
+        smoke_observations = list(model.observations)
+        report["smoke"]["response_models"] = sorted(
+            {o["response_model"] for o in smoke_observations if o["response_model"] is not None}
+        )
+        report["smoke"]["tokens"] = token_summary(
+            [o["usage"] for o in smoke_observations], len(budget.attempts)
+        )
+        if report["smoke"]["status"] == "passed":
+            budget.stage = "grounded"
+            snapshots, latencies = [], []
+            builder = EvidenceBuilder(provider, model)
+            for offset in range(0, len(selections), 4):
+                start = perf_counter()
+                snapshot = await builder.build(selections[offset : offset + 4])
+                latencies.append((perf_counter() - start) * 1000)
+                snapshots.append(snapshot.model_dump(mode="json"))
+            report["grounded"] = {
+                "prediction": merge_predictions(snapshots),
+                "review_statuses": [i["review_status"] for s in snapshots for i in s["items"]],
+                "latency_samples_ms": latencies,
+                "usages": [o["usage"] for o in model.observations[len(smoke_observations) :]],
+                "response_models": sorted(
+                    {
+                        o["response_model"]
+                        for o in model.observations[len(smoke_observations) :]
+                        if o["response_model"] is not None
+                    }
+                ),
+            }
+            budget.stage = "free_form"
+            predictions: dict[str, Any] = {
+                "items": [],
+                "facts_by_item": {},
+                "evidence": {},
+                "review_mentions": {},
+            }
+            outputs, timings = {}, []
+            for selection in selections:
+                listing = await provider.get_listing(selection["listing_id"])
+                variant = await provider.get_variant(
+                    selection["listing_id"], selection["variant_id"]
+                )
+                if listing is None or variant is None:
+                    raise ValueError("Evaluation source disappeared after preflight")
+                key = f"{selection['listing_id']}:{selection['variant_id']}"
+                evidence = build_evidence_index(listing, variant)
+                start = perf_counter()
+                output = await free_form_specs(sdk, model_name, key, evidence)
+                timings.append((perf_counter() - start) * 1000)
+                predictions["items"].append({"item_key": key, **selection})
+                predictions["facts_by_item"][key] = output["facts"]
+                predictions["evidence"].update({k: v.model_dump() for k, v in evidence.items()})
+                outputs[key] = output
+            report["free_form"] = {
+                "prediction": predictions,
+                "outputs": outputs,
+                "latency_samples_ms": timings,
+            }
+            completed = all(
+                i["analysis_status"] == "completed"
+                for i in report["grounded"]["prediction"]["items"]
+            )
+            completed &= all(s == "completed" for s in report["grounded"]["review_statuses"])
+            completed &= all(o["status"] == "completed" for o in outputs.values())
+            report["status"] = "completed" if completed else "partial"
+    report["attempts"] = budget.attempts
+    report["attempted_requests"] = len(budget.attempts)
+    return report
+
+
+async def evaluate(
+    *, live: bool = False, transport: httpx2.AsyncBaseTransport | None = None
+) -> dict[str, Any]:
     if live and not os.environ.get("OPENAI_API_KEY"):
         raise RuntimeError("OPENAI_API_KEY is required for explicit --live evaluation")
     provider = MockCatalogProvider()
@@ -51,17 +224,7 @@ async def evaluate(*, live: bool = False) -> dict[str, Any]:
     start = perf_counter()
     baseline = await predict(provider, selections)
     elapsed_ms = (perf_counter() - start) * 1000
-    live_predictions: list[dict[str, Any]] = []
-    comparison_latencies: list[float] = []
-    model: OpenAIModelClient | None = None
-    if live:
-        model = OpenAIModelClient()
-        builder = EvidenceBuilder(provider, model)
-        for offset in range(0, len(selections), 4):
-            start = perf_counter()
-            comparison = await builder.build(selections[offset : offset + 4])
-            comparison_latencies.append((perf_counter() - start) * 1000)
-            live_predictions.append(comparison.model_dump())
+    measured = await live_predictions(provider, selections, transport) if live else None
     labels = json.loads((ROOT / "data/ground_truth.json").read_text())
     result: dict[str, Any] = {
         "conditions": {
@@ -102,31 +265,67 @@ async def evaluate(*, live: bool = False) -> dict[str, Any]:
             "Developer B supplies decision/agent outputs and tests"
         ),
     }
-    if live:
-        merged = merge_predictions(live_predictions)
-        assert model is not None
-        statuses = [item["analysis_status"] for item in merged["items"]]
-        usages = [o["usage"] for o in model.observations if o["usage"] is not None]
+    if measured is not None:
+        result["live_run"] = {
+            k: v for k, v in measured.items() if k not in ("grounded", "free_form")
+        }
+        if measured["grounded"] is None:
+            reason = "Live smoke failed; benchmarks were not attempted"
+            result["grounded_structured_outputs"] = unavailable(reason)
+            result["ungrounded_free_form"] = unavailable(reason)
+            return result
+        grounded = measured["grounded"]
+        merged = grounded["prediction"]
+        latencies = grounded["latency_samples_ms"]
+        counts = Counter(a["stage"] for a in measured["attempts"])
         result["grounded_structured_outputs"] = {
             "available": True,
-            "model": model.model,
+            "model": measured["model"],
+            "response_models": grounded["response_models"],
+            "status": "completed"
+            if all(i["analysis_status"] == "completed" for i in merged["items"])
+            and all(s == "completed" for s in grounded["review_statuses"])
+            else "partial",
             "metrics": score(merged, labels, selections),
-            "analysis_statuses": statuses,
-            "successful_responses": len(model.observations),
+            "prediction": merged,
+            "analysis_statuses": [i["analysis_status"] for i in merged["items"]],
+            "review_statuses": grounded["review_statuses"],
             "comparison_latency_ms": {
-                "samples": comparison_latencies,
-                "p50": median(comparison_latencies),
-                "p95_nearest_rank": max(comparison_latencies),
+                "samples": latencies,
+                "p50": median(latencies),
+                "p95_nearest_rank": max(latencies),
+                "sample_count": len(latencies),
             },
-            "tokens": {
-                key: sum(usage.get(key, 0) for usage in usages)
-                for key in ("input_tokens", "output_tokens", "total_tokens")
-            }
-            if usages
-            else unavailable("Provider returned no usage"),
+            "tokens": token_summary(grounded["usages"], counts["grounded"]),
             "cost": unavailable(
                 "No verified pricing configured; usage is reported without guessed cost"
             ),
+        }
+        free_form = measured["free_form"]
+        result["ungrounded_free_form"] = {
+            "available": True,
+            "model": measured["model"],
+            "response_models": sorted(
+                {
+                    o["response_model"]
+                    for o in free_form["outputs"].values()
+                    if o.get("response_model") is not None
+                }
+            ),
+            "task": "specifications_only",
+            "metrics": {
+                k: v
+                for k, v in score(free_form["prediction"], labels, selections).items()
+                if not k.startswith("review_")
+            },
+            "outputs": free_form["outputs"],
+            "prediction": free_form["prediction"],
+            "latency_per_item_ms": free_form["latency_samples_ms"],
+            "tokens": token_summary(
+                [o["usage"] for o in free_form["outputs"].values()], counts["free_form"]
+            ),
+            "cost": unavailable("No verified pricing configured"),
+            "review_metrics": unavailable("Free-form baseline extracts specifications only"),
         }
     return result
 
@@ -138,6 +337,9 @@ def main() -> None:
     )
     parser.add_argument("--output", type=Path, default=ROOT / "eval/results.json")
     args = parser.parse_args()
+    if args.live:
+        logging.basicConfig(level=logging.INFO, format="%(message)s")
+        load_dotenv(ROOT / ".env", override=False)
     try:
         result = asyncio.run(evaluate(live=args.live))
     except RuntimeError as failure:
@@ -153,6 +355,8 @@ def main() -> None:
             indent=2,
         )
     )
+    if args.live and result["live_run"]["status"] != "completed":
+        parser.exit(2, "Live run failed or was partial; measured artifact retained.\n")
 
 
 if __name__ == "__main__":

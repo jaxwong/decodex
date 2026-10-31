@@ -67,7 +67,7 @@
         "denominator": 51
       }
     },
-    "observed_corpus_latency_ms": 3.1068329990375787,
+    "observed_corpus_latency_ms": 3.1768750050105155,
     "tokens": {
       "available": false,
       "reason": "No model called for deterministic baseline"

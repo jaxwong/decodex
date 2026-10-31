@@ -190,3 +190,97 @@ access, human user study, production evaluation or deployed integration is claim
 - No real model calls, new evaluation results, browser E2E or deployment were
   performed. Existing fixture, dependency lock and evidence wire schema remain
   unchanged. PR description must distinguish these limits from passing tests.
+
+## Approved live evidence validation and A4 comparison — 31 October 2026
+
+- Human approval: strengthen A2/A3 live checks, run grounded and free-form
+  benchmarks within 36 paid requests, and finish with a tested PR. Human supplied
+  server credentials; they were placed in ignored local `.env` with mode 0600.
+  No credential value is recorded in code, artifacts or this log. B-owned project
+  configuration remains untouched, following the user's earlier decision.
+- Started `feat/luna-live-evidence-evaluation` from main `35c33e2` (B3 included).
+  Plain `make api-test` reproduced the known root `eval` mypy lookup failure;
+  temporary `MYPYPATH` verification remained explicit.
+- Codex strengthened smoke acceptance checks in `eval/smoke.py` and the standalone
+  evidence smoke entry point. They check exact selections, 100W isolation, 420g
+  normalization with original quote, missing weight, warranty alternatives, exact
+  review coverage/aspects and canonical provenance/aggregation invariants.
+- `eval/live.py` adds a pre-transport request ceiling and a plain-text Responses
+  specification baseline. Both model paths get identical seller evidence; the
+  free-form baseline permits knowledge inference and model unit conversion but
+  receives no Structured Outputs, tools, provenance repair or automatic retry.
+  `eval/run.py` preflights the fixed fixture, runs smoke first, stops on smoke
+  failure, retains partial statuses and reports usage coverage rather than guessed
+  token/cost values. Ground-truth labels are loaded only after inference finishes.
+- OpenAI Docs skill: fetched the official Structured Outputs guide and inspected
+  installed SDK 3.42.0 signatures for `responses.parse` and `responses.create`.
+  Reference: https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses
+  Kept the approved `gpt-6-luna` model; recorded returned model names separately.
+- New offline SDK-transport tests cover prescribed smoke failures, the 36-call
+  plan/ceiling, six-call early stop, partial extraction, malformed/incomplete
+  free-form output, missing usage, identical input sources and labels loaded only
+  after all inference. They write no benchmark artifact and make no real API call.
+- Actual offline gate before the live run:
+
+  ```text
+  MYPYPATH="$PWD" UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+  52 files already formatted
+  All checks passed!
+  Success: no issues found in 50 source files
+  142 passed in 0.85s
+  exit 0
+  ```
+
+- Actual deterministic evaluation regenerated `eval/results.json` with unchanged
+  regex/keyword scores. Actual paid execution:
+
+  ```text
+  PYTHONPATH=services/luna-api:. services/luna-api/.venv/bin/python -m eval.run --live --output eval/live-results.json
+  status=completed; smoke=passed
+  attempted_requests=36 (6 smoke + 18 grounded + 12 free-form)
+  configured_model=gpt-6-luna; returned_models=[gpt-6-luna]
+  exit 0
+  ```
+
+- `eval/live-results.json` contains real predictions/source graphs, raw free-form
+  outputs, source hashes, SDK/model identity, timings, coverage and usage. Both
+  canonical evidence graphs and all source hashes were revalidated offline.
+  Grounded: supported fields 88/88; evidence precision 96/96; unsupported supported
+  claims 0/88; missing recall 4/4; normalized conflict recall 4/4; variant leakage
+  0/12; review precision 49/49 and recall 49/51.
+- Free-form: supported fields 88/88 and leakage 0/12 also matched the fixtures.
+  Exact normalized conflict recall 2/4 and evidence precision 92/96 were reduced
+  by `12 months`/`24 months` strings instead of canonical `12`/`24` in two cells.
+  All four conflicts were semantically recognized; no claim of missed semantic
+  conflicts is made. No post-hoc parser/prompt tuning or paid rerun was performed.
+- Grounded omissions were two `other/neutral` case-colour mentions, `listingB-r13`
+  and `listingC-r13`. No emitted mention failed literal-quote validation.
+- Three grounded comparison timings: 10.051s, 8.481s, 9.817s (p50 9.817s;
+  nearest-rank p95 10.051s for three samples only). Model-reported tokens: smoke
+  11,435; grounded 32,827; free-form 22,778; total 67,040, complete usage coverage.
+  Costs remain unavailable. Workloads/scheduling differ; this is no production
+  p95, matched latency/cost comparison, human study or real shopping evaluation.
+- Fixtures and labels remain synthetic and were authored together. B's agent
+  output evaluation, C's browser/second-host proof and deployment remain outside
+  this A-owned run. No additional paid calls are authorized by this completed run.
+
+- Before publishing, merged latest main `8068646`, including B4 and C's existing
+  changes, without editing their implementations. Final offline verification:
+
+  ```text
+  MYPYPATH="$PWD" UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+  55 files already formatted
+  All checks passed!
+  Success: no issues found in 53 source files
+  150 passed in 1.36s
+  exit 0
+  ```
+
+- Plain `make api-typecheck` still exits 2: missing root `eval` imports produce
+  eight diagnostics, including a propagated untyped return in the standalone
+  smoke entry point. All disappear with the root `MYPYPATH` override. The same
+  B-owned `mypy_path = ["$MYPY_CONFIG_FILE_DIR/../.."]` configuration remains
+  pending. No rule was suppressed and no B-owned configuration was changed.
+- Final source/artifact audit: changed paths are A-owned; the fixture, canonical
+  evidence contract and data sources are unchanged; both live canonical graphs
+  validate; source hashes match; no secret value is present in candidate files.
