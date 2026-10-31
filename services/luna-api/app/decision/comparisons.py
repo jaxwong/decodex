@@ -11,7 +11,11 @@ from app.contracts.session import (
     Preferences,
 )
 from app.decision.ranking import rank_comparison
-from app.decision.sessions import DemoSessionState
+from app.decision.sessions import (
+    DemoSessionState,
+    release_comparison_reservation,
+    reserve_comparison,
+)
 from app.errors import ApiFailure, ErrorCode
 
 logger = logging.getLogger(__name__)
@@ -37,7 +41,11 @@ async def create_comparison(
     build_evidence: BuildComparisonEvidence,
 ) -> ComparisonResponse:
     """Build evidence exactly once and save one canonical comparison response."""
-    evidence = await build_evidence(selections)
+    reserve_comparison(session_state)
+    try:
+        evidence = await build_evidence(selections)
+    finally:
+        release_comparison_reservation(session_state)
     requested_item_keys = {
         f"{selection.listing_id}:{selection.variant_id}" for selection in selections
     }

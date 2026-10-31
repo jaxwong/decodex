@@ -1,5 +1,6 @@
 """Own bearer-token parsing for protected Luna API routes."""
 
+from datetime import UTC, datetime
 from typing import Annotated, cast
 
 from fastapi import Depends, Request
@@ -23,4 +24,8 @@ def require_demo_session_state(
     if credentials is None:
         raise DemoSessionRequired("missing demo session bearer token")
     session_store = cast(DemoSessionStore, request.app.state.demo_sessions)
-    return require_active_demo_session(session_store, token=credentials.credentials)
+    return require_active_demo_session(
+        session_store,
+        token=credentials.credentials,
+        checked_at=datetime.now(UTC),
+    )

@@ -1,12 +1,19 @@
 import asyncio
 from collections.abc import Sequence
+from datetime import UTC, datetime
 
 import pytest
 
 from app.contracts.evidence import ComparisonEvidence, ComparisonSelection
 from app.contracts.session import Preferences
-from app.decision.comparisons import ComparisonNotFound, create_comparison
-from app.decision.sessions import DemoSessionStore, create_demo_session, require_active_demo_session
+from app.decision.comparisons import ComparisonNotFound, create_comparison, require_comparison
+from app.decision.sessions import (
+    MAX_COMPARISONS_PER_SESSION,
+    ComparisonLimitReached,
+    DemoSessionStore,
+    create_demo_session,
+    require_active_demo_session,
+)
 from app.decision.tools import (
     RevisionConflict,
     UnknownEvidence,
@@ -18,12 +25,18 @@ from app.decision.tools import (
 )
 from tests.decision.fixtures import SELECTIONS, build_fixture_evidence
 
+CHECKED_AT = datetime(2026, 10, 31, 3, 0, tzinfo=UTC)
+
 
 def create_comparison_state() -> tuple[DemoSessionStore, str, str]:
     """Create one session-owned comparison over the frozen B2 fixture."""
     session_store: DemoSessionStore = {}
-    demo_session = create_demo_session(session_store)
-    session_state = require_active_demo_session(session_store, token=demo_session.token)
+    demo_session = create_demo_session(session_store, created_at=CHECKED_AT)
+    session_state = require_active_demo_session(
+        session_store,
+        token=demo_session.token,
+        checked_at=CHECKED_AT,
+    )
     selections = [ComparisonSelection.model_validate(selection) for selection in SELECTIONS]
     comparison = asyncio.run(
         create_comparison(session_state, selections, build_evidence=build_fixture_evidence)
@@ -33,8 +46,12 @@ def create_comparison_state() -> tuple[DemoSessionStore, str, str]:
 
 def test_create_comparison_calls_evidence_builder_once() -> None:
     session_store: DemoSessionStore = {}
-    demo_session = create_demo_session(session_store)
-    session_state = require_active_demo_session(session_store, token=demo_session.token)
+    demo_session = create_demo_session(session_store, created_at=CHECKED_AT)
+    session_state = require_active_demo_session(
+        session_store,
+        token=demo_session.token,
+        checked_at=CHECKED_AT,
+    )
     selections = [ComparisonSelection.model_validate(selection) for selection in SELECTIONS]
     build_calls: list[list[dict[str, str]]] = []
 
@@ -64,9 +81,38 @@ def test_create_comparison_calls_evidence_builder_once() -> None:
     assert build_calls == [SELECTIONS]
 
 
+def test_create_comparison_rejects_capacity_before_evidence_builder() -> None:
+    session_store, token, comparison_id = create_comparison_state()
+    session_state = require_active_demo_session(
+        session_store,
+        token=token,
+        checked_at=CHECKED_AT,
+    )
+    existing_comparison = require_comparison(session_state, comparison_id)
+    session_state.comparisons = {
+        f"cmp_{index}": existing_comparison for index in range(MAX_COMPARISONS_PER_SESSION)
+    }
+    build_calls = 0
+
+    async def unexpected_builder(
+        requested_selections: Sequence[ComparisonSelection],
+    ) -> ComparisonEvidence:
+        nonlocal build_calls
+        del requested_selections
+        build_calls += 1
+        return existing_comparison.evidence
+
+    selections = [ComparisonSelection.model_validate(selection) for selection in SELECTIONS]
+    with pytest.raises(ComparisonLimitReached, match="capacity reached"):
+        asyncio.run(create_comparison(session_state, selections, build_evidence=unexpected_builder))
+
+    assert build_calls == 0
+    assert session_state.pending_comparisons == 0
+
+
 def test_get_comparison_returns_compact_normalized_snapshot() -> None:
     session_store, token, comparison_id = create_comparison_state()
-    session_state = require_active_demo_session(session_store, token=token)
+    session_state = require_active_demo_session(session_store, token=token, checked_at=CHECKED_AT)
 
     snapshot = get_comparison(session_state, comparison_id)
 
@@ -83,7 +129,7 @@ def test_get_comparison_returns_compact_normalized_snapshot() -> None:
 
 def test_get_review_aspect_returns_counts_and_literal_mentions() -> None:
     session_store, token, comparison_id = create_comparison_state()
-    session_state = require_active_demo_session(session_store, token=token)
+    session_state = require_active_demo_session(session_store, token=token, checked_at=CHECKED_AT)
 
     result = get_review_aspect(
         session_state,
@@ -103,7 +149,7 @@ def test_get_review_aspect_returns_counts_and_literal_mentions() -> None:
 
 def test_tool_call_rejects_unknown_item() -> None:
     session_store, token, comparison_id = create_comparison_state()
-    session_state = require_active_demo_session(session_store, token=token)
+    session_state = require_active_demo_session(session_store, token=token, checked_at=CHECKED_AT)
 
     with pytest.raises(UnknownItem, match="unknown item keys"):
         get_review_aspect(
@@ -116,7 +162,7 @@ def test_tool_call_rejects_unknown_item() -> None:
 
 def test_inspect_evidence_rejects_unknown_id_without_partial_result() -> None:
     session_store, token, comparison_id = create_comparison_state()
-    session_state = require_active_demo_session(session_store, token=token)
+    session_state = require_active_demo_session(session_store, token=token, checked_at=CHECKED_AT)
     snapshot = get_comparison(session_state, comparison_id)
     known_evidence_id = snapshot.items[0].facts[0].evidence_ids[0]
 
@@ -130,7 +176,7 @@ def test_inspect_evidence_rejects_unknown_id_without_partial_result() -> None:
 
 def test_preferences_revision_conflict_preserves_newer_correction() -> None:
     session_store, token, comparison_id = create_comparison_state()
-    session_state = require_active_demo_session(session_store, token=token)
+    session_state = require_active_demo_session(session_store, token=token, checked_at=CHECKED_AT)
 
     first_update = apply_preferences(
         session_state,
@@ -172,8 +218,12 @@ def test_preferences_revision_conflict_preserves_newer_correction() -> None:
 
 def test_comparison_id_is_private_to_owning_session() -> None:
     session_store, _, comparison_id = create_comparison_state()
-    other_session = create_demo_session(session_store)
-    other_session_state = require_active_demo_session(session_store, token=other_session.token)
+    other_session = create_demo_session(session_store, created_at=CHECKED_AT)
+    other_session_state = require_active_demo_session(
+        session_store,
+        token=other_session.token,
+        checked_at=CHECKED_AT,
+    )
 
     with pytest.raises(ComparisonNotFound, match="comparison not found"):
         get_comparison(other_session_state, comparison_id)

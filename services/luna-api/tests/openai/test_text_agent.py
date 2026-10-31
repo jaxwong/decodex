@@ -12,11 +12,16 @@ from openai.types.responses import Response
 
 from app.contracts.evidence import ComparisonSelection
 from app.decision.comparisons import create_comparison, require_comparison
-from app.decision.sessions import DemoSessionState
+from app.decision.sessions import (
+    MAX_CONVERSATIONS_PER_SESSION,
+    ConversationComparisonMismatch,
+    ConversationLimitReached,
+    ConversationState,
+    DemoSessionState,
+)
 from app.openai.text_agent import (
     ANSWER_TEXT_CONFIG,
     ApplyPreferencesArguments,
-    ConversationComparisonMismatch,
     LunaAgentContractError,
     LunaAgentTimeout,
     LunaAnswer,
@@ -264,6 +269,7 @@ def test_agent_rejects_provider_tool_call_after_terminal_mutation() -> None:
         assert failure.value.current_revision == 1
         assert require_comparison(session_state, comparison_id).revision == 1
         assert session_state.conversations == {}
+        assert session_state.pending_conversations == set()
 
     asyncio.run(scenario())
 
@@ -504,5 +510,37 @@ def test_conversation_cannot_cross_comparisons() -> None:
                 create_response=create_response,
                 model="gpt-6-luna",
             )
+
+    asyncio.run(scenario())
+
+
+def test_conversation_limit_rejects_before_provider_call() -> None:
+    async def scenario() -> None:
+        session_state, comparison_id = await create_comparison_state()
+        session_state.conversations = {
+            f"conv-{index}": ConversationState(comparison_id=comparison_id)
+            for index in range(MAX_CONVERSATIONS_PER_SESSION)
+        }
+        provider_calls = 0
+
+        async def create_response(**request: Any) -> Response:
+            nonlocal provider_calls
+            del request
+            provider_calls += 1
+            return answer_response("unexpected", answer="Unexpected.", cited_ids=[])
+
+        with pytest.raises(ConversationLimitReached, match="capacity reached"):
+            await run_luna(
+                session_state,
+                comparison_id=comparison_id,
+                conversation_id="conv-overflow",
+                message="Compare these.",
+                expected_revision=0,
+                create_response=create_response,
+                model="gpt-6-luna",
+            )
+
+        assert provider_calls == 0
+        assert len(session_state.conversations) == MAX_CONVERSATIONS_PER_SESSION
 
     asyncio.run(scenario())
