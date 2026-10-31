@@ -31,8 +31,10 @@ This file records implemented Luna milestones. The implementation spec remains t
 - Final deterministic gates: **194 API tests passed**, frontend lint passed, Host A transformed
   70 modules, Host B transformed 45 modules, and Playwright reported **5 passed / 1 intentional
   duplicate-project skip**.
-- G3 has automated proof. G4 remains pending one explicitly authorized real microphone →
-  provider → sideband tool → visible revision run; the WebRTC test double is not that proof.
+- G3 has automated proof. G4 later received one explicitly authorized real run: the Live
+  session returned HTTP 201, microphone speech produced captions, canonical state changed from
+  revision 0 to 1 and refreshes returned HTTP 200, but no audible response was heard. There was
+  no retry, G4 remains failed, and voice is cut from the main demo.
 - Added root/package integration READMEs and updated architecture, invariants, decisions, user
   stories and the implementation spec to match the current tree.
 
@@ -127,6 +129,6 @@ This file records implemented Luna milestones. The implementation spec remains t
 
 - Complete C3 by deleting the browser API-key field, direct OpenAI call and independent browser
   ranking path; the shared Luna widget currently exists beside that legacy path.
-- Run and record the explicitly authorized real-microphone delegation/mutation G4 check; cut
-  voice from the main demo if it does not increment the canonical revision.
+- Keep voice out of the main demo. The one authorized G4 run proved speech/captions/mutation but
+  failed audible output; its generation-versus-playback root cause is unverified.
 - Add the single Docker image, Render deployment and public smoke proof.

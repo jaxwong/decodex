@@ -41,8 +41,9 @@ channel. It marks connected only after `session.started`, displays transcript de
 provisional, and closes only after `session.closed` or an explicit incomplete-finalization
 error. It never executes tools. The authenticated server sideband is the sole tool executor.
 
-Offline browser tests do not prove provider audio or tool mutation. A real paid acceptance run
-must show microphone input, generated speech, sideband mutation and a newer canonical revision.
+Offline browser tests do not prove provider audio or tool mutation. The one authorized real run
+showed microphone input, captions, sideband mutation and a newer canonical revision, but no
+audible output. G4 failed, was not retried and is excluded from the main demo.
 
 ## Verify
 

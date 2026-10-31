@@ -63,9 +63,10 @@ Open Host A at `http://127.0.0.1:5173/#/Cart` and Host B at
 ## Honest current limits
 
 - G3 portability is covered by deterministic dual-host browser tests.
-- GPT-Live server and browser code exists, but G4 is **not passed** until an explicitly
-  authorized real microphone turn invokes the sideband tool and visibly increments the same
-  comparison revision. Do not demo voice if that check is red.
+- G4 **did not pass** its one authorized real run. The provider accepted the Live session;
+  microphone speech produced captions and changed the comparison from revision 0 to 1, but no
+  audible Luna response was heard. The run was not retried. Use text in the main demo and do
+  not claim working voice audio.
 - Host A still contains the superseded legacy compare engine and browser API-key settings next
   to the shared Luna panel. They must be deleted when Luna becomes Host A's sole compare path.
 - Docker/Render deployment and public smoke proof are not implemented.

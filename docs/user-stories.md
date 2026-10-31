@@ -39,12 +39,13 @@ the final demo only when both its backend and browser columns are complete.
 | Review intelligence | **Complete** — exact-SKU aspects, mentions and excerpts are validated | **Partial** — cited review mentions resolve to excerpts; full cross-product aspect view remains | C: add the required review-aspect presentation |
 | Text decision agent | **Complete, current evaluation partial** — bounded tools, citations and deterministic ranking; 10/12 paid scenarios passed | **Browser ready in widget** — ask, citations and canonical refresh pass in both hosts with an injected test model | C: final tool-activity/focused-row presentation |
 | Revision-safe correction | **Complete** — optimistic revision and one mutation owner | **Browser ready** — dual-host E2E observes revisions 0→1→2→3 and changed priority/budget | C: add explicit stale-error browser case |
-| Voice decision | **Complete server path** — Live session and sideband executor | **Partial** — WebRTC, audio, captions, mute/stop and text fallback are implemented/tested offline | Joint: authorize real mic→provider→tool→revision run; cut voice if red |
+| Voice decision | **Complete server path** — Live session and sideband executor | **Failed demo gate** — real speech produced captions and revision 0→1, but no audible output | Voice cut from demo; generation versus playback cause remains unverified |
 | Portable second host | API is host-neutral | **Browser ready** — `@luna/widget` mounts through separate adapters and same-flow Playwright passes | No G3 blocker; real Shopee integration remains out of scope |
 | Seller listing gap report | **Complete** — session-scoped gaps, supported competitors, exclusion and uncertainty counts; zero model calls | **Browser ready in widget** — both hosts render one server response and reuse canonical evidence | Production seller auth, ownership, persistence and cross-session aggregation remain roadmap |
 
 A4 is complete and `eval/results.json` contains the current hash-validated partial agent
-artifact. G3 is no longer a blocker. G4 still needs one explicitly authorized real paid run.
+artifact. G3 is no longer a blocker. G4 received its one authorized paid run and failed audible
+output; it is not part of the main demo.
 
 ## The complete buyer journey
 
@@ -226,9 +227,9 @@ microphone capture, remote audio, provisional captions, start/mute/stop, gracefu
 canonical refresh after confirmed Live events.
 
 **Status:** The server and browser pieces are implemented, and deterministic Playwright proves
-transport wiring plus microphone-denied fallback. The real microphone-to-visible-mutation story
-is still **Integration required** and must not be demoed as working until it increments the
-canonical revision through the provider sideband.
+transport wiring plus microphone-denied fallback. One authorized real microphone turn produced
+captions and changed the canonical comparison from revision 0 to 1, but no audible Luna response
+was heard. G4 therefore failed. It was not retried and must not be demoed as working voice.
 
 ## The portability story
 
@@ -305,8 +306,8 @@ legacy path is deleted; do not present both comparison engines as one architectu
 | 70–82 s | Open the same flow in Host B. | “The intelligence is portable; the storefront only supplies an adapter.” |
 | 82–90 s | Show measured evaluation results. | “We test evidence, tool behavior and stale-update protection separately, and we keep failed scenarios visible.” |
 
-If the real browser voice path is green, speak the two decision turns instead of typing them.
-If it is not green, use text and do not imply that microphone integration works.
+Use text for the decision turns. The real browser voice gate failed audible output, so do not
+imply that microphone integration is demo-ready.
 
 ## Pitch-ready summary
 
@@ -328,5 +329,5 @@ operations loop without another model pipeline.
 **Honest current claim:** The backend intelligence is implemented and evaluated, and one shared
 widget completes the same cited buyer decision, correction and demo-session seller-report
 journey in two independent hosts. Host A's legacy browser comparison path still needs deletion,
-deployment is incomplete, and voice must stay out of the main demo until a real spoken tool
-mutation changes revision.
+deployment is incomplete, and voice stays out of the main demo because the real run had no
+audible output even though captions and mutation worked.
