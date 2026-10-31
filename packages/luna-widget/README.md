@@ -24,7 +24,9 @@ The adapter supplies:
   includes identity, title, variant, synthetic status, the server-owned delivered-price
   breakdown and every normalized specification. Each listed price component and each supported
   or conflicting specification carries its exact evidence source text/location; and
-- optional `requestAddToCart(selection)`: not currently invoked by the widget.
+- optional `requestAddToCart(selection)`: when supplied, each comparison column shows **Choose
+  this one**; the widget calls it only on that press and requires `{ ok: boolean }` back. The host
+  decides what follows (Host A checks out that exact variant).
 
 Invalid adapters and selections fail at the package boundary. The widget owns only its
 comparison bucket/view state. The API owns evidence, preferences, recommendation and revision.
@@ -39,7 +41,8 @@ breakdown. The visible disclaimer is fixed: "Assumes listed shipping and shop vo
 widget never calculates the delivered total, changes shipping, or guesses coin, platform-voucher
 or buyer-specific eligibility.
 
-The demo hosts render their own product previews and keep the widget mounted. A production host
+The demo hosts keep the widget mounted when showing a product: Host B renders the cited
+snapshot, and Host A opens its storefront product page over the comparison. A production host
 may navigate to its authorized listing route using `listingId` and `variantId`; the widget never
 invents a marketplace URL. Opening a preview makes no new API or model call. The delivered total
 is labelled as arithmetic over the cited list-price, shop-voucher and shipping records.

@@ -73,7 +73,7 @@ of one listing. Invalid identities fail before any model work.
 
 `CatalogProvider` defines five async methods in `app/providers/base.py`.
 `list_listings(query)` returns public cards with `id`/`listing_id`, `title`,
-`image_url=None` (no inherited assets), `preview`, `synthetic`, and variant metadata
+`image_url` (the fixture's drawn product image as a data URI; never an evidence source), `preview`, `synthetic`, and variant metadata
 (`id`/`variant_id`, `label`, `price_minor`, `currency`); raw claims stay server-side.
 Catalog variant metadata also includes the listed `shop_voucher_minor` and
 `shipping_minor`; it does not assert personalised checkout eligibility.

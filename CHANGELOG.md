@@ -4,6 +4,25 @@ This file records implemented Luna milestones. The implementation spec remains t
 
 ## 31 October 2026
 
+### Implemented on `feat/demo-flow-rich-data`
+
+- Demo catalog reads like real listings: Atlas Portable, Breeze Slim and Comet Travel Power
+  Bank; variant labels such as "100W"; drawn SVG product images inlined as data URIs; star
+  ratings that follow each review's labelled sentiment. Ground-truth labels are unchanged; the
+  seller question now ends "…of the 87W model?".
+- `GET /api/catalog?q=` matches titles; `GET /api/catalog/{listing_id}` returns a storefront
+  listing (description, per-variant specification lines, every review) with no model call.
+- Host A: working search and suggestion chips, a Shopee-style product page with model buttons,
+  quantity, **Add To Cart** / **Buy Now**, specifications, description and paged star reviews;
+  cart rows link to it. **View product** in the comparison opens it as an overlay.
+- Widget: a "Lining up your N products" state replaces the pre-ticked picker while a
+  cart-handed comparison builds; product images in column headers; **Choose this one** calls the
+  optional `requestAddToCart`, which Host A uses to check out that exact variant.
+- Checkout and Order Confirmation rebuilt over catalog prices (per-line voucher and shipping,
+  cash on delivery only); the clone pages and the cart's VND "You May Also Like" strip are gone.
+- Playwright covers search → product → add to cart, the held-comparison loading state, cart and
+  chosen-product checkout, and the Host A product overlay.
+
 ### Implemented on `feat/seller-question-loop`
 
 - Proposal 4: a missing table cell offers **Ask seller**. `POST
