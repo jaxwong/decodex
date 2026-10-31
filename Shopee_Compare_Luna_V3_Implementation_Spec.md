@@ -30,8 +30,12 @@ This document began as the developer handoff and remains the implementation sour
   `session.closed`, canonical refresh and microphone-denied text fallback exist. Playwright uses
   a labelled browser transport double and makes no provider call. A real authorized microphone
   → GPT-Live → sideband `apply_preferences` → visible newer revision is still required.
+- **Seller operations demo is implemented:** after an exclusion, both hosts render the same
+  session-scoped evidence gaps, supported competitors and decision-reason counts from
+  `@luna/widget`. Clicking a conflict reuses the canonical evidence panel. The view makes zero
+  model calls and exposes no buyer identity, conversation, budget or preferences.
 - **Still incomplete:** Host A retains the legacy direct-browser OpenAI comparison path beside
-  Luna; seller gap-report UI, single-image runtime, deployment and public smoke proof remain.
+  Luna; the single-image runtime, deployment and public smoke proof remain.
   Voice must be cut from the main demo unless the real G4 check passes.
 
 1. Push `shopee-compare-app/` and this spec together. Do not push `node_modules/`, generated `dist/`, `.env`, API keys or unrelated local files.
@@ -405,7 +409,11 @@ class ComparisonEvidence(BaseModel):
     review_mentions: dict[str,ReviewMention]
 ```
 
-B wraps `ComparisonEvidence` in the session response containing `id`, `revision`, `preferences` and `recommendation`. C generates `packages/luna-widget/src/contracts.ts` from B's exported OpenAPI schema. No frontend model may silently reinterpret missing, conflicting, or unresolved as a numeric zero.
+B wraps `ComparisonEvidence` in the session response containing `id`, `revision`, `preferences`
+and `recommendation`. B's exported OpenAPI schema is the wire-contract source of truth. The
+current JavaScript frontend has no `contracts.ts` generator—this path was searched and not
+found—so do not claim generated types or invent a competing handwritten transport schema. No
+frontend model may silently reinterpret missing, conflicting or unresolved as numeric zero.
 
 ### 2.4 Minimum fixture and validity rules
 
@@ -939,7 +947,11 @@ make frontend-build
 make e2e
 ```
 
-All three commands must exit `0`. `make e2e` must prove the same scripted flow in `shopee-compare-app` and `minimal-host`: select three exact variants → compare → open seller evidence → open review evidence → ask for `under S$80, at least 65W, portability first` → observe a revision and recommendation change → correct to `price first` → observe a newer revision.
+All three commands must exit `0`. `make e2e` must prove the same scripted flow in
+`shopee-compare-app` and `minimal-host`: select three exact variants → compare → open seller
+evidence → open review evidence → ask for `under S$80, at least 65W, portability first` →
+observe a revision and recommendation change → correct to `price first` → set S$70 → open the
+excluded listing's seller report → inspect its evidence gaps and over-budget count.
 
 **Real local app (not the Docker deployment proof):**
 
@@ -1103,8 +1115,11 @@ curl --fail "$DEMO_URL/api/health"
 **12–28 s — build quality/trust:** Show the normalized comparison; click one seller quote and the conflicting warranty. “Luna does not guess.”
 **28–40 s — domain intelligence:** Open the aligned heat-review aspect and one original review ID/quote. State the analyzed-sample limitation.
 **40–68 s — AI-native action:** Say to GPT-Live (or type): “Under S$80, at least 65W, prioritize portability.” Show the real tool call and visible table mutation. Correct it with “Actually prioritize price,” and show the new revision without re-extraction.
-**68–80 s — originality/portability:** Switch to `minimal-host`, showing the same widget/service and comparison state through a different adapter.
-**80–90 s — measured value/Codex:** Show only measured `results.json` values—tool success, evidence precision, friction proxy, p95 latency and cost—and point to the short Codex build log. Keep the AI-Native Products alignment visible on the scorecard.
+**68–78 s — operations loop:** Set S$70, open listing C's seller view and its warranty conflict.
+“The buyer got a decision; the seller got a fix list from the same evidence, with no extra
+model call.” Say “this demo session,” not “this week.”
+**78–85 s — originality/portability:** Switch to `minimal-host`, showing the same widget/service and comparison state through a different adapter.
+**85–90 s — measured value/Codex:** Show only measured `results.json` values—tool success, evidence precision, friction proxy, p95 latency and cost—and point to the short Codex build log. Keep the AI-Native Products alignment visible on the scorecard.
 
 **Pitch sentence:** “Luna is an AI-native, portable marketplace decision layer; instead of merely answering a question, it **removes the sequence of actions** between having a shopping need and making an evidence-backed choice: normalize, inspect, constrain, compare, explain and correct—through text or voice.”
 

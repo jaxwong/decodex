@@ -737,3 +737,64 @@ transport test is labelled fake, and no real microphone → GPT-Live → sideban
 revision run was authorized or executed. Voice stays out of the main demo until that check
 passes. Host A's legacy direct-browser OpenAI path, seller-report UI, deployment and public
 smoke proof remain out of this branch.
+
+## B11: shared seller listing gap view — 31 October 2026
+
+**Outcome:** Completed Proposal 1's demo-session product loop without another model call or a
+second seller implementation. An excluded card in the shared widget opens the backend-owned
+gap report in both hosts. Warranty evidence reuses the comparison evidence panel.
+
+**Root-cause decisions:**
+
+- Kept the report inside `@luna/widget`, which already owns the bearer token and comparison
+  evidence. Host-specific seller routes would require duplicated or lifted session state.
+- Rendered the endpoint's counts directly. The browser does not recount exclusions, sort a
+  second truth or reinterpret ranking reasons.
+- Did not create the proposed `contracts.ts`: neither that file nor a generator command exists
+  in this JavaScript repository. OpenAPI remains the service contract source of truth.
+- Added no retry or fallback data. A failed report request uses the existing API error boundary.
+
+**Red-to-green evidence:**
+
+```text
+make e2e
+failed waiting for getByRole('button', { name: 'Seller view' })
+exit 1
+
+make e2e
+5 passed, 1 intentionally skipped duplicate Host B transport test
+exit 0
+```
+
+**Final deterministic verification:**
+
+```text
+./shopee-compare-app/node_modules/.bin/eslint \
+  --config shopee-compare-app/eslint.config.js \
+  packages/luna-widget/src/LunaWidget.jsx \
+  packages/luna-widget/src/LunaPanels.jsx \
+  packages/luna-widget/src/SellerGapReport.jsx \
+  packages/luna-widget/src/lunaClient.js \
+  shopee-compare-app/tests/e2e/luna-hosts.spec.js
+exit 0
+
+UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+62 files already formatted
+All checks passed!
+Success: no issues found in 60 source files
+194 passed in 1.21s
+exit 0
+
+make frontend-build
+Host A: 71 modules transformed
+Host B: 46 modules transformed
+exit 0
+
+make e2e
+5 passed, 1 intentionally skipped duplicate Host B transport test
+exit 0
+```
+
+These commands made zero provider calls. Seller authentication, listing ownership,
+persistence, cross-session aggregation and week-over-week analytics remain explicitly out of
+scope. The paid real-microphone G4 acceptance run remains separate.

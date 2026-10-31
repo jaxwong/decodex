@@ -27,9 +27,9 @@ make eval
 ```
 
 `make e2e` starts a deterministic test-only API plus both hosts on isolated local ports. It
-makes no provider call. It proves the same two-turn cited comparison flow in both hosts,
-package import boundaries, Live browser event wiring through a labelled WebRTC test double, and
-microphone-denied text fallback.
+makes no provider call. It proves the same cited comparison, correction and seller gap-report
+flow in both hosts, package import boundaries, Live browser event wiring through a labelled
+WebRTC test double, and microphone-denied text fallback.
 
 ## Run the real local app
 
@@ -68,7 +68,7 @@ Open Host A at `http://127.0.0.1:5173/#/Cart` and Host B at
   comparison revision. Do not demo voice if that check is red.
 - Host A still contains the superseded legacy compare engine and browser API-key settings next
   to the shared Luna panel. They must be deleted when Luna becomes Host A's sole compare path.
-- Seller report UI, Docker/Render deployment and public smoke proof are not implemented.
+- Docker/Render deployment and public smoke proof are not implemented.
 - `npm install` currently reports dependency audit findings; no automatic or breaking audit fix
   has been applied.
 

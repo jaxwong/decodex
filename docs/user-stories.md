@@ -38,10 +38,10 @@ the final demo only when both its backend and browser columns are complete.
 | Normalized seller evidence | **Complete** — supported, missing and conflicting facts retain provenance | **Browser ready in widget** — facts and original seller sources render in both hosts | C: replace legacy table with this canonical view |
 | Review intelligence | **Complete** — exact-SKU aspects, mentions and excerpts are validated | **Partial** — cited review mentions resolve to excerpts; full cross-product aspect view remains | C: add the required review-aspect presentation |
 | Text decision agent | **Complete, current evaluation partial** — bounded tools, citations and deterministic ranking; 10/12 paid scenarios passed | **Browser ready in widget** — ask, citations and canonical refresh pass in both hosts with an injected test model | C: final tool-activity/focused-row presentation |
-| Revision-safe correction | **Complete** — optimistic revision and one mutation owner | **Browser ready** — dual-host E2E observes revisions 0→1→2 and the changed priority | C: add explicit stale-error browser case |
+| Revision-safe correction | **Complete** — optimistic revision and one mutation owner | **Browser ready** — dual-host E2E observes revisions 0→1→2→3 and changed priority/budget | C: add explicit stale-error browser case |
 | Voice decision | **Complete server path** — Live session and sideband executor | **Partial** — WebRTC, audio, captions, mute/stop and text fallback are implemented/tested offline | Joint: authorize real mic→provider→tool→revision run; cut voice if red |
 | Portable second host | API is host-neutral | **Browser ready** — `@luna/widget` mounts through separate adapters and same-flow Playwright passes | No G3 blocker; real Shopee integration remains out of scope |
-| Seller listing gap report | **Complete** — session-scoped gaps, supported competitors, exclusion and uncertainty counts; zero model calls | **Not complete** | C: render the report in Host A and Host B using the generated OpenAPI contract |
+| Seller listing gap report | **Complete** — session-scoped gaps, supported competitors, exclusion and uncertainty counts; zero model calls | **Browser ready in widget** — both hosts render one server response and reuse canonical evidence | Production seller auth, ownership, persistence and cross-session aggregation remain roadmap |
 
 A4 is complete and `eval/results.json` contains the current hash-validated partial agent
 artifact. G3 is no longer a blocker. G4 still needs one explicitly authorized real paid run.
@@ -252,8 +252,8 @@ same two-turn Playwright journey passes in both, and the package imports neither
 ## Seller operations extension
 
 This is Proposal 1 from
-[luna-business-value-proposals.md](luna-business-value-proposals.md). Its read-only backend is
-implemented; the seller browser view is not.
+[luna-business-value-proposals.md](luna-business-value-proposals.md). Its read-only
+demo-session backend and shared dual-host browser view are implemented.
 
 Persona: Linh sells one of the compared power banks.
 
@@ -285,10 +285,10 @@ filters and discovery without manual listing audits.
 **Privacy rule:** Sellers see aggregate reason counts and public listing evidence, never a
 buyer's identity, conversation, budget or preferences.
 
-**Status:** **Backend ready.** `GET /api/listings/{listing_id}/gap-report` projects only the
-authorized demo session's current comparison states and makes zero model calls. Host A and Host
-B seller views remain C work; seller login, listing ownership and cross-session aggregation are
-not implemented.
+**Status:** **Demo flow ready.** `GET /api/listings/{listing_id}/gap-report` projects only the
+authorized demo session's current comparison states and makes zero model calls. Both hosts
+render it through the same widget and reuse the existing evidence panel. Seller login, listing
+ownership, persistence and cross-session aggregation are not implemented.
 
 ## What the judge should see
 
@@ -301,9 +301,9 @@ legacy path is deleted; do not present both comparison engines as one architectu
 | 12–28 s | Show the normalized table; open one quote and one warranty conflict. | “Luna normalizes the evidence, but never guesses through missing or conflicting data.” |
 | 28–40 s | Open the heat aspect and an exact review excerpt. | “It turns the reviews we analysed into comparable concerns while keeping every claim inspectable.” |
 | 40–58 s | Type the budget, minimum power and portability request. | “The model does not invent a winner. It uses constrained tools, and the server applies the decision rules.” |
-| 58–68 s | Correct the priority to price and show the new revision. | “A correction updates the same decision without paying to extract the evidence again.” |
-| 68–80 s | Open the same flow in Host B. | “The intelligence is portable; the storefront only supplies an adapter.” |
-| 80–90 s | Show measured evaluation results. | “We test evidence, tool behavior and stale-update protection separately, and we keep failed scenarios visible.” |
+| 58–70 s | Correct to price, set S$70, then open listing C's Seller view and warranty evidence. | “The buyer got a decision; the seller got a fix list from the same evidence, with no extra model call. These counts cover this demo session.” |
+| 70–82 s | Open the same flow in Host B. | “The intelligence is portable; the storefront only supplies an adapter.” |
+| 82–90 s | Show measured evaluation results. | “We test evidence, tool behavior and stale-update protection separately, and we keep failed scenarios visible.” |
 
 If the real browser voice path is green, speak the two decision turns instead of typing them.
 If it is not green, use text and do not imply that microphone integration works.
@@ -322,10 +322,11 @@ review language and translating human intent into constrained actions. Determini
 owns identity, constraints, ranking, revisions and permissions.
 
 **Why a marketplace cares:** The immediate value is fewer buyer actions and a more defensible
-choice. The proposed seller report reuses the same decision evidence to reveal catalog gaps,
-creating an operations loop without another model pipeline.
+choice. The seller report reuses the same decision evidence to reveal catalog gaps, creating an
+operations loop without another model pipeline.
 
 **Honest current claim:** The backend intelligence is implemented and evaluated, and one shared
-widget completes the same cited two-turn decision journey in two independent hosts. Host A's
-legacy browser comparison path still needs deletion, seller UI/deployment are incomplete, and
-voice must stay out of the main demo until a real spoken tool mutation changes revision.
+widget completes the same cited buyer decision, correction and demo-session seller-report
+journey in two independent hosts. Host A's legacy browser comparison path still needs deletion,
+deployment is incomplete, and voice must stay out of the main demo until a real spoken tool
+mutation changes revision.

@@ -11,13 +11,13 @@ The repository contains three different levels of completion:
 
 - **Implemented and tested:** the Python API, synthetic catalog provider, evidence pipeline,
   deterministic ranking, session state, four decision tools, Responses text agent, GPT-Live
-  server sideband, evaluation runners, and the session-scoped seller gap-report API. The current
-  paid agent artifact is projected by `make eval` and remains honestly partial at 10/12
-  scenarios.
+  server sideband, evaluation runners, and the session-scoped seller gap-report API and browser
+  view. The current paid agent artifact is projected by `make eval` and remains honestly
+  partial at 10/12 scenarios.
 - **G3 implemented and deterministic E2E green:** `packages/luna-widget` owns the API client,
   comparison UI, evidence/citation rendering and Live controls. Host A and the independent
   `apps/minimal-host` mount that same package through separate adapters. `make e2e` runs the
-  same two-turn comparison journey in both hosts and an import-boundary check.
+  same comparison/correction/seller journey in both hosts and an import-boundary check.
 - **G4 browser path implemented, real gate pending:** the widget negotiates WebRTC, waits for
   `session.started`, plays remote audio, renders provisional input/output captions, refreshes
   canonical state after confirmed Live events, and gracefully closes on `session.closed`.
@@ -25,8 +25,8 @@ The repository contains three different levels of completion:
   microphone → GPT-Live → sideband tool → revision change has not been run on this branch, so
   G4 is not claimed passed.
 - **Replacement/deployment incomplete:** the old compare engine still exists beside Luna and
-  `src/compare/engine.js` still contains a direct browser OpenAI request. Seller gap-report UI,
-  the single-image runtime, deployment files and public smoke proof remain missing.
+  `src/compare/engine.js` still contains a direct browser OpenAI request. The single-image
+  runtime, deployment files and public smoke proof remain missing.
 
 The backend no longer blocks C. The next frontend root-cause fix is deleting the parallel
 legacy comparison/model path after the canonical widget becomes Host A's only compare owner.
@@ -51,6 +51,7 @@ flowchart LR
 
     subgraph Widget["Shared package: packages/luna-widget"]
         LunaWidget[Comparison, evidence and chat UI]
+        SellerView[Session-scoped seller gap report]
         LunaClient[Relative /api client]
         LiveControls[WebRTC media and captions]
     end
@@ -82,6 +83,7 @@ flowchart LR
     LegacyEngine -. "direct browser call — must be removed" .-> Responses
 
     LunaWidget --> LunaClient --> Routes
+    LunaWidget --> SellerView
     LunaWidget --> LiveControls
     LiveControls --> Routes
     LiveControls <--> Live
@@ -443,10 +445,10 @@ browser path exists. The remaining ordered work is:
 1. make Host A's main compare journey use the canonical API selection instead of keeping a
    separate synthetic Luna catalog beside the legacy comparison;
 2. delete the browser API-key settings, direct OpenAI call and independent ranking path;
-3. render the seller gap-report in both hosts from B's existing endpoint;
-4. authorize and run one real local microphone → Live tool → revision proof; cut voice from the
+3. authorize and run one real local microphone → Live tool → revision proof; cut voice from the
    main demo if that check fails; and
-5. add the single-origin runtime and deployment only after the canonical Host A replacement.
+4. add the single-origin runtime and deployment only after the canonical Host A replacement.
 
-Do not represent the legacy Host A replacement, real voice mutation, seller UI, Docker or
-deployment as complete before their individual gates pass.
+Do not represent the legacy Host A replacement, real voice mutation, Docker or deployment as
+complete before their individual gates pass. The seller view is complete only for one
+authorized in-process demo session, not seller authentication or weekly analytics.

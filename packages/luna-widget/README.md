@@ -1,7 +1,8 @@
 # `@luna/widget`
 
 This package is the only browser owner of Luna comparison UI, API calls, evidence/citation
-rendering and GPT-Live WebRTC media. It imports neither demo host.
+rendering, session-scoped seller insights and GPT-Live WebRTC media. It imports neither demo
+host.
 
 ## Host contract
 
@@ -24,6 +25,14 @@ The adapter supplies:
 Invalid adapters and selections fail at the package boundary. The widget owns only its
 comparison bucket/view state. The API owns evidence, preferences, recommendation and revision.
 Hosts own routes, selection context, cart and checkout.
+
+## Seller report ownership
+
+An excluded recommendation exposes **Seller view**. The widget fetches the listing gap report
+with its existing bearer token and renders server-owned gaps, competitor support and decision
+reason counts. Clicking a conflict reuses the existing evidence panel. Hosts do not fetch,
+recount or reinterpret seller insights, and the view never exposes buyer identity,
+conversation, budget or preferences.
 
 ## Live ownership
 

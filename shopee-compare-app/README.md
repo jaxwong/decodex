@@ -1,8 +1,9 @@
 # Shopee Compare — Luna Host A
 
 This Vite app is the Shopee-style Host A for the shared `@luna/widget` workspace package.
-The supported Luna flow is: open `#/Cart` → Compare → **Ask Luna**. Luna then uses only
-relative `/api` calls; model keys and ranking remain on `services/luna-api`.
+The supported Luna flow is: open `#/Cart` → Compare → **Ask Luna** → set a constraint that
+excludes a listing → **Seller view**. Luna then uses only relative `/api` calls; model keys,
+ranking and seller counts remain on `services/luna-api`.
 
 The older `src/compare` implementation still renders the surrounding legacy comparison and
 contains browser API-key settings. It is superseded, must not be used for the Luna demo, and
