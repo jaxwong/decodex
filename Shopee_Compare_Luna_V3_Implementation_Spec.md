@@ -17,7 +17,22 @@
 
 ## Start here — what this branch is for
 
-This branch is the **developer handoff**, not the completed Luna implementation.
+This document began as the developer handoff and remains the implementation source of truth.
+
+### Current implementation status — 31 October 2026
+
+- **G3 portability is implemented on `feat/g3-g4-portable-live`:** root npm workspaces contain
+  Host A, `packages/luna-widget` and the independent `apps/minimal-host`; one root lockfile owns
+  dependencies. `make e2e` runs the same exact-variant → comparison → cited answer → revision
+  correction flow in both hosts and checks that widget source imports neither host.
+- **G4 browser transport is implemented but the gate is not passed:** WebRTC offer/answer,
+  `oai-events`, `session.started`, remote audio, provisional input/output captions, mute, Stop,
+  `session.closed`, canonical refresh and microphone-denied text fallback exist. Playwright uses
+  a labelled browser transport double and makes no provider call. A real authorized microphone
+  → GPT-Live → sideband `apply_preferences` → visible newer revision is still required.
+- **Still incomplete:** Host A retains the legacy direct-browser OpenAI comparison path beside
+  Luna; seller gap-report UI, single-image runtime, deployment and public smoke proof remain.
+  Voice must be cut from the main demo unless the real G4 check passes.
 
 1. Push `shopee-compare-app/` and this spec together. Do not push `node_modules/`, generated `dist/`, `.env`, API keys or unrelated local files.
 2. A, B and C branch from the same handoff commit and follow only their rows in section 1. They share A1's fixture; they do not edit each other's areas.
@@ -39,7 +54,7 @@ Expected now: the frontend build exits `0`; only intended source/spec/config cha
 
 **Completed product is ready for demo only when all four are true:**
 
-- `make test` exits `0`.
+- `make api-test` and `make frontend-build` exit `0`.
 - `make e2e` exits `0` against both Host A and Host B.
 - The manual local script in section 10.4 succeeds twice.
 - The deployed `/api/health`, Host A and Host B smoke checks in section 11 succeed.
@@ -183,8 +198,8 @@ The team shares **one artifact only**: A's frozen evidence contract plus `data/s
 | **G0 Contract freeze** | 00:30 | A1 fixture validates; B imports it; C renders one item | A is the only blocker. B/C scaffold, test tooling and do not invent fields |
 | **G1 Independent streams ready** | 02:30 | A evidence tests pass; B four tools pass on fixture; C Host A renders full fixture flow | Each owner fixes only their stream; the other two continue their own tests |
 | **G2 P0 integrated** | 03:30 | Host A add → compare → ask → tool → visible revision → citation works | All stretch work stops; failing layer's owner fixes it |
-| **G3 Portability** | 04:15 | Same P0 flow works in Host B without changing widget/backend | C fixes adapter coupling; B/A do not create host-specific paths |
-| **G4 Voice decision** | 04:45 | Speech invokes the same tool and revision as text | Remove voice from the main demo; keep text. No second voice architecture |
+| **G3 Portability — automated pass** | 04:15 | Same P0 flow works in Host B without changing widget/backend | C fixes adapter coupling; B/A do not create host-specific paths |
+| **G4 Voice decision — real run pending** | 04:45 | Speech invokes the same tool and revision as text | Remove voice from the main demo; keep text. No second voice architecture |
 | **G5 Feature freeze** | 05:45 | All P0 tests pass; optional work either passes or is removed | No new code except correctness fixes and demo evidence |
 | **G6 Demo ready** | 07:00 | Two consecutive end-to-end runs and only measured claims | Do not claim unverified behavior |
 
@@ -202,20 +217,20 @@ The team shares **one artifact only**: A's frozen evidence contract plus `data/s
 decodex/
   shopee-compare-app/          # Host A: EXISTING frontend and primary judge demo
     src/App.jsx                # preserve shell + #/Cart and #/Compare routes
-    src/luna/HostAdapter.js    # new: implements LunaHostAdapter for existing cart/routes
+    src/lunaHostAdapter.js     # implements LunaHostAdapter for existing routes
     src/components/Section/    # existing host-owned storefront presentation
     package.json               # existing Vite app; becomes an npm workspace
   apps/
     minimal-host/              # Host B: deliberately different plain layout
-      src/HostAdapter.ts
-      src/App.tsx
+      src/minimalHostAdapter.js
+      src/App.jsx
   packages/
     luna-widget/               # Portable React UI, one set of components
-      src/index.ts             # exports LunaProvider, AddCompareButton, ComparisonDrawer, LunaAssistant
-      src/contracts.ts         # frontend contract and host-adapter types
-      src/api.ts               # typed calls to Luna service, not host-specific catalog
-      src/state.ts             # comparison view + revision guards
-      src/components/         # bucket, table, reviews, evidence, chat, Live
+      src/index.jsx            # exports the shared LunaWidget
+      src/hostAdapter.js       # runtime-validated public host contract
+      src/lunaClient.js        # Luna service calls, never host-specific catalog internals
+      src/LunaWidget.jsx       # comparison state and UI owner
+      src/LiveVoiceControls.jsx # browser-only WebRTC media/events
   services/
     luna-api/                  # FastAPI; runnable independently of any host
       app/
@@ -293,7 +308,7 @@ npm run lint
 
 1. Keep `shopee-compare-app/` where it is.
 2. Add root workspaces for `shopee-compare-app`, `packages/luna-widget` and `apps/minimal-host`.
-3. Add root scripts named exactly `dev:shopee`, `dev:minimal`, `build:frontends`, `lint` and `test:browser`.
+3. Root scripts own `build` and `test:e2e`; use npm's workspace flag for each development server.
 4. Create the FastAPI service and root fixtures shown in section 2.1.
 5. Move to one root npm lockfile; do not keep independently resolved frontend dependency graphs.
 6. Add Playwright as the single browser-test runner because it must exercise two real Vite hosts, navigation, drawers and API-driven UI mutations. Do not add a second E2E framework.
@@ -306,18 +321,16 @@ Use three terminals from the repository root:
 # One-time JavaScript setup
 npm install
 
-# Terminal 1 — backend
-cd services/luna-api
-uv sync
-uv run uvicorn app.main:app --reload --port 8000
+# Terminal 1 — backend (load root .env first)
+set -a; . ./.env; set +a
+make api-dev
 
 # Terminal 2 — existing Shopee frontend (Host A)
-cd ../..
-npm run dev:shopee
+npm run dev --workspace shopee-compare
 # Open http://127.0.0.1:5173/#/Cart
 
 # Terminal 3 — portability host (Host B)
-npm run dev:minimal
+npm run dev --workspace minimal-host -- --port 5174
 # Open http://127.0.0.1:5174/
 ```
 
@@ -325,12 +338,17 @@ Health checks, from a fourth shell:
 
 ```bash
 curl http://localhost:8000/api/health
-curl http://localhost:8000/api/catalog
+curl -X POST http://localhost:8000/api/demo-sessions
 ```
 
 Expected: both return HTTP `200`; both hosts show the same fixture products; only Host A has the Shopee-style shell. Vite in both hosts proxies `/api` to port 8000.
 
-The root `Makefile` must expose exactly the documented entry points: `make test`, `make e2e`, `make eval`, `make test-live` and `make demo`. `README.md` must contain the same startup sequence without hidden steps. Do not put `OPENAI_API_KEY` in `VITE_*` variables or commits. Pin the OpenAI SDK revision that passed smoke tests, and use `.env.example` for `OPENAI_TEXT_MODEL`, `OPENAI_LIVE_MODEL`, `LUNA_CATALOG_PROVIDER=mock`.
+The root `Makefile` currently exposes `make api-test`, `make frontend-build`, `make e2e`,
+`make eval`, `make api-dev` and the explicitly paid `make api-capability-smoke`. `README.md`
+contains the same startup sequence without hidden steps. `make demo` and a full browser
+`make test-live` do not exist yet and must not be claimed. Do not put `OPENAI_API_KEY` in
+`VITE_*` variables or commits. Pin the OpenAI SDK revision that passed smoke tests, and use
+`.env.example` for `OPENAI_TEXT_MODEL`, `OPENAI_LIVE_MODEL`, `LUNA_CATALOG_PROVIDER=mock`.
 
 ### 2.3 Shared canonical IDs and response schema
 
@@ -792,9 +810,9 @@ before backend confirmation. Say what changed in plain language.
 - [ ] Mic audio reaches GPT-Live; generated voice plays; browser shows connected state.
 - [ ] At least one spoken constraint **invokes backend tool execution and changes the existing comparison state/UI**.
 - [ ] A correction/interrupt changes a preference without duplicate or stale actions.
-- [ ] Visible text answer or captions and spoken explanation are consistent enough for demo.
-- [ ] API key not present in browser. Mic permission denied → text Luna remains usable.
-- [ ] `Stop` releases mic; session errors do not crash comparison.
+- [x] Provisional captions and Live connection state are covered by deterministic browser tests.
+- [x] API key not present in browser. Mic permission denied → text Luna remains usable.
+- [x] `Stop` waits for `session.closed`, releases mic, and session errors preserve text mode in deterministic tests.
 
 **Failure policy:** Voice without real tool-backed UI mutation is **not done**. Cut it from the main demo if integration fails.
 
@@ -900,13 +918,14 @@ Use held-out evaluation labels; never send labels to the extractor. All sample c
 **Commands:**
 
 ```bash
-make test       # A+B pytest, contract check, frontend lint/build; no network
-make e2e        # test-only fake OpenAI client + Playwright against both built hosts
+make api-test   # Python format, lint, typecheck and pytest; no provider call
+make frontend-build # production builds for Host A and Host B
+make e2e        # test-only fake OpenAI client + Playwright against both local hosts
 make eval       # held-out fixtures -> eval/results.json
-make test-live  # requires .env; real evidence structured output + agent tool loop + Live session smoke
+make api-capability-smoke # explicit paid Responses + Live capability check; not full browser voice
 ```
 
-`make test` and `make e2e` must be deterministic and must not spend API credits. The fake OpenAI client is injected from the test tree only; it must not be selectable in the shipped runtime. `make test-live` is the separate proof that the installed SDK, project entitlement, A's structured extraction, B's real tool loop and Live session creation work. Any blank or N/A metric in `eval/results.json` remains blank on the slide.
+`make api-test`, `make frontend-build` and `make e2e` must be deterministic and must not spend API credits. The fake OpenAI client and WebRTC transport are injected from test code only; neither is selectable in the shipped runtime. `make api-capability-smoke` proves project access and provider session creation, not real browser audio/tool mutation. Any blank or N/A metric in `eval/results.json` remains blank on the slide.
 
 **Numerical claims:** Report measured values only; never confuse offline accuracy or scripted click counts with a demonstrated conversion/GMV lift.
 
@@ -915,22 +934,27 @@ make test-live  # requires .env; real evidence structured output + agent tool lo
 **Automated:**
 
 ```bash
-make test
+make api-test
+make frontend-build
 make e2e
 ```
 
-Both commands must exit `0`. `make e2e` must prove the same scripted flow in `shopee-compare-app` and `minimal-host`: select three exact variants → compare → open seller evidence → open review evidence → ask for `under S$80, at least 65W, portability first` → observe a revision and recommendation change → correct to `price first` → observe a newer revision.
+All three commands must exit `0`. `make e2e` must prove the same scripted flow in `shopee-compare-app` and `minimal-host`: select three exact variants → compare → open seller evidence → open review evidence → ask for `under S$80, at least 65W, portability first` → observe a revision and recommendation change → correct to `price first` → observe a newer revision.
 
-**Real local demo:**
+**Real local app (not the Docker deployment proof):**
 
 ```bash
 cp .env.example .env
 # Put OPENAI_API_KEY in .env; never use a VITE_* key.
-make test-live
-make demo
+set -a; . ./.env; set +a
+make api-dev
+# In separate terminals:
+npm run dev --workspace shopee-compare
+npm run dev --workspace minimal-host -- --port 5174
 ```
 
-`make demo` builds and runs the same single Docker image used for deployment, binds `127.0.0.1:8080`, and stops cleanly on `Ctrl-C`. In another terminal:
+The single Docker image and `make demo` are not implemented as of the status date. Do not use
+the following future deployment URLs until section 11's runtime files exist and pass review:
 
 ```bash
 curl --fail http://127.0.0.1:8080/api/health
@@ -1013,7 +1037,8 @@ services:
 
 ### 11.3 Deploy and smoke-test
 
-1. Re-run `make test`, `make e2e`, `make test-live` and the two manual local runs.
+1. Re-run `make api-test`, `make frontend-build`, `make e2e` and the two manual local text runs.
+   Run the paid capability smoke or real G4 microphone check only with explicit authorization.
 2. Commit and push the tested branch.
 3. In Render: **New → Blueprint** → connect the repository → select the pushed branch → keep the root `render.yaml` path → enter `OPENAI_API_KEY` → **Deploy Blueprint**.
 4. Wait until `/api/health` passes. Copy the assigned HTTPS URL.

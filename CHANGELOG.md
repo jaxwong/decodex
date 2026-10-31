@@ -13,6 +13,28 @@ This file records implemented Luna milestones. The implementation spec remains t
 - **B3 bounded Responses text agent — [PR #7](https://github.com/jaxwong/decodex/pull/7):** authenticated comparison chat over the same four tools, bounded conversation history, revision-safe mutations, evidence-bound answers, and a paid local end-to-end verification.
 - **B4 GPT-Live server delegation — [PR #9](https://github.com/jaxwong/decodex/pull/9):** authenticated WebRTC session creation, one no-retry server sideband executor over the same four tools, revision-safe corrections, and paid provider create-and-attach verification. Browser microphone/audio remained C5 work and was not claimed complete.
 - **C3 Host A API panel — [PR #14](https://github.com/jaxwong/decodex/pull/14):** demo-session auth, API catalog selection, comparison creation, text ask and canonical-state refresh inside `shopee-compare-app`. This connected panel does not yet replace the legacy browser comparison engine.
+- **C3 interactive Luna UI — [PR #19](https://github.com/jaxwong/decodex/pull/19):** recommendation cards, preference chips, evidence view and conversation UI in Host A.
+
+### Implemented on `feat/g3-g4-portable-live`
+
+- Moved Luna browser ownership from Host A's deleted `src/luna` path into one
+  `@luna/widget` workspace package; Host A and independent Host B provide separate adapters.
+- Added root npm workspaces and one root lockfile. Both production hosts build through
+  `make frontend-build`; no host copies widget code or imports another host.
+- Added `apps/minimal-host` with a distinct layout, catalog state and navigation behavior.
+- Added browser GPT-Live WebRTC controls: microphone track, remote audio, `oai-events`,
+  `session.started`, provisional captions, mute, graceful `session.close`/`session.closed`,
+  explicit failures and text fallback. The server sideband remains the only tool executor.
+- Added `make e2e`: both hosts run the same three-SKU, seller/review citation, revisions
+  0→1→2 journey using frozen evidence and an injected SDK-shaped response. Import boundaries,
+  successful WebRTC lifecycle and microphone denial are deterministic browser checks.
+- Final deterministic gates: **194 API tests passed**, frontend lint passed, Host A transformed
+  70 modules, Host B transformed 45 modules, and Playwright reported **5 passed / 1 intentional
+  duplicate-project skip**.
+- G3 has automated proof. G4 remains pending one explicitly authorized real microphone →
+  provider → sideband tool → visible revision run; the WebRTC test double is not that proof.
+- Added root/package integration READMEs and updated architecture, invariants, decisions, user
+  stories and the implementation spec to match the current tree.
 
 ### Implemented on `b8-a4-c-unblock`
 
@@ -85,7 +107,8 @@ This file records implemented Luna milestones. The implementation spec remains t
 ### Remaining integration
 
 - Complete C3 by deleting the browser API-key field, direct OpenAI call and independent browser
-  ranking path; the merged Luna panel currently exists beside that legacy path.
-- C5 browser WebRTC voice controls and the joint real-microphone delegation/mutation check.
-- C's independent Host B.
-- Aggregate E2E/demo Make targets, the single Docker image, and Render deployment.
+  ranking path; the shared Luna widget currently exists beside that legacy path.
+- Run and record the explicitly authorized real-microphone delegation/mutation G4 check; cut
+  voice from the main demo if it does not increment the canonical revision.
+- Render the existing seller gap-report in both hosts.
+- Add the single Docker image, Render deployment and public smoke proof.

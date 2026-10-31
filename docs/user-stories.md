@@ -13,18 +13,19 @@ every product page.
 
 ## Status legend
 
-The Host A Luna panel now calls the backend, but it has not replaced the legacy comparison and
-the portable Host B does not exist. Each story therefore has an explicit status.
+The same packaged Luna panel now calls the backend from Host A and Host B, but it has not
+replaced Host A's legacy comparison path. Each story therefore has an explicit status.
 
 | Status | Meaning |
 |---|---|
 | **Backend ready** | The API behavior exists and has automated tests, but Host A does not render it yet. |
-| **Host A partial** | The Luna panel calls the real API, but the full host journey or required presentation is incomplete. |
-| **Integration required** | Developer C must connect `shopee-compare-app` to the API before this is an end-to-end product flow. |
+| **Browser ready** | The behavior runs in the shared widget and is covered by deterministic browser tests. |
+| **Partial** | A working slice exists, but the full required presentation or real external proof is incomplete. |
+| **Integration required** | A real cross-boundary acceptance check or replacement remains. |
 | **Planned** | The design exists, but required product code has not been implemented. |
 
-Nothing marked **Backend ready** should be pitched as a working browser experience. **Host A
-partial** means the connected panel can be demonstrated only with its stated limitations.
+Nothing marked **Backend ready** should be pitched as a working browser experience. Offline
+Live transport tests are not evidence of a real provider-driven voice mutation.
 
 ## Current implementation snapshot
 
@@ -33,18 +34,17 @@ the final demo only when both its backend and browser columns are complete.
 
 | User story | Backend/API | Host A browser | Remaining owner/work |
 |---|---|---|---|
-| Exact-variant comparison | **Complete** — validates 2–4 canonical variant IDs and builds one comparison | **Partial** — Luna panel selects API variants; the storefront selection still uses unrelated IDs | C: make the host selection canonical and remove the parallel legacy state |
-| Normalized seller evidence | **Complete** — supported, missing and conflicting facts retain provenance | **Partial** — panel renders facts in an evidence details view | C: final comparison table and source drawer |
-| Review intelligence | **Complete** — exact-SKU aspects, mentions and excerpts are validated | **Not complete** — no required review-aspect view | C: render aspects and resolve review-mention sources |
-| Text decision agent | **Complete, current evaluation partial** — bounded tools, citations and deterministic ranking; 10/12 paid scenarios passed | **Partial** — ask and canonical refresh work in the Luna panel | C: final tool activity, focused rows and error presentation |
-| Revision-safe correction | **Complete** — optimistic revision and one mutation owner | **Partial** — current revision is sent and canonical state is refreshed | C: visible stale-turn browser proof and final UI patch presentation |
-| Voice decision | **Complete on server only** — Live session and delegated tool executor | **Not complete** | C: microphone, playback, captions and visible mutation |
-| Portable second host | API is host-neutral | **Not complete** — shared widget package and Host B are absent | C: package widget, build Host B and run the same journey |
+| Exact-variant comparison | **Complete** — validates 2–4 canonical variant IDs and builds one comparison | **Browser ready in widget** — both hosts select exact API variants; Host A's legacy cart IDs remain separate | C: remove parallel legacy selection/state |
+| Normalized seller evidence | **Complete** — supported, missing and conflicting facts retain provenance | **Browser ready in widget** — facts and original seller sources render in both hosts | C: replace legacy table with this canonical view |
+| Review intelligence | **Complete** — exact-SKU aspects, mentions and excerpts are validated | **Partial** — cited review mentions resolve to excerpts; full cross-product aspect view remains | C: add the required review-aspect presentation |
+| Text decision agent | **Complete, current evaluation partial** — bounded tools, citations and deterministic ranking; 10/12 paid scenarios passed | **Browser ready in widget** — ask, citations and canonical refresh pass in both hosts with an injected test model | C: final tool-activity/focused-row presentation |
+| Revision-safe correction | **Complete** — optimistic revision and one mutation owner | **Browser ready** — dual-host E2E observes revisions 0→1→2 and the changed priority | C: add explicit stale-error browser case |
+| Voice decision | **Complete server path** — Live session and sideband executor | **Partial** — WebRTC, audio, captions, mute/stop and text fallback are implemented/tested offline | Joint: authorize real mic→provider→tool→revision run; cut voice if red |
+| Portable second host | API is host-neutral | **Browser ready** — `@luna/widget` mounts through separate adapters and same-flow Playwright passes | No G3 blocker; real Shopee integration remains out of scope |
 | Seller listing gap report | **Complete** — session-scoped gaps, supported competitors, exclusion and uncertainty counts; zero model calls | **Not complete** | C: render the report in Host A and Host B using the generated OpenAPI contract |
 
-A4 is no longer waiting on B: `eval/results.json` contains the current hash-validated partial
-agent artifact. C is no longer waiting on B routes: PR #14 consumes every API needed for the
-remaining frontend work.
+A4 is complete and `eval/results.json` contains the current hash-validated partial agent
+artifact. G3 is no longer a blocker. G4 still needs one explicitly authorized real paid run.
 
 ## The complete buyer journey
 
@@ -103,8 +103,8 @@ zero.
 **Success looks like:** Every supported value opens the original seller snippet. Luna never
 guesses through a missing or conflicting value.
 
-**Status:** **Host A partial.** Evidence is generated by the API and the panel renders supported,
-missing and conflicting facts. The final normalized table and source drawer remain C work.
+**Status:** **Browser ready in the shared widget.** Evidence and seller sources render in both
+hosts. Replacing Host A's parallel legacy table remains C work.
 
 ### 3. Understand what buyers experienced
 
@@ -124,8 +124,8 @@ material.
 **Success looks like:** Every review claim can be traced to an exact excerpt, and an invalid
 excerpt is not displayed.
 
-**Status:** **Backend ready.** The panel does not yet provide the required review-aspect view,
-and review-mention citations need the canonical review source lookup before they can open.
+**Status:** **Partial.** Review-mention citations now open their canonical excerpts in both
+hosts. The dedicated cross-product aspect/count view is still missing.
 
 ### 4. State the decision instead of manipulating filters
 
@@ -151,8 +151,8 @@ Luna then:
 relevant rows and explains the recommendation. The model does not choose the winner; it calls
 the server-owned decision tools.
 
-**Status:** **Host A partial.** Chat calls the bounded Responses agent and refreshes the visible
-canonical ranking. Final tool-activity and focused-row presentation remain C work.
+**Status:** **Browser ready in the shared widget.** The deterministic two-host gate proves the
+tool-backed state and citations; the current paid agent evaluation remains honestly 10/12.
 
 ### 5. Correct the decision without starting over
 
@@ -176,9 +176,8 @@ session.
 **Success looks like:** The visible recommendation changes and the revision increases, while
 the cited source material remains the same.
 
-**Status:** **Host A partial.** The panel sends the current revision and refreshes canonical
-state after a successful correction; the final UI-patch presentation and browser stale-flow
-proof remain C work.
+**Status:** **Browser ready for successful correction.** Both hosts visibly move from revision
+0 to 1 to 2. A dedicated stale-error browser case remains.
 
 ### 6. Continue to the marketplace action
 
@@ -192,8 +191,9 @@ helps me choose without taking over checkout.
 **Value:** Luna removes decision work while keeping the buyer in control of the commercial
 action.
 
-**Status:** **Planned** as part of the Host A adapter. Checkout automation is intentionally
-out of scope.
+**Status:** **Partial.** Recommendation cards call each host's `navigateToListing` adapter.
+Host A currently routes back to its compare shell with the canonical listing ID rather than a
+real authorized product-detail route. Checkout automation is intentionally out of scope.
 
 ## The same decision by voice
 
@@ -221,13 +221,14 @@ sequenceDiagram
 **User story:** As Mai, I want to speak and correct my constraints while looking at the table
 so that I can keep my attention on the products.
 
-The server-side Live path already delegates to the same tools used by text. The missing
-browser work is microphone capture, remote audio, captions, start/mute/stop controls and
-rendering the new comparison revision.
+The server-side Live path delegates to the same tools used by text. The shared widget now owns
+microphone capture, remote audio, provisional captions, start/mute/stop, graceful close and a
+canonical refresh after confirmed Live events.
 
-**Status:** Live session creation and one server-side tool executor are **Backend ready**.
-The real microphone-to-visible-mutation story is **Integration required** and must not be
-demoed as working until tested end to end.
+**Status:** The server and browser pieces are implemented, and deterministic Playwright proves
+transport wiring plus microphone-denied fallback. The real microphone-to-visible-mutation story
+is still **Integration required** and must not be demoed as working until it increments the
+canonical revision through the provider sideband.
 
 ## The portability story
 
@@ -245,7 +246,8 @@ a different storefront without rebuilding its evidence, ranking or model integra
 **Success looks like:** The same Playwright journey passes in both hosts without changing the
 widget or API to add Host B.
 
-**Status:** **Planned.** The shared widget package and independent Host B do not yet exist.
+**Status:** **Browser ready.** Host A and independent Host B use the same package and API; the
+same two-turn Playwright journey passes in both, and the package imports neither host.
 
 ## Seller operations extension
 
@@ -290,7 +292,8 @@ not implemented.
 
 ## What the judge should see
 
-This is the intended 75–90 second product flow after Host A integration passes.
+This is the intended 75–90 second text product flow. Use the shared widget in Host A until the
+legacy path is deleted; do not present both comparison engines as one architecture.
 
 | Time | Visible action | What to say |
 |---|---|---|
@@ -322,7 +325,7 @@ owns identity, constraints, ranking, revisions and permissions.
 choice. The proposed seller report reuses the same decision evidence to reveal catalog gaps,
 creating an operations loop without another model pipeline.
 
-**Honest current claim:** The backend intelligence is implemented and evaluated, and Host A's
-Luna panel is connected to it. The primary demo is not complete until that panel replaces the
-legacy browser comparison path, and the portability claim is not complete until Host B runs
-the same journey.
+**Honest current claim:** The backend intelligence is implemented and evaluated, and one shared
+widget completes the same cited two-turn decision journey in two independent hosts. Host A's
+legacy browser comparison path still needs deletion, seller UI/deployment are incomplete, and
+voice must stay out of the main demo until a real spoken tool mutation changes revision.

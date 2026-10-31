@@ -7,22 +7,29 @@ break, and read [decisions.md](decisions.md) for the reasons behind the design.
 
 ## Current status — read this first
 
-The repository contains two different levels of completion:
+The repository contains three different levels of completion:
 
 - **Implemented and tested:** the Python API, synthetic catalog provider, evidence pipeline,
   deterministic ranking, session state, four decision tools, Responses text agent, GPT-Live
   server sideband, evaluation runners, and the session-scoped seller gap-report API. The current
   paid agent artifact is projected by `make eval` and remains honestly partial at 10/12
   scenarios.
-- **Host A connected, replacement incomplete:** `shopee-compare-app` now has a Luna panel that
-  creates a session, reads the API catalog, creates a comparison, asks the text agent and
-  refreshes canonical state. The old compare engine still exists in parallel and
-  `src/compare/engine.js` still contains a direct browser request to OpenAI.
-- **Missing:** the independent Host B, browser WebRTC voice controls, root E2E command,
-  single-image runtime, and deployment files.
+- **G3 implemented and deterministic E2E green:** `packages/luna-widget` owns the API client,
+  comparison UI, evidence/citation rendering and Live controls. Host A and the independent
+  `apps/minimal-host` mount that same package through separate adapters. `make e2e` runs the
+  same two-turn comparison journey in both hosts and an import-boundary check.
+- **G4 browser path implemented, real gate pending:** the widget negotiates WebRTC, waits for
+  `session.started`, plays remote audio, renders provisional input/output captions, refreshes
+  canonical state after confirmed Live events, and gracefully closes on `session.closed`.
+  Offline Playwright covers that wiring and microphone-denied text fallback. A real paid
+  microphone → GPT-Live → sideband tool → revision change has not been run on this branch, so
+  G4 is not claimed passed.
+- **Replacement/deployment incomplete:** the old compare engine still exists beside Luna and
+  `src/compare/engine.js` still contains a direct browser OpenAI request. Seller gap-report UI,
+  the single-image runtime, deployment files and public smoke proof remain missing.
 
-The backend no longer blocks C. C still owns replacing the parallel legacy path, packaging the
-shared widget, building Host B and proving the complete browser journey.
+The backend no longer blocks C. The next frontend root-cause fix is deleting the parallel
+legacy comparison/model path after the canonical widget becomes Host A's only compare owner.
 
 ## System map
 
@@ -30,13 +37,22 @@ shared widget, building Host B and proving the complete browser journey.
 flowchart LR
     Buyer[Buyer]
 
-    subgraph HostA["Host A: shopee-compare-app — current"]
+    subgraph HostA["Host A: shopee-compare-app"]
         Cart[Cart and variant selection]
         CompareContext[CompareContext]
         LegacyEngine[Legacy browser comparison engine]
-        LocalWidget[Backend-connected Luna panel]
-        LunaClient[Relative /api client]
         BrowserSettings[Browser API-key settings]
+    end
+
+    subgraph HostB["Host B: apps/minimal-host"]
+        MinimalCatalog[Independent catalog UI]
+        MinimalAdapter[Minimal host adapter]
+    end
+
+    subgraph Widget["Shared package: packages/luna-widget"]
+        LunaWidget[Comparison, evidence and chat UI]
+        LunaClient[Relative /api client]
+        LiveControls[WebRTC media and captions]
     end
 
     subgraph LunaAPI["Luna API: services/luna-api — implemented"]
@@ -60,11 +76,15 @@ flowchart LR
     end
 
     Buyer --> Cart --> CompareContext --> LegacyEngine
-    CompareContext --> LocalWidget --> LunaClient
+    CompareContext --> LunaWidget
+    MinimalCatalog --> MinimalAdapter --> LunaWidget
     BrowserSettings --> LegacyEngine
     LegacyEngine -. "direct browser call — must be removed" .-> Responses
 
-    LunaClient --> Routes
+    LunaWidget --> LunaClient --> Routes
+    LunaWidget --> LiveControls
+    LiveControls --> Routes
+    LiveControls <--> Live
 
     Routes --> SessionStore
     Routes --> EvidenceBuilder
@@ -83,7 +103,10 @@ flowchart LR
 
 | Area | Owner | Primary paths | Responsibility |
 |---|---|---|---|
-| Host A | C | `shopee-compare-app/` | Cart, compare UI, API client, evidence/review presentation and voice controls |
+| Host A | C | `shopee-compare-app/` | Shopee-style shell, routes and host adapter |
+| Shared widget | C | `packages/luna-widget/` | Comparison UI, API client, evidence/citations and WebRTC media |
+| Host B | C | `apps/minimal-host/` | Independent layout, catalog UI and host adapter for portability proof |
+| Frontend workspace/test gate | C | `package.json`, `package-lock.json`, `playwright.config.js` | One dependency lock, both builds and dual-host browser tests |
 | HTTP/API composition | B | `services/luna-api/app/main.py`, `app/routes/`, `app/errors.py` | Authentication boundary, routes, dependency wiring, stable error envelope |
 | Mutable decision state | B | `app/decision/`, `app/contracts/session.py` | Demo sessions, comparisons, preferences, ranking, revisions and tools |
 | Immutable evidence | A | `app/evidence/`, `app/contracts/evidence.py` | Exact-variant extraction, normalization, citations and review analysis |
@@ -293,7 +316,8 @@ new revision in a non-retryable error so the client refreshes instead of repeati
 
 ## GPT-Live flow
 
-The backend half is implemented; the browser half is not wired in Host A.
+The backend and browser transport halves are implemented. The real provider-driven spoken
+mutation is still a manual paid acceptance gate.
 
 ```mermaid
 sequenceDiagram
@@ -311,7 +335,8 @@ sequenceDiagram
     API->>Sideband: attach once, max_retries=0
     API-->>Browser: unchanged session id + answer SDP
 
-    Note over Browser,Live: C-owned microphone, playback, captions and stop controls are missing
+    Browser->>Live: microphone track + oai-events data channel
+    Live-->>Browser: session.started + remote audio + provisional transcripts
     Live-->>Sideband: session.delegation.created
     Responses-->>Sideband: completed function-call item
     Sideband->>Tools: validate and execute once
@@ -319,11 +344,17 @@ sequenceDiagram
     Sideband->>Responses: function_call_output
     Sideband->>Responses: response.create exactly once
     Responses-->>Live: spoken continuation
+    Live-->>Browser: session.updated or nested response.completed
+    Browser->>API: GET canonical comparison once after confirmed event
+    Browser->>Live: session.close
+    Live-->>Browser: session.closed
 ```
 
 The sideband ignores argument deltas, deduplicates call IDs, permits at most three sequential
-tool rounds per delegation, and is the only Live tool executor. A successful mutation refreshes
-the delegated tool schema to the new revision.
+tool rounds per delegation, and is the only Live tool executor. The browser never executes a
+tool. It refreshes canonical state only after a confirmed session/backend lifecycle event, not
+on provisional transcript fragments. A successful mutation refreshes the delegated tool schema
+to the new revision.
 
 ## Errors and failure ownership
 
@@ -394,25 +425,28 @@ Current verified commands:
 ```bash
 make api-test
 make eval
-make api-capability-smoke  # paid
+make frontend-build
+make e2e
+make api-capability-smoke  # paid capability check
 ```
 
-`make test`, `make e2e`, `make test-live`, `make demo`, `Dockerfile` and `render.yaml` are not
-implemented yet. Do not infer deployment readiness from backend test success.
+`make e2e` is deterministic: it injects SDK-shaped text responses, uses a browser WebRTC test
+double, starts both independent hosts and makes no provider call. It is not proof of real
+microphone/provider audio. `make test`, `make test-live`, `make demo`, `Dockerfile` and
+`render.yaml` are not implemented. Do not infer deployment or G4 readiness from offline tests.
 
 ## Required next integration
 
-The next system-level milestone is not another backend feature. The Host A panel already issues
-a session, loads `/api/catalog`, creates a comparison, calls `/ask` with the current revision and
-refreshes canonical state. C can proceed without A or B and must now:
+The next system-level milestone is not another backend feature. G3 is automated and the G4
+browser path exists. The remaining ordered work is:
 
 1. make Host A's main compare journey use the canonical API selection instead of keeping a
    separate synthetic Luna catalog beside the legacy comparison;
 2. delete the browser API-key settings, direct OpenAI call and independent ranking path;
-3. render review-mention citations from the canonical review source collection;
-4. extract the host-neutral widget package and mount it unchanged in Host B;
-5. add browser WebRTC controls only after the text journey is stable; and
-6. prove the same text journey in both hosts with Playwright.
+3. render the seller gap-report in both hosts from B's existing endpoint;
+4. authorize and run one real local microphone → Live tool → revision proof; cut voice from the
+   main demo if that check fails; and
+5. add the single-origin runtime and deployment only after the canonical Host A replacement.
 
-Only after that path passes can E2E, voice UI, optional seller reporting, Docker and deployment
-be represented as working system features.
+Do not represent the legacy Host A replacement, real voice mutation, seller UI, Docker or
+deployment as complete before their individual gates pass.
