@@ -255,6 +255,13 @@ Important details:
 - Review excerpts must be literal substrings from exact-variant review sources.
 - Provider/model partial failures become explicit unresolved analysis. They never select an
   offline answer or a second model.
+- Each product makes two Structured Outputs calls, spec extraction and review extraction, which
+  run concurrently with each other and with the other products; disputes are attached once both
+  resolve. Both calls send `reasoning={"effort": "low"}` (D-22).
+- `EvidenceBuilder` keeps completed per-product analyses in process memory keyed by
+  `(listing_id, variant_id, snapshot_version)`, at most 64 entries, oldest evicted. A repeat
+  compare of unchanged products makes no model call; a seller reply changes that product's
+  snapshot version and re-extracts only it; unresolved analyses are never cached (I-60).
 - Source text stays server-side. Decision tools expose bounded normalized facts or explicitly
   requested evidence.
 
