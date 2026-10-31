@@ -443,12 +443,26 @@ Seed three to four **fabricated and explicitly labelled** power-bank listings wi
 // packages/luna-widget/src/contracts.ts
 export type Selection = { listingId: string; variantId: string };
 export type Money = { currency: string; amountMinor: number };
+export type ProductSpecificationSource = {
+  evidenceId: string;
+  label: string;
+  text: string;
+  location: string | null;
+};
+export type ProductSpecification = {
+  fieldKey: string;
+  label: string;
+  status: 'supported' | 'missing' | 'conflicting' | 'unresolved';
+  value: string;
+  sources: ProductSpecificationSource[];
+};
 export type HostProduct = Selection & {
   title: string;
   variantLabel: string;
   priceMinor: number;
   currency: string;
   synthetic: boolean;
+  specifications: ProductSpecification[];
 };
 export interface LunaHostAdapter {
   hostId: string;                 // 'shopee-compare-app' / 'minimal-host'
@@ -475,7 +489,7 @@ export type LunaConfig = {
 </LunaProvider>
 ```
 
-`AddCompareButton` asks host for currently selected SKU where appropriate; otherwise renders its own variant picker using backend catalog metadata. `requestAddToCart` is **optional** and must require explicit user confirmation; no purchase or payment API is supplied. `navigateToListing` receives the exact canonical product snapshot and remains a host callback, not a hardcoded route. The demo hosts render honest local previews because no authorized marketplace URL exists; a production adapter may navigate using the canonical listing and variant IDs. The widget owns its comparison bucket/view state; it must not import host Redux/Zustand stores or scrape the DOM. Scope CSS and expose theme tokens. For non-React hosts, optionally export `mountLuna(element, config)` wrapping React `createRoot`; this is an embedding bridge, not evidence of compatibility with Shopee’s actual frontend.
+`AddCompareButton` asks host for currently selected SKU where appropriate; otherwise renders its own variant picker using backend catalog metadata. `requestAddToCart` is **optional** and must require explicit user confirmation; no purchase or payment API is supplied. `navigateToListing` receives the exact canonical product snapshot and remains a host callback, not a hardcoded route. The widget projects specifications from the existing immutable comparison: supported/conflicting fields retain every evidence ID plus exact source text/location; missing/unresolved fields expose no invented source. Opening the product view makes zero new API or model calls. The demo hosts render honest local previews because no authorized marketplace URL exists; a production adapter may navigate using the canonical listing and variant IDs. The widget owns its comparison bucket/view state; it must not import host Redux/Zustand stores or scrape the DOM. Scope CSS and expose theme tokens. For non-React hosts, optionally export `mountLuna(element, config)` wrapping React `createRoot`; this is an embedding bridge, not evidence of compatibility with Shopee’s actual frontend.
 
 **Host A (`shopee-compare-app/`)**: the existing orange storefront, cart, `#/Cart` and `#/Compare`; replace only the compare implementation. **Host B (`apps/minimal-host/`)**: one neutral product list and distinct route structure; implement a separate adapter, mount the *same* compiled widget package and do not copy widget code. **Test**: run the same Playwright scenario in both hosts; all Luna functions work against the same API and fixture IDs.
 

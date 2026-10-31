@@ -904,3 +904,45 @@ exit 0
 
 These commands made zero provider calls. An authorized marketplace product-detail URL remains a
 future host integration; the demo preview is explicitly synthetic where applicable.
+
+## B15: cited product specifications — 31 October 2026
+
+**Root cause:** the B14 host snapshot stopped at identity, title, variant and price even though
+the already-loaded comparison owned eight normalized facts and their evidence relationships.
+Each host therefore had no specifications to render. Refetching or asking the model again would
+create a second evidence path, so the widget now projects the existing immutable comparison.
+
+Each specification includes field identity/label, status, display value and every canonical
+evidence record's ID, source label, exact source text and location. Missing/unresolved facts have
+an empty source list and render the explicit abstention “No verified seller source. Luna does
+not guess.” Price remains identified as the trusted selected catalog variant rather than an AI
+claim. Both hosts render the projection independently; neither recomputes facts or citations.
+
+```text
+make e2e (before fix)
+2 failed, 5 passed, 1 skipped
+exit 2
+
+focused ESLint
+exit 0
+
+make e2e
+7 passed, 1 intentional Host B transport skip
+exit 0
+
+make frontend-build
+Host A: 67 modules transformed
+Host B: 47 modules transformed
+exit 0
+
+UV_CACHE_DIR=/tmp/decodex-uv-cache make api-test
+62 files already formatted
+All checks passed!
+Success: no issues found in 60 source files
+194 passed in 1.31s
+exit 0
+```
+
+These commands made zero provider calls. Playwright covers eight supported Atlas specs, one
+exact source excerpt/location, Comet's missing weight abstention and both exact warranty-conflict
+excerpts in both hosts.

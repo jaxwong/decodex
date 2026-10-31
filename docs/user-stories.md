@@ -188,16 +188,21 @@ the cited source material remains the same.
 choose without taking over checkout.
 
 1. Mai opens the host's product view for the exact listing and variant she compared.
-2. Luna does not add to cart or buy without an explicit user action.
-3. The existing marketplace owns cart, checkout, payment and fulfilment.
+2. She sees every normalized specification, including missing and conflicting states.
+3. Every supported or conflicting value shows the exact seller excerpt and source location;
+   missing values say no verified source exists rather than inventing one.
+4. Luna does not add to cart or buy without an explicit user action.
+5. The existing marketplace owns cart, checkout, payment and fulfilment.
 
 **Value:** Luna removes decision work while keeping the buyer in control of the commercial
 action.
 
 **Status:** **Browser ready for the demo boundary.** **View product** passes the exact canonical
-snapshot to each host, which renders and closes its own product preview without resetting the
-comparison. The preview is labelled synthetic where applicable. A real authorized marketplace
-product URL and checkout automation remain intentionally out of scope.
+snapshot and all eight normalized specifications to each host. Exact evidence excerpts and
+locations render for supported/conflicting facts; missing facts explicitly abstain. The view
+opens and closes without another API/model call or comparison reset. It is labelled synthetic
+where applicable. A real authorized marketplace product URL and checkout automation remain out
+of scope.
 
 ## The same decision by voice
 

@@ -19,8 +19,9 @@ The adapter supplies:
 - `hostId`: non-empty host identity;
 - `getCurrentSelection()`: `{ listingId, variantId }` or `null`;
 - `onSelectionChange(callback)`: subscribe and return an unsubscribe function;
-- `navigateToListing(product)`: host-owned product view for the exact canonical snapshot
-  `{ listingId, variantId, title, variantLabel, priceMinor, currency, synthetic }`; and
+- `navigateToListing(product)`: host-owned product view for the exact canonical snapshot. It
+  includes identity, title, variant, price, synthetic status and every normalized specification;
+  each specification carries its status and exact evidence source text/location; and
 - optional `requestAddToCart(selection)`: not currently invoked by the widget.
 
 Invalid adapters and selections fail at the package boundary. The widget owns only its
@@ -29,7 +30,8 @@ Hosts own routes, selection context, cart and checkout.
 
 The demo hosts render their own product previews and keep the widget mounted. A production host
 may navigate to its authorized listing route using `listingId` and `variantId`; the widget never
-invents a marketplace URL.
+invents a marketplace URL. Opening a preview makes no new API or model call. Missing/unresolved
+specifications have no fabricated citation; the host explicitly says no verified source exists.
 
 ## Seller report ownership
 
