@@ -35,9 +35,11 @@ Host A, Host B and the API now share one canonical comparison path. Host A's sto
 (`src/shop.jsx`) loads `/api/catalog` once and keeps a cart of exact trusted catalog variants.
 Search asks `/api/catalog?q=`; the product page shows `/api/catalog/{listing_id}`, the seller's
 unverified listing text and reviews. **Compare now** hands the ticked listing/variant IDs to
-Luna, which shows those products loading and compares 2–4 of them immediately, and otherwise
-shows its picker with them picked. **Choose this one** calls the host's `requestAddToCart`, which
-checks out that exact variant. No storefront page sends product text as evidence. The cart's
+Luna, which shows those products loading and compares them immediately; Host A enables it only
+for 2–4 ticked products and never shows the widget's picker. **Pick this one** calls the host's
+`requestAddToCart`, which returns to the cart with only that variant ticked; picking is not
+buying. Seller Centre (`#/SellerCentre`) has its own header and holds the only seller-side UI:
+the listing's open buyer questions and the gap report. No storefront page sends product text as evidence. The cart's
 three starting rows are demo contents; a real marketplace cart still needs an authorized catalog
 contract before its identities can be used.
 
@@ -184,6 +186,10 @@ A missing, unknown or expired token never reveals whether another session owns a
 | `POST` | `/api/demo-sessions` | Creates an opaque process-local session |
 | `GET` | `/api/catalog` | Returns bounded catalog previews and exact variants; `q` (≤100 chars) matches titles |
 | `GET` | `/api/catalog/{listing_id}` | Returns one storefront listing: seller description, per-variant specification lines and every review (two provider calls, no model call) |
+| `GET` | `/api/listings/{listing_id}/gap-report` | Seller projection over every active session's comparisons (no model call) |
+| `POST` | `/api/listings/{listing_id}/variants/{variant_id}/questions` | Opens one fixed-wording buyer question per variant field; idempotent; 409 once answered |
+| `GET` | `/api/listings/{listing_id}/questions` | The listing's open buyer questions, oldest first |
+| `POST` | `/api/listings/{listing_id}/variants/{variant_id}/seller-replies` | Stores one parsable seller answer as variant text and closes the question |
 | `POST` | `/api/comparisons` | Builds immutable evidence once and stores revision `0` |
 | `GET` | `/api/comparisons/{id}` | Returns the latest authorized comparison state |
 | `POST` | `/api/comparisons/{id}/ask` | Runs one bounded text-agent turn |
@@ -302,11 +308,13 @@ The model can access exactly four functions:
 | `inspect_evidence` | Read | Exact stored evidence IDs only |
 | `apply_preferences` | **Write** | The only mutation; revision checked |
 
-The simulated seller question loop is deliberately not a tool. Two plain routes under
-`/api/listings/{listing_id}/variants/{variant_id}/` draft a fixed-template question and store one
-parsable seller answer per field in the mock provider. The answer becomes variant text at
-`variants/{variant_id}/seller_replies/{n}`; open comparisons keep their evidence, and only a newly
-built comparison extracts and cites it. Replies live in memory and reset on API restart.
+The seller question loop is deliberately not a tool. Plain routes under `/api/listings/` open
+one fixed-template question per variant field (kept in `app.state.seller_questions`, bounded by
+catalog size times schema size), list a listing's open questions, and store one parsable seller
+answer per field in the mock provider, which closes the question. The answer becomes variant
+text at `variants/{variant_id}/seller_replies/{n}`; open comparisons keep their evidence, and
+only a newly built comparison extracts and cites it. Questions and replies live in memory and
+reset on API restart.
 
 ## Responses text-agent flow
 

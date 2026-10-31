@@ -53,6 +53,7 @@ flowchart TD
 | D-15 | Accepted for demo | Project seller listing gaps from current authorized session state |
 | D-16 | Accepted and implemented | Use one widget package, two host adapters and one root npm lock |
 | D-17 | Accepted and implemented | Refresh Live UI after confirmed events; never mutate from captions |
+| D-21 | Accepted and implemented | Separate buyer and seller UI; picking in Luna returns to the cart; Host A has no picker |
 
 ## D-01 — Labelled synthetic marketplace provider
 
@@ -325,7 +326,7 @@ clone presentation. D-20 replaces both.
 labels, drawn product images, sentiment-based star ratings). Host A gets search
 (`GET /api/catalog?q=`), a Shopee-style product page (`GET /api/catalog/{listing_id}`), a cart
 and checkout over that catalog, and **Choose this one** in the comparison, wired through the
-widget's existing optional `requestAddToCart`. In Host A, **View product** opens the product page
+widget's existing optional `requestAddToCart` (renamed and re-targeted by D-21). In Host A, **View product** opens the product page
 over the comparison instead of the cited evidence panel. While a cart-handed comparison builds,
 the widget shows those products loading instead of the picker.
 
@@ -342,3 +343,31 @@ product page costs one catalog GET and no model call. Checkout totals per line a
 delivery only; nothing is charged. Renaming fixtures changed source text the recorded paid runs
 were hashed against; both were already stale on `main` before this change. Images are inlined
 SVG data URIs, so every host and the single-file build show them without a file server.
+
+## D-21 — Buyer and seller UI are separate products; picking in Luna is not buying
+
+**Decision:** Seller Centre gets its own layout and header (`SellerNav`: Seller Centre wordmark,
+"Demo seller · no login", "Switch to buyer view") and holds the only seller-side UI. The seller
+question loop is split across the boundary: the buyer confirms and sends a fixed-wording
+question, sees it under **Waiting on the seller**, and presses **Check for the seller's answer**;
+the seller answers it under **Buyer questions** in Seller Centre. The API keeps open questions
+(`POST …/questions` is idempotent per variant field, `GET /api/listings/{id}/questions` lists
+them, a stored reply closes them). The comparison column button is **Pick this one** and Host A
+answers it by returning to the cart with only that variant ticked. Cart ticks keep Shopee's
+meaning (what checks out); **Compare now** sits beside **Check Out** and is enabled for 2–4
+ticks. Host A never renders the widget picker: `#/Compare` without 2–4 cart picks returns to the
+cart, and a lost or failed host-picked comparison shows **Build the comparison again**. The buyer
+top bar keeps only links that lead somewhere (Seller Centre, social); the clone login and
+sign-up pages and the Notification/Help/Download/Start Selling links are deleted, and the clone
+landing cards are plain decoration whose calls to action open the power-bank search.
+
+**Why:** The buyer typed the seller's answer inside their own comparison, Seller Centre wore the
+buyer's search bar and account links, and **Choose this one** jumped from a comparison straight
+into payment, so a shopper who only wanted to compare was pushed to buy. A picker inside the
+comparison page duplicated the cart, which is where Shopee shoppers already pick. Dead links
+made judges distrust the parts that work.
+
+**Consequences:** The buyer learns of an answer only by an explicit check (at most one read per
+asked listing); nothing polls. Questions are in-memory demo state like sessions and reset on API
+restart. Host B still uses the picker because it has no cart. `make api-dev` reloads on API file
+edits and forgets sessions; the widget now recovers in place instead of showing a picker.

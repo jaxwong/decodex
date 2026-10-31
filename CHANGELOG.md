@@ -4,6 +4,28 @@ This file records implemented Luna milestones. The implementation spec remains t
 
 ## 31 October 2026
 
+### Implemented on `feat/buyer-seller-separation`
+
+- Seller Centre is its own product: a `SellerNav` layout (Seller Centre wordmark, "Demo seller ·
+  no login", "Switch to buyer view") with no buyer search, cart or account links, opening on the
+  first listing. The report now says what to do about each gap in listing terms, names the
+  competitors that state a value as a list, and explains each exclusion count.
+- The seller question loop crosses the boundary instead of living in the buyer's widget. `POST
+  …/questions` opens one fixed-wording question per variant field (idempotent, 409 once answered);
+  `GET /api/listings/{listing_id}/questions` lists a listing's open questions; a stored reply
+  closes it. The buyer sees **Waiting on the seller** and presses **Check for the seller's
+  answer** (one read per asked listing) to rebuild with the cited answer. The answer form is
+  **Buyer questions** in Seller Centre; the simulated inbox in the buyer widget is deleted.
+- **Choose this one** became **Pick this one**: Host A returns to the cart with only that product
+  ticked (adding it if absent) instead of checking out. Cart ticks keep Shopee's checkout meaning;
+  **Compare now** sits beside **Check Out**, enabled for 2–4 ticks.
+- Host A never shows the widget picker: `#/Compare` without 2–4 cart picks returns to the cart,
+  and a failed or lost host-picked comparison shows the same picks with **Build the comparison
+  again**. Host B keeps the picker.
+- Dead buyer chrome removed: Login, Sign-up and LoginNav pages, the Notification/Help/Download/
+  Start Selling links. Clone landing cards are plain decoration; Shop Now, See All and Shop All
+  open the power-bank search; the handler-less See More button is gone.
+
 ### Implemented on `feat/mixed-language-reviews`
 
 - Proposal 5: the synthetic review corpus now includes the region's languages. Atlas 100W gains
