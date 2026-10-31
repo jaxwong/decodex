@@ -58,7 +58,7 @@ only under `tests/evidence` and cannot be enabled by runtime configuration.
 No injection uses `LUNA_CATALOG_PROVIDER=mock` and server-side `OPENAI_API_KEY`,
 with `OPENAI_TEXT_MODEL=gpt-6-luna` by default. There is no offline-answer fallback.
 Absent credentials or malformed/failed Responses output produce unresolved facts.
-Catalog errors raise `CatalogError` with stable `.code` values; B maps these to
+Catalog errors raise `CatalogError` with stable typed `.code` values; the API returns these in
 its HTTP envelope. Selection validation can raise Pydantic `ValidationError`.
 Only two to four unique exact variants are accepted, including different variants
 of one listing. Invalid identities fail before any model work.

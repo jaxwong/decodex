@@ -4,20 +4,93 @@ import base64
 import hashlib
 import json
 from copy import deepcopy
+from http import HTTPStatus
 from pathlib import Path
 from typing import Any
+
+from app.errors import ApiFailure, ErrorCode
 
 from .base import CatalogProvider
 
 DATA_ROOT = Path(__file__).resolve().parents[4] / "data"
 
 
-class CatalogError(ValueError):
+CATALOG_FAILURES: dict[str, tuple[ErrorCode, HTTPStatus, str, bool]] = {
+    "duplicate_selection": (
+        ErrorCode.DUPLICATE_SELECTION,
+        HTTPStatus.BAD_REQUEST,
+        "The same exact variant cannot be selected twice.",
+        False,
+    ),
+    "invalid_bucket": (
+        ErrorCode.INVALID_BUCKET,
+        HTTPStatus.BAD_REQUEST,
+        "Select between two and four exact variants.",
+        False,
+    ),
+    "provider_unavailable": (
+        ErrorCode.PROVIDER_UNAVAILABLE,
+        HTTPStatus.SERVICE_UNAVAILABLE,
+        "Catalog evidence is temporarily unavailable.",
+        True,
+    ),
+    "snapshot_changed": (
+        ErrorCode.SNAPSHOT_CHANGED,
+        HTTPStatus.CONFLICT,
+        "Catalog evidence changed while the comparison was built.",
+        True,
+    ),
+    "unknown_listing": (
+        ErrorCode.UNKNOWN_LISTING,
+        HTTPStatus.BAD_REQUEST,
+        "The selected listing does not exist.",
+        False,
+    ),
+    "unknown_variant": (
+        ErrorCode.UNKNOWN_VARIANT,
+        HTTPStatus.BAD_REQUEST,
+        "The selected variant does not exist.",
+        False,
+    ),
+    "unsupported_provider": (
+        ErrorCode.UNSUPPORTED_PROVIDER,
+        HTTPStatus.SERVICE_UNAVAILABLE,
+        "The configured catalog provider is unavailable.",
+        False,
+    ),
+    "repeated_review_cursor": (
+        ErrorCode.REPEATED_REVIEW_CURSOR,
+        HTTPStatus.SERVICE_UNAVAILABLE,
+        "Catalog review pagination did not advance.",
+        True,
+    ),
+    "invalid_limit": (
+        ErrorCode.INVALID_LIMIT,
+        HTTPStatus.BAD_REQUEST,
+        "The catalog page limit is invalid.",
+        False,
+    ),
+    "invalid_cursor": (
+        ErrorCode.INVALID_CURSOR,
+        HTTPStatus.BAD_REQUEST,
+        "The catalog cursor is invalid.",
+        False,
+    ),
+}
+
+
+class CatalogError(ApiFailure):
     """A public, stable error code for the API composition layer."""
 
-    def __init__(self, code: str):
-        self.code = code
-        super().__init__(code)
+    def __init__(self, catalog_code: str):
+        try:
+            self.code, self.http_status, self.public_message, self.retryable = CATALOG_FAILURES[
+                catalog_code
+            ]
+        except KeyError as failure:
+            raise ValueError(f"Unknown CatalogError code: {catalog_code!r}") from failure
+        self.catalog_code = catalog_code
+        super().__init__(catalog_code)
 
 
 class MockCatalogProvider:

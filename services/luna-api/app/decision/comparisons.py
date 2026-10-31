@@ -3,6 +3,7 @@
 import logging
 import secrets
 from collections.abc import Awaitable, Callable, Sequence
+from http import HTTPStatus
 
 from app.contracts.evidence import ComparisonEvidence
 from app.contracts.session import (
@@ -12,14 +13,20 @@ from app.contracts.session import (
 )
 from app.decision.ranking import rank_comparison
 from app.decision.sessions import DemoSessionState
+from app.errors import ApiFailure, ErrorCode
 
 logger = logging.getLogger(__name__)
 
 type BuildComparisonEvidence = Callable[[Sequence[dict[str, str]]], Awaitable[ComparisonEvidence]]
 
 
-class ComparisonNotFound(LookupError):
+class ComparisonNotFound(ApiFailure):
     """Raised when a comparison is absent from the authorized demo session."""
+
+    code = ErrorCode.COMPARISON_NOT_FOUND
+    http_status = HTTPStatus.NOT_FOUND
+    public_message = "The comparison was not found in this demo session."
+    retryable = False
 
 
 async def create_comparison(
