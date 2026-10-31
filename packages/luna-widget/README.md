@@ -19,12 +19,17 @@ The adapter supplies:
 - `hostId`: non-empty host identity;
 - `getCurrentSelection()`: `{ listingId, variantId }` or `null`;
 - `onSelectionChange(callback)`: subscribe and return an unsubscribe function;
-- `navigateToListing(listingId)`: host-owned navigation; and
+- `navigateToListing(product)`: host-owned product view for the exact canonical snapshot
+  `{ listingId, variantId, title, variantLabel, priceMinor, currency, synthetic }`; and
 - optional `requestAddToCart(selection)`: not currently invoked by the widget.
 
 Invalid adapters and selections fail at the package boundary. The widget owns only its
 comparison bucket/view state. The API owns evidence, preferences, recommendation and revision.
 Hosts own routes, selection context, cart and checkout.
+
+The demo hosts render their own product previews and keep the widget mounted. A production host
+may navigate to its authorized listing route using `listingId` and `variantId`; the widget never
+invents a marketplace URL.
 
 ## Seller report ownership
 
