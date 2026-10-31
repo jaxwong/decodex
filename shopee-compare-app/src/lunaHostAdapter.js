@@ -1,4 +1,4 @@
-export function createShopeeLunaAdapter(navigate) {
+export function createShopeeLunaAdapter(openProduct) {
   return {
     hostId: 'shopee-compare-app',
     getCurrentSelection() {
@@ -7,8 +7,8 @@ export function createShopeeLunaAdapter(navigate) {
     onSelectionChange() {
       return () => {};
     },
-    navigateToListing(listingId) {
-      navigate(`/Compare?listing_id=${encodeURIComponent(listingId)}`);
+    navigateToListing(product) {
+      openProduct(product);
     },
   };
 }

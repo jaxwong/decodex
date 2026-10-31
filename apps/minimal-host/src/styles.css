@@ -58,3 +58,22 @@ main {
   color: #244f66;
   cursor: pointer;
 }
+
+.product-view {
+  margin: 24px 0;
+  padding: 20px;
+  border: 2px solid #244f66;
+  background: white;
+}
+
+.product-view h2 {
+  margin: 8px 0;
+}
+
+.product-view button {
+  padding: 8px 10px;
+  border: 1px solid #244f66;
+  background: #244f66;
+  color: white;
+  cursor: pointer;
+}

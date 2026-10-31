@@ -14,8 +14,8 @@ async function request(path, options) {
 export default function App() {
   const [catalog, setCatalog] = useState([]);
   const [catalogError, setCatalogError] = useState('');
-  const [selectedListingId, setSelectedListingId] = useState('');
-  const hostBridge = useMemo(() => createMinimalHostAdapter(setSelectedListingId), []);
+  const [viewedProduct, setViewedProduct] = useState(null);
+  const hostBridge = useMemo(() => createMinimalHostAdapter(setViewedProduct), []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -60,8 +60,17 @@ export default function App() {
           </button>)}
         </article>)}
       </div>
-      {selectedListingId && <p role="status">Host navigated to listing: {selectedListingId}</p>}
     </section>
+    {viewedProduct && <section aria-label="Host product view" className="product-view">
+      <p className="eyebrow">Host B product preview</p>
+      <h2>{viewedProduct.title}</h2>
+      <p>{viewedProduct.variantLabel}</p>
+      <p>{viewedProduct.currency} {(viewedProduct.priceMinor / 100).toFixed(2)}</p>
+      <p>{viewedProduct.synthetic
+        ? 'Synthetic demo listing from Luna’s trusted backend catalog.'
+        : 'Canonical listing snapshot from Luna’s trusted backend catalog.'}</p>
+      <button type="button" onClick={() => setViewedProduct(null)}>Close product view</button>
+    </section>}
     <LunaWidget adapter={hostBridge.adapter} apiBaseUrl="/api" />
   </main>;
 }
