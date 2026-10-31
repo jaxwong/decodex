@@ -122,12 +122,13 @@ flowchart LR
 ### Product view evidence flow
 
 **View product** does not fetch or infer a second product record. `ComparisonTable` projects the
-selected item, all `schema_fields`, its `facts_by_item` entries and their existing evidence IDs
-into one host snapshot. Exact source type, source text and source location travel with each
-supported or conflicting specification. Missing and unresolved facts carry no source and are
-rendered as abstentions. Host A and Host B own different presentation, but neither recomputes a
-value or citation. Opening and closing the view keeps the widget mounted and makes zero external
-calls.
+selected item, its server-validated list/voucher/shipping/delivered amounts, all `schema_fields`,
+its `facts_by_item` entries and their existing evidence IDs into one host snapshot. Exact source
+type, source text and source location travel with each listed price component and each supported
+or conflicting specification. The delivered total is labelled as arithmetic over those three
+cited components. Missing and unresolved facts carry no source and are rendered as abstentions.
+Host A and Host B own different presentation, but neither recomputes a value or citation.
+Opening and closing the view keeps the widget mounted and makes zero external calls.
 
 ## API composition root
 

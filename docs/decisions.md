@@ -252,8 +252,9 @@ versions of the supposedly same package.
 frontend-build` builds both hosts, and `make e2e` runs the same decision flow plus an
 import-boundary check. A real Shopee integration still needs authorized product identity,
 session, performance and security work. Product views receive one widget-projected canonical
-snapshot with all normalized facts and exact existing evidence excerpts; hosts render it but do
-not fetch, infer or recite specifications independently.
+snapshot with the server-owned price breakdown, all normalized facts and exact existing evidence
+excerpts/locations. Hosts render it but do not fetch, calculate, infer or recite product data
+independently.
 
 ## D-17 — Confirmed-event Live refresh, not transcript mutation or endless polling
 

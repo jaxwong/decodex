@@ -188,21 +188,25 @@ the cited source material remains the same.
 choose without taking over checkout.
 
 1. Mai opens the host's product view for the exact listing and variant she compared.
-2. She sees every normalized specification, including missing and conflicting states.
-3. Every supported or conflicting value shows the exact seller excerpt and source location;
-   missing values say no verified source exists rather than inventing one.
-4. Luna does not add to cart or buy without an explicit user action.
-5. The existing marketplace owns cart, checkout, payment and fulfilment.
+2. She sees delivered total plus its list price, shop voucher and shipping components, followed
+   by every normalized specification, including missing and conflicting states.
+3. Every listed price component and every supported or conflicting specification shows the exact
+   seller excerpt and source location; the delivered total says it is calculated from those
+   cited components.
+4. Missing values say no verified source exists rather than inventing one.
+5. Luna does not add to cart or buy without an explicit user action.
+6. The existing marketplace owns cart, checkout, payment and fulfilment.
 
 **Value:** Luna removes decision work while keeping the buyer in control of the commercial
 action.
 
 **Status:** **Browser ready for the demo boundary.** **View product** passes the exact canonical
-snapshot and all eight normalized specifications to each host. Exact evidence excerpts and
-locations render for supported/conflicting facts; missing facts explicitly abstain. The view
-opens and closes without another API/model call or comparison reset. It is labelled synthetic
-where applicable. A real authorized marketplace product URL and checkout automation remain out
-of scope.
+snapshot, the four delivered-price amounts and all eight normalized specifications to each host.
+Exact evidence excerpts and locations render for the three listed price components and every
+supported/conflicting fact; delivered total is explicitly derived, while missing facts abstain.
+The view opens and closes without another API/model call or comparison reset. It is labelled
+synthetic where applicable. A real authorized marketplace product URL and checkout automation
+remain out of scope.
 
 ## The same decision by voice
 

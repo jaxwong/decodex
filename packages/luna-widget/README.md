@@ -20,8 +20,9 @@ The adapter supplies:
 - `getCurrentSelection()`: `{ listingId, variantId }` or `null`;
 - `onSelectionChange(callback)`: subscribe and return an unsubscribe function;
 - `navigateToListing(product)`: host-owned product view for the exact canonical snapshot. It
-  includes identity, title, variant, price, synthetic status and every normalized specification;
-  each specification carries its status and exact evidence source text/location; and
+  includes identity, title, variant, synthetic status, the server-owned delivered-price
+  breakdown and every normalized specification. Each listed price component and each supported
+  or conflicting specification carries its exact evidence source text/location; and
 - optional `requestAddToCart(selection)`: not currently invoked by the widget.
 
 Invalid adapters and selections fail at the package boundary. The widget owns only its
@@ -39,8 +40,10 @@ or buyer-specific eligibility.
 
 The demo hosts render their own product previews and keep the widget mounted. A production host
 may navigate to its authorized listing route using `listingId` and `variantId`; the widget never
-invents a marketplace URL. Opening a preview makes no new API or model call. Missing/unresolved
-specifications have no fabricated citation; the host explicitly says no verified source exists.
+invents a marketplace URL. Opening a preview makes no new API or model call. The delivered total
+is labelled as arithmetic over the cited list-price, shop-voucher and shipping records.
+Missing/unresolved specifications have no fabricated citation; the host explicitly says no
+verified source exists.
 
 ## Seller report ownership
 
