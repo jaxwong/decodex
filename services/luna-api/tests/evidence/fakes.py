@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from app.contracts.evidence import Aspect, Sentiment
+from app.contracts.evidence import Aspect, FieldKey, Sentiment
 from app.evidence.model import (
     CandidateFact,
     CandidateMention,
@@ -54,21 +54,33 @@ class FakeModelClient:
         if self.review_failure:
             raise TimeoutError("Injected review timeout")
         mentions = []
-        phrases: list[tuple[str, Aspect, Sentiment]] = [
-            ("gets hot", "heat", "negative"),
-            ("stays cool", "heat", "positive"),
-            ("charges fast", "charging", "positive"),
-            ("charges slowly", "charging", "negative"),
-            ("feels light", "portability", "positive"),
-            ("feels heavy", "portability", "negative"),
-            ("stopped working", "reliability", "negative"),
-            ("works reliably", "reliability", "positive"),
-            ("good value", "value", "positive"),
-            ("poor value", "value", "negative"),
-            ("case is blue", "other", "neutral"),
+        phrases: list[tuple[str, Aspect, Sentiment, FieldKey | None]] = [
+            ("gets hot", "heat", "negative", None),
+            ("stays cool", "heat", "positive", None),
+            ("charges fast", "charging", "positive", None),
+            ("charges slowly", "charging", "negative", None),
+            ("feels light", "portability", "positive", None),
+            ("feels heavy", "portability", "negative", None),
+            ("stopped working", "reliability", "negative", None),
+            ("works reliably", "reliability", "positive", None),
+            ("good value", "value", "positive", None),
+            ("poor value", "value", "negative", None),
+            ("case is blue", "other", "neutral", None),
+            (
+                "Charges my phone twice, nowhere near 20000mAh",
+                "charging",
+                "negative",
+                "capacity_mah",
+            ),
+            (
+                "Only two phone charges per fill, not the 20000mAh claimed",
+                "charging",
+                "negative",
+                "capacity_mah",
+            ),
         ]
         for review in request["reviews"]:
-            for phrase, aspect, sentiment in phrases:
+            for phrase, aspect, sentiment, disputes_field_key in phrases:
                 if phrase in review["text"]:
                     mentions.append(
                         CandidateMention(
@@ -76,6 +88,7 @@ class FakeModelClient:
                             aspect=aspect,
                             sentiment=sentiment,
                             excerpt=phrase,
+                            disputes_field_key=disputes_field_key,
                         )
                     )
         return ReviewCandidates(mentions=mentions)

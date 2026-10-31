@@ -4,17 +4,19 @@ import hashlib
 from dataclasses import dataclass
 from typing import Any
 
-from app.contracts.evidence import Evidence, ReviewAspectSummary, ReviewMention
+from app.contracts.evidence import Evidence, Fact, ReviewAspectSummary, ReviewMention
 
 from .index import source_id
 from .model import ReviewCandidates
-from .schema import ASPECTS
+from .schema import ASPECTS, DISPUTE_MIN_REVIEWS
 
 
 @dataclass(frozen=True)
 class ReviewValidation:
     mentions: dict[str, ReviewMention]
     rejected_count: int
+    # Field key to accepted mention IDs whose reviewer reports a contradicting value.
+    disputes: dict[str, set[str]]
 
 
 def review_evidence(item_key: str, reviews: list[dict[str, Any]]) -> dict[str, Evidence]:
@@ -40,6 +42,7 @@ def validate_review_mentions(
     """Drop unknown IDs, sibling/unknown variants, and non-literal or empty quotes."""
     sources = {review["review_id"]: review for review in reviews}
     mentions = {}
+    disputes: dict[str, set[str]] = {}
     rejected_count = 0
     for candidate in candidates.mentions:
         review = sources.get(candidate.review_id)
@@ -58,9 +61,34 @@ def validate_review_mentions(
         ).hexdigest()[:20]
         mention_id = f"{item_key}:mention:{digest}"
         mentions[mention_id] = ReviewMention(
-            id=mention_id, item_key=item_key, **candidate.model_dump()
+            id=mention_id,
+            item_key=item_key,
+            **candidate.model_dump(exclude={"disputes_field_key"}),
         )
-    return ReviewValidation(mentions, rejected_count)
+        if candidate.disputes_field_key is not None:
+            disputes.setdefault(candidate.disputes_field_key, set()).add(mention_id)
+    return ReviewValidation(mentions, rejected_count, disputes)
+
+
+def attach_disputes(
+    facts: list[Fact], disputes: dict[str, set[str]], mentions: dict[str, ReviewMention]
+) -> list[Fact]:
+    """Mark supported seller claims that enough distinct analysed reviews contradict.
+
+    Missing, conflicting and unresolved facts assert no value, so there is nothing to
+    dispute. Below DISPUTE_MIN_REVIEWS distinct reviews the fact is left untouched.
+    """
+    disputed = []
+    for fact in facts:
+        mention_ids = disputes.get(fact.field_key, set())
+        if (
+            fact.status == "supported"
+            and len({mentions[mention_id].review_id for mention_id in mention_ids})
+            >= DISPUTE_MIN_REVIEWS
+        ):
+            fact = fact.model_copy(update={"disputing_mention_ids": sorted(mention_ids)})
+        disputed.append(fact)
+    return disputed
 
 
 def aggregate_reviews(

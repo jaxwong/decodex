@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from eval.live import FreeFormPrediction
-from eval.metrics import score
+from eval.metrics import REVIEW_METRIC_PREFIXES, score
 from eval.smoke import check_smoke
 
 from app.contracts.evidence import ComparisonEvidence, ComparisonSelection, Evidence
@@ -131,7 +131,9 @@ async def load_recorded_evidence(
                         raise RecordedEvidenceError("Failed free-form output asserted facts")
             rescored = score(prediction, labels, selections)
             if name == "ungrounded_free_form":
-                rescored = {k: v for k, v in rescored.items() if not k.startswith("review_")}
+                rescored = {
+                    k: v for k, v in rescored.items() if not k.startswith(REVIEW_METRIC_PREFIXES)
+                }
             if rescored != measured["metrics"]:
                 raise RecordedEvidenceError(
                     f"Recorded {name} metrics disagree with saved predictions"
@@ -230,6 +232,8 @@ def render_scorecard(result: dict[str, Any]) -> str:
         ("Variant leakage", "variant_leakage_rate"),
         ("Review precision", "review_mention_precision"),
         ("Review recall", "review_mention_recall"),
+        ("Dispute precision", "dispute_precision"),
+        ("Dispute recall", "dispute_recall"),
     ):
         values = [_ratio(s, key) for s in (result["regex_keyword_baseline"], grounded, free_form)]
         rows.append(f"| {label} | {' | '.join(values)} |")

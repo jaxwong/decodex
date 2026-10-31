@@ -39,6 +39,7 @@ class CandidateMention(CandidateModel):
     aspect: Aspect
     sentiment: Sentiment
     excerpt: str
+    disputes_field_key: FieldKey | None
 
 
 class ReviewCandidates(CandidateModel):

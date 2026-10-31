@@ -8,6 +8,7 @@ from app.evidence.model import ReviewCandidates
 from app.evidence.reviews import (
     ReviewValidation,
     aggregate_reviews,
+    attach_disputes,
     review_batches,
     validate_review_mentions,
 )
@@ -30,6 +31,7 @@ def validate(
                     "aspect": "heat",
                     "sentiment": "negative",
                     "excerpt": excerpt,
+                    "disputes_field_key": None,
                 }
             ]
         }
@@ -159,9 +161,12 @@ def test_changed_snapshot_excludes_review_batch() -> None:
 def test_unknown_review_variant_classification_before_model() -> None:
     model = FakeModelClient()
     comparison(model)
-    assert len(model.review_requests) == 3
+    assert {request["item_key"]: len(request["reviews"]) for request in model.review_requests} == {
+        "listingA:100w": 14,
+        "listingB:65w": 16,
+        "listingC:87w": 14,
+    }
     for request in model.review_requests:
-        assert len(request["reviews"]) == 14
         assert all(r["variant_id"] == request["variant_id"] for r in request["reviews"])
 
 
@@ -237,3 +242,107 @@ def test_partially_failed_review_batches_keep_successful_denominator() -> None:
     assert isinstance(first_item, AnalyzedComparisonItem)
     assert first_item.review_status == "unresolved"
     assert first_item.review_coverage.exact_reviews_available == 24
+
+
+CAPACITY_DISPUTE_REVIEWS = {"listingB-r19", "listingB-r20"}
+
+
+class DisputesOnlyFrom(FakeModelClient):
+    """Keep the double's mentions but flag disputes only from the given reviews."""
+
+    def __init__(self, disputing_review_ids: set[str]) -> None:
+        super().__init__()
+        self.disputing_review_ids = disputing_review_ids
+
+    async def extract_reviews(self, request: dict[str, Any]) -> ReviewCandidates:
+        candidates = await super().extract_reviews(request)
+        return ReviewCandidates(
+            mentions=[
+                mention.model_copy(
+                    update={
+                        "disputes_field_key": mention.disputes_field_key
+                        if mention.review_id in self.disputing_review_ids
+                        else None
+                    }
+                )
+                for mention in candidates.mentions
+            ]
+        )
+
+
+def test_two_distinct_disputing_reviews_attach_without_changing_the_claim() -> None:
+    result = comparison()
+    capacity = fact(result, "listingB:65w", "capacity_mah")
+    assert capacity.status == "supported" and capacity.value == 20000
+    assert {
+        result.review_mentions[mention_id].review_id
+        for mention_id in capacity.disputing_mention_ids
+    } == CAPACITY_DISPUTE_REVIEWS
+    assert [
+        (key, f.field_key)
+        for key, facts in result.facts_by_item.items()
+        for f in facts
+        if f.disputing_mention_ids
+    ] == [("listingB:65w", "capacity_mah")]
+
+
+def test_one_disputing_review_attaches_nothing() -> None:
+    result = comparison(DisputesOnlyFrom({"listingB-r19"}))
+    assert fact(result, "listingB:65w", "capacity_mah").disputing_mention_ids == []
+    # The review is still cited as an ordinary mention.
+    assert any(m.review_id == "listingB-r19" for m in result.review_mentions.values())
+
+
+def test_disputes_never_attach_to_a_fact_without_a_value() -> None:
+    model = FakeModelClient()
+    model.fail_items.add("listingB:65w")
+    result = comparison(model)
+    capacity = fact(result, "listingB:65w", "capacity_mah")
+    assert capacity.status == "unresolved" and capacity.disputing_mention_ids == []
+
+
+def test_disputes_against_a_missing_field_attach_nothing() -> None:
+    result = comparison()
+    mention_ids = {
+        mention_id
+        for mention_id, mention in result.review_mentions.items()
+        if mention.item_key == "listingC:87w"
+    }
+    assert len({result.review_mentions[m].review_id for m in mention_ids}) >= 2
+    facts = result.facts_by_item["listingC:87w"]
+    assert fact(result, "listingC:87w", "weight_g").status == "missing"
+    assert attach_disputes(facts, {"weight_g": mention_ids}, result.review_mentions) == facts
+
+
+def test_two_disputing_mentions_from_one_review_count_once() -> None:
+    result = comparison()
+    one_review = {
+        mention_id
+        for mention_id, mention in result.review_mentions.items()
+        if mention.review_id == "listingA-r11"
+    }
+    assert len(one_review) == 2
+    facts = result.facts_by_item["listingA:100w"]
+    assert attach_disputes(facts, {"capacity_mah": one_review}, result.review_mentions) == facts
+
+
+def test_sibling_variant_dispute_is_rejected_before_it_can_attach() -> None:
+    reviews = [
+        {"review_id": "r1", "variant_id": "130w", "text": "Charges my phone twice, nowhere near."}
+    ]
+    candidates = ReviewCandidates.model_validate(
+        {
+            "mentions": [
+                {
+                    "review_id": "r1",
+                    "aspect": "charging",
+                    "sentiment": "negative",
+                    "excerpt": "Charges my phone twice",
+                    "disputes_field_key": "capacity_mah",
+                }
+            ]
+        }
+    )
+    validation = validate_review_mentions(candidates, reviews, "listingA:100w", "100w")
+    assert validation.rejected_count == 1
+    assert validation.mentions == {} and validation.disputes == {}

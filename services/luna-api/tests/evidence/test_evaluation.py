@@ -28,7 +28,10 @@ def test_deterministic_evaluation_behavior() -> None:
     assert metrics["contradiction_recall"] == ratio(0, 4)
     assert metrics["variant_leakage_rate"] == ratio(9, 12)
     assert not first["grounded_structured_outputs"]["available"]
-    assert first["conditions"]["source_review_count"] == 54
+    assert first["conditions"]["source_review_count"] == 56
+    # The keyword baseline emits no disputes, so precision is unavailable, not zero.
+    assert metrics["dispute_precision"] == ratio(0, 0)
+    assert metrics["dispute_recall"] == ratio(0, 1)
 
 
 def test_scorer_checks_hand_authored_expected_values() -> None:
@@ -39,8 +42,10 @@ def test_scorer_checks_hand_authored_expected_values() -> None:
     assert metrics["evidence_precision"] == ratio(24, 24)
     assert metrics["unsupported_claim_rate"] == ratio(0, 22)
     assert metrics["contradiction_recall"] == ratio(1, 1)
-    assert metrics["review_mention_precision"] == ratio(45, 45)
-    assert metrics["review_mention_recall"] == ratio(45, 45)
+    assert metrics["review_mention_precision"] == ratio(47, 47)
+    assert metrics["review_mention_recall"] == ratio(47, 47)
+    assert metrics["dispute_precision"] == ratio(1, 1)
+    assert metrics["dispute_recall"] == ratio(1, 1)
 
 
 def test_scorer_rejects_wrong_source_even_if_value_correct() -> None:
@@ -57,8 +62,21 @@ def test_scorer_review_support_and_variant_exclusion() -> None:
     predictions = comparison().model_dump()
     next(iter(predictions["review_mentions"].values()))["excerpt"] = "Invented quotation"
     metrics = score(predictions, labels(), SELECTIONS)
-    assert metrics["review_mention_precision"] == ratio(44, 45)
-    assert metrics["review_mention_recall"] == ratio(44, 45)
+    assert metrics["review_mention_precision"] == ratio(46, 47)
+    assert metrics["review_mention_recall"] == ratio(46, 47)
+
+
+def test_scorer_rejects_dispute_citing_an_unlabelled_review() -> None:
+    predictions = comparison().model_dump()
+    capacity = predictions["facts_by_item"]["listingA:100w"][0]
+    capacity["disputing_mention_ids"] = sorted(
+        mention_id
+        for mention_id, mention in predictions["review_mentions"].items()
+        if mention["item_key"] == "listingA:100w"
+    )[:2]
+    metrics = score(predictions, labels(), SELECTIONS)
+    assert metrics["dispute_precision"] == ratio(1, 2)
+    assert metrics["dispute_recall"] == ratio(1, 1)
 
 
 def test_baseline_input_does_not_contain_labels() -> None:

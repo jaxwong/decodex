@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 from eval.agent import load_agent_benchmark
 from eval.baselines import predict
 from eval.live import MAX_LIVE_REQUESTS, RequestBudget, free_form_specs, token_summary
-from eval.metrics import score
+from eval.metrics import REVIEW_METRIC_PREFIXES, score
 from eval.scorecard import (
     SOURCE_NAMES,
     RecordedEvidenceError,
@@ -345,7 +345,7 @@ async def evaluate(
             "metrics": {
                 k: v
                 for k, v in score(free_form["prediction"], labels, selections).items()
-                if not k.startswith("review_")
+                if not k.startswith(REVIEW_METRIC_PREFIXES)
             },
             "outputs": free_form["outputs"],
             "prediction": free_form["prediction"],

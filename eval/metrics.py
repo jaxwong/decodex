@@ -9,6 +9,9 @@ from typing import Any
 
 from app.contracts.evidence import ComparisonSelection
 
+# Metrics that need review extraction; specification-only baselines omit them.
+REVIEW_METRIC_PREFIXES = ("review_", "dispute_")
+
 
 def ratio(numerator: int, denominator: int) -> dict[str, Any]:
     return {
@@ -135,6 +138,28 @@ def score(
         )
         if literal and any(quote in mention["excerpt"] for quote in gold.get(unit, [])):
             matched.add(unit)
+    # Dispute units are (item, field). An emitted dispute matches only when every cited
+    # mention comes from a review labelled as contradicting that same seller claim.
+    labelled_disputes = {
+        (key, field): set(review_ids)
+        for key, fields in ground_truth["disputes"].items()
+        if key in selected_keys
+        for field, review_ids in fields.items()
+    }
+    emitted_disputes, matched_disputes = set(), set()
+    for key in selected_keys:
+        for fact in prediction["facts_by_item"].get(key, []):
+            mention_ids = fact.get("disputing_mention_ids", [])
+            if not mention_ids:
+                continue
+            dispute_unit = (key, fact["field_key"])
+            emitted_disputes.add(dispute_unit)
+            review_ids = {
+                prediction["review_mentions"].get(mention_id, {}).get("review_id")
+                for mention_id in mention_ids
+            }
+            if review_ids <= labelled_disputes.get(dispute_unit, set()):
+                matched_disputes.add(dispute_unit)
     return {
         "exact_variant_accuracy": ratio(identity_correct, len(selected_keys)),
         "supported_field_accuracy": ratio(counts["supported_correct"], counts["supported_total"]),
@@ -145,4 +170,6 @@ def score(
         "variant_leakage_rate": ratio(counts["variant_leaks"], counts["variant_sensitive_total"]),
         "review_mention_precision": ratio(len(matched), len(emitted)),
         "review_mention_recall": ratio(len(matched), len(gold)),
+        "dispute_precision": ratio(len(matched_disputes), len(emitted_disputes)),
+        "dispute_recall": ratio(len(matched_disputes), len(labelled_disputes)),
     }

@@ -12,5 +12,7 @@ SCHEMA_FIELDS = [
     SchemaField(field_key="included_cable", label="Included cable", unit=None),
     SchemaField(field_key="warranty_months", label="Warranty", unit="months"),
 ]
+# Distinct analysed reviews needed before a dispute attaches; one angry review never flips it.
+DISPUTE_MIN_REVIEWS = 2
 ASPECTS = ("heat", "portability", "charging", "reliability", "value", "other")
 UNITS = {field.field_key: field.unit for field in SCHEMA_FIELDS}

@@ -27,6 +27,9 @@ catalog. Items contain `listing_id`, `variant_id`, `item_key`, `title`,
 `variant_label`, integer `price_minor`, `shop_voucher_minor`, `shipping_minor`,
 validated `landed_price_minor`, `currency='SGD'`, `snapshot_version`, `synthetic`.
 The evidence builder is the sole runtime owner of `price - voucher + shipping`.
+A supported fact may carry `disputing_mention_ids`: review mentions on the same item whose
+reviewers report a value contradicting the claim. The builder attaches them only when at least
+`DISPUTE_MIN_REVIEWS` distinct analysed reviews agree; the fact keeps its status and value.
 Schema rows contain `field_key`, `label`, `unit`. Do not derive
 frontend types independently; generate from B's eventual OpenAPI wrapper.
 

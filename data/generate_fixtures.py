@@ -22,6 +22,17 @@ LANDED_PRICE_COMPONENTS = {
     'listingC': {'shipping_minor': 300, 'shop_voucher_minor': 1000},
 }
 
+# Reviewers on Breeze's 65W demo SKU report experienced capacity that contradicts the
+# seller's consistent 20 Ah claim. Two distinct reviews meet DISPUTE_MIN_REVIEWS.
+DISPUTING_REVIEWS = {
+    'listingB': ('65w', 'capacity_mah', [
+        ('Charges my phone twice, nowhere near 20000mAh.',
+         [('charging', 'negative', 'Charges my phone twice, nowhere near 20000mAh')]),
+        ('Only two phone charges per fill, not the 20000mAh claimed.',
+         [('charging', 'negative', 'Only two phone charges per fill, not the 20000mAh claimed')]),
+    ]),
+}
+
 
 def write(name, value):
     (ROOT / name).write_text(json.dumps(value, indent=2) + '\n')
@@ -33,7 +44,8 @@ def source_id(item_key, location, text):
 
 
 def generate():
-    listings, reviews, labels = [], [], {'synthetic': True, 'items': {}, 'reviews': [], 'source_claims': {}}
+    listings, reviews = [], []
+    labels = {'synthetic': True, 'items': {}, 'reviews': [], 'source_claims': {}, 'disputes': {}}
     for index, (name, powers, demo) in enumerate([
         ('Atlas', [100, 130, 65, 30], 100), ('Breeze', [65, 100, 130, 45], 65),
         ('Comet', [87, 100, 130, 65], 87),
@@ -102,9 +114,12 @@ def generate():
             ('It charges fast in my office.', [('charging', 'positive', 'charges fast')]),
             ('It gets hot at my desk.', [('heat', 'negative', 'gets hot')]),
         ]
-        for n, (text, mentions) in enumerate(phrases):
-            vid = str(demo) + 'w' if n < 14 else '130w' if n < 16 else None
+        disputing_vid, disputed_field, disputing = DISPUTING_REVIEWS.get(lid, (None, None, []))
+        for n, (text, mentions) in enumerate(phrases + disputing):
+            vid = str(demo) + 'w' if n < 14 else '130w' if n < 16 else None if n < 18 else disputing_vid
             rid = f'{lid}-r{n + 1:02}'
+            if n >= 18:
+                labels['disputes'].setdefault(f'{lid}:{vid}', {}).setdefault(disputed_field, []).append(rid)
             reviews.append({'review_id': rid, 'listing_id': lid, 'variant_id': vid, 'rating': 3,
                             'text': text, 'created_at': None, 'source': 'fixture'})
             labels['reviews'].append({'review_id': rid, 'listing_id': lid, 'variant_id': vid,
@@ -167,9 +182,11 @@ def generate():
                                                source_location='description/2', variant_id=vid, review_id=None)
                 source_ids.append(sid)
             facts.append(dict(field_key=field, status=label['status'], value=label['value'], unit=FIELDS[field][1],
-                              evidence_ids=source_ids, conflicting_values=label['conflicting_values']))
+                              evidence_ids=source_ids, conflicting_values=label['conflicting_values'],
+                              disputing_mention_ids=[]))
         result['facts_by_item'][key] = facts
         exact_reviews = [r for r in reviews if r['listing_id'] == lid and r['variant_id'] == vid]
+        disputed_reviews = labels['disputes'].get(key, {})
         for review in exact_reviews:
             sid = f"{key}:review:{review['review_id']}"
             result['evidence'][sid] = dict(id=sid, item_key=key, source_type='review', source_text=review['text'],
@@ -178,6 +195,9 @@ def generate():
             for n, mention in enumerate(labelled['mentions']):
                 mid = f"{key}:mention:{review['review_id']}:{n}"
                 result['review_mentions'][mid] = dict(id=mid, item_key=key, review_id=review['review_id'], **mention)
+                for fact in facts:
+                    if review['review_id'] in disputed_reviews.get(fact['field_key'], []):
+                        fact['disputing_mention_ids'].append(mid)
         for aspect in ['heat', 'portability', 'charging', 'reliability', 'value', 'other']:
             mentions = [m for m in result['review_mentions'].values() if m['item_key'] == key and m['aspect'] == aspect]
             result['review_summaries'].append(dict(item_key=key, aspect=aspect, analyzed_reviews=len(exact_reviews),

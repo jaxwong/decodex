@@ -191,6 +191,7 @@ def test_openapi_exposes_bearer_auth_and_canonical_comparison_contract() -> None
         "shop_voucher_minor",
     } <= comparison_item["properties"].keys()
     assert {"shipping_minor", "shop_voucher_minor"} <= catalog_variant["properties"].keys()
+    assert "disputing_mention_ids" in schema["components"]["schemas"]["Fact"]["properties"]
     recommendation_properties = schema["components"]["schemas"]["Recommendation"]["properties"]
     assert "exclusion_reasons" not in recommendation_properties
     assert "uncertain_fields" not in recommendation_properties

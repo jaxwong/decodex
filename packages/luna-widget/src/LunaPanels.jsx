@@ -1,8 +1,8 @@
 import { Fragment, useEffect, useId, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
-  PRICE_FIELD, citationSource, conflictText, factValueText, fieldLabel, itemName, money,
-  readableLimitation, sourceLabel,
+  PRICE_FIELD, citationSource, conflictText, disputeText, factValueText, fieldLabel, itemName, money,
+  readableLimitation, reviewDispute, sourceLabel,
 } from './display.js';
 
 // The API ranks against max_output_w when the shopper sets min_output_w.
@@ -19,7 +19,9 @@ function describeCell(evidence, item, fieldKey) {
     return { status: 'price', text: money(item.landed_price_minor, item.currency) };
   }
   const fact = factFor(evidence, item.item_key, fieldKey);
-  if (fact.status === 'supported') return { status: 'supported', text: factValueText(fact), fact };
+  if (fact.status === 'supported') {
+    return { status: 'supported', text: factValueText(fact), fact, dispute: reviewDispute(evidence, fact) };
+  }
   if (fact.status === 'conflicting') return { status: 'conflicting', text: conflictText(fact), fact };
   return { status: fact.status, text: null, fact };
 }
@@ -100,7 +102,16 @@ UpdateNotice.propTypes = {
   evidence: PropTypes.object.isRequired,
 };
 
+const WarningIcon = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>
+</svg>;
+
 function CellContent({ cell }) {
+  if (cell.dispute) return <>
+    <span className="luna-value">{cell.text}</span>
+    <span className="luna-dispute-marker"><WarningIcon/>{disputeText(cell.dispute)}</span>
+  </>;
   if (cell.status === 'price' || cell.status === 'supported') return <span className="luna-value">{cell.text}</span>;
   if (cell.status === 'missing') return <>
     <span className="luna-value is-missing">Not stated</span>
@@ -121,7 +132,12 @@ const cellSpokenText = cell => ({
   missing: 'Not stated',
   conflicting: `Listing disagrees, ${cell.text}`,
   unresolved: 'Couldn’t verify',
-}[cell.status] || cell.text);
+}[cell.status] || (cell.dispute ? `${cell.text}, ${disputeText(cell.dispute).toLowerCase()}` : cell.text));
+
+function cellClassName(cell) {
+  if (cell.status === 'conflicting') return 'luna-cell is-conflict';
+  return cell.dispute ? 'luna-cell is-disputed' : 'luna-cell';
+}
 
 function productSource(record) {
   return {
@@ -200,9 +216,11 @@ export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing })
   const fieldKeys = [PRICE_FIELD, ...schemaFields.map(field => field.field_key)];
   const cells = new Map(fieldKeys.map(fieldKey =>
     [fieldKey, columns.map(item => describeCell(evidence, item, fieldKey))]));
+  // A disputed claim is not "the same" as an undisputed one, so its row stays visible.
   const isSameEverywhere = fieldKey => {
     const row = cells.get(fieldKey);
-    return row.every(cell => (cell.status === 'supported' || cell.status === 'price') && cell.text === row[0].text);
+    return row.every(cell => (cell.status === 'supported' || cell.status === 'price')
+      && !cell.dispute && cell.text === row[0].text);
   };
   const focused = comparison.ui_patch?.new_revision === comparison.revision
     ? comparison.ui_patch.focused_fields.filter(fieldKey => fieldKeys.includes(fieldKey)) : [];
@@ -272,7 +290,7 @@ export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing })
                 {columns.map((item, index) => {
                   const cell = cells.get(fieldKey)[index];
                   return <td key={item.item_key} className={item.item_key === recommendation.item_key ? 'is-top' : undefined}>
-                    <button type="button" className={`luna-cell${cell.status === 'conflicting' ? ' is-conflict' : ''}`}
+                    <button type="button" className={cellClassName(cell)}
                       aria-label={`${label} for ${itemName(item)}: ${cellSpokenText(cell)}`}
                       onClick={() => onOpenCell({ itemKey: item.item_key, fieldKey })}>
                       <CellContent cell={cell}/>
@@ -326,6 +344,12 @@ function cellExplanation(cell, label) {
   if (cell.status === 'price') {
     return 'Luna uses this delivered total for price ranking and budget checks. It is calculated only from the listed components shown above.';
   }
+  if (cell.dispute) {
+    const { reviewCount, analyzedReviews } = cell.dispute;
+    return `The seller states ${cell.text}, and Luna keeps that value in the comparison and ranking. `
+      + `${reviewCount} of the ${analyzedReviews} reviews analysed for this product report otherwise. `
+      + 'Luna can’t verify the true figure. This is a count among reviews analysed, not a defect rate.';
+  }
   if (cell.status === 'supported') {
     return cell.fact.evidence_ids.length > 1
       ? `Found in ${cell.fact.evidence_ids.length} places in the listing.` : 'Read from the seller’s listing.';
@@ -346,6 +370,7 @@ const CELL_STATUS = {
   conflicting: ['warn', 'Listing disagrees with itself'],
   unresolved: ['none', 'Couldn’t verify'],
 };
+const DISPUTED_STATUS = ['warn', 'From the listing · disputed in reviews'];
 
 export function SourcePanel({ comparison, target, onClose, onAsk }) {
   const titleId = useId();
@@ -363,7 +388,7 @@ export function SourcePanel({ comparison, target, onClose, onAsk }) {
   if (resolved.source) {
     const { kind, record } = resolved.source;
     title = itemName(item);
-    subtitle = kind === 'review' ? 'Customer review' : sourceLabel(record.source_type);
+    subtitle = kind === 'review' ? `Customer review · ${record.review_id}` : sourceLabel(record.source_type);
     body = <>
       <div className="luna-quote">
         <p>“{kind === 'review' ? record.excerpt : record.source_text}”</p>
@@ -375,11 +400,13 @@ export function SourcePanel({ comparison, target, onClose, onAsk }) {
   } else {
     const label = fieldLabel(evidence.schema_fields, resolved.fieldKey);
     const cell = describeCell(evidence, item, resolved.fieldKey);
-    const [tone, statusText] = CELL_STATUS[cell.status];
+    const [tone, statusText] = cell.dispute ? DISPUTED_STATUS : CELL_STATUS[cell.status];
     const quotes = (cell.fact?.evidence_ids || []).map(id => citationSource(evidence, id).record);
     title = `${label} · ${item.title}`;
     subtitle = item.variant_label;
-    question = `Tell me about the ${label.toLowerCase()} of ${itemName(item)}.`;
+    question = cell.dispute
+      ? `Is the ${label.toLowerCase()} claim for ${itemName(item)} reliable?`
+      : `Tell me about the ${label.toLowerCase()} of ${itemName(item)}.`;
     body = <>
       <span className={`luna-status luna-status-${tone}`}>{statusText}</span>
       <p className={`luna-panel-value${cell.text && cell.status !== 'conflicting' ? '' : ' is-missing'}`}>
@@ -395,10 +422,20 @@ export function SourcePanel({ comparison, target, onClose, onAsk }) {
         <p>Assumes listed shipping and shop voucher.</p>
       </div>}
       {cell.status === 'conflicting' && <p className="luna-panel-lead">The seller gives different values: {cell.text}.</p>}
+      {cell.dispute && <h4 className="luna-panel-section">Seller claim</h4>}
       {quotes.map(record => <div key={record.id} className="luna-quote">
         <span className="luna-quote-from">{sourceLabel(record.source_type)}</span>
         <p>{highlightValue(record.source_text)}</p>
       </div>)}
+      {cell.dispute && <section aria-label="Disputed in analysed reviews">
+        <h4 className="luna-panel-section">{disputeText(cell.dispute)}</h4>
+        {cell.dispute.mentions.map(mention => <div key={mention.id} className="luna-quote is-dispute">
+          <span className="luna-quote-from">
+            Customer review · <span className="luna-review-id">{mention.review_id}</span>
+          </span>
+          <p>“{mention.excerpt}”</p>
+        </div>)}
+      </section>}
       <p className="luna-panel-explain">{cellExplanation(cell, label)}</p>
     </>;
   }
