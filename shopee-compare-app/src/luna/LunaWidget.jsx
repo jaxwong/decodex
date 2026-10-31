@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from "react";
+import PropTypes from "prop-types";
+
 
 // Host-independent UI: receives products as props, never reads Shopee cart/router context.
 // This is an explicitly local prototype until Builder B supplies a backend contract.
@@ -28,3 +30,10 @@ export default function LunaWidget({ products = [], onClose, apiBaseUrl = '' }) 
     <p className="text-xs text-gray-400 mt-3">{apiBaseUrl ? 'Backend URL configured; API integration pending.' : 'No backend connected. No AI calls or rankings are made.'}</p>
   </section>;
 }
+
+
+LunaWidget.propTypes = {
+  products: PropTypes.arrayOf(PropTypes.object),
+  onClose: PropTypes.func,
+  apiBaseUrl: PropTypes.string,
+};
