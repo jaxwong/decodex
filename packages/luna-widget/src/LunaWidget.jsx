@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
-import { assertHostAdapter, selectionKey } from './hostAdapter.js';
+import { assertHostAdapter, selectionKey, selectionKeys } from './hostAdapter.js';
 import { LiveVoiceControls } from './LiveVoiceControls.jsx';
 import { lunaClient } from './lunaClient.js';
 import { errorText, money } from './display.js';
@@ -57,12 +57,13 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
         setMessages([]);
         setNotice(null);
         setSourceTarget(null);
-        const hostKey = selectionKey(hostAdapter.getCurrentSelection());
+        const hostKeys = selectionKeys(hostAdapter.getCurrentSelections());
         const availableKeys = new Set(listings.flatMap(listing => listing.variants
           .map(variant => `${listing.listing_id}:${variant.variant_id}`)));
-        setSelection(hostKey && availableKeys.has(hostKey) ? [hostKey] : []);
-        if (hostKey && !availableKeys.has(hostKey)) {
-          setError(`Host selection ${hostKey} is unavailable in the Luna catalog.`);
+        const unavailableKeys = hostKeys.filter(key => !availableKeys.has(key));
+        setSelection(hostKeys.filter(key => availableKeys.has(key)));
+        if (unavailableKeys.length > 0) {
+          setError(`Host selection ${unavailableKeys.join(', ')} is unavailable in the Luna catalog.`);
         }
       } catch (err) {
         if (!controller.signal.aborted) showError(err);
@@ -286,7 +287,7 @@ export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
 LunaWidget.propTypes = {
   adapter: PropTypes.shape({
     hostId: PropTypes.string.isRequired,
-    getCurrentSelection: PropTypes.func.isRequired,
+    getCurrentSelections: PropTypes.func.isRequired,
     onSelectionChange: PropTypes.func.isRequired,
     navigateToListing: PropTypes.func.isRequired,
     requestAddToCart: PropTypes.func,

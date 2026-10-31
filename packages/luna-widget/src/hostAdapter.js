@@ -1,5 +1,5 @@
 const requiredFunctions = [
-  'getCurrentSelection',
+  'getCurrentSelections',
   'onSelectionChange',
   'navigateToListing',
 ];
@@ -31,4 +31,12 @@ export function selectionKey(selection) {
     throw new TypeError('Host selection requires listingId and variantId');
   }
   return `${selection.listingId}:${selection.variantId}`;
+}
+
+// The comparison bucket holds at most four exact variants, so a host may hand over at most four.
+export function selectionKeys(selections) {
+  if (!Array.isArray(selections) || selections.length > 4 || selections.includes(null)) {
+    throw new TypeError('Host selections must be an array of at most 4 { listingId, variantId } objects');
+  }
+  return selections.map(selectionKey);
 }

@@ -1,11 +1,17 @@
 import { useMemo, useState } from 'react';
 import { LunaWidget } from '@luna/widget';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { createShopeeLunaAdapter } from '../../lunaHostAdapter';
 
 function Compare() {
     const [viewedProduct, setViewedProduct] = useState(null);
-    const lunaAdapter = useMemo(() => createShopeeLunaAdapter(setViewedProduct), []);
+    // The cart hands over its ticked catalog variants; opening #/Compare directly hands over none.
+    // Depend on the stable state object: a new adapter starts a new Luna session.
+    const { state: routeState } = useLocation();
+    const lunaAdapter = useMemo(
+        () => createShopeeLunaAdapter(setViewedProduct, routeState?.cartSelections ?? []),
+        [routeState],
+    );
 
     return (
         <main className="min-h-screen bg-gray-100 py-3 sm:py-6">

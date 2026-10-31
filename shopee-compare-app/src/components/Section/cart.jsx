@@ -1,43 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const formatPrice = value => `${value.toLocaleString('vi-VN')}₫`;
+const formatMinor = (minor, currency) => `${currency} ${(minor / 100).toFixed(2)}`;
 
+// Demo cart contents. Each row is an exact variant in Luna's backend catalog, which owns its
+// title and price, so Compare now can hand the ticked rows to Luna unchanged.
+const cartItem = (listingId, variantId) => ({ id: `${listingId}:${variantId}`, listingId, variantId, quantity: 1 });
 const initialCartItems = [
-    {
-        id: 'cart-1',
-        shop: 'Anker Official Store',
-        mall: true,
-        title: 'Anker PowerCore portable charger',
-        variation: 'Black',
-        image: 'images/categories/2.png',
-        price: 899000,
-        originalPrice: 1299000,
-        quantity: 1,
-    },
-    {
-        id: 'cart-2',
-        shop: 'UGREEN Vietnam',
-        mall: true,
-        title: 'UGREEN USB-C fast charger',
-        variation: '65W',
-        image: 'images/categories/17.png',
-        price: 749000,
-        originalPrice: 999000,
-        quantity: 1,
-    },
-    {
-        id: 'cart-3',
-        shop: 'Tech Accessories',
-        mall: false,
-        title: 'Baseus compact power bank',
-        variation: '20,000 mAh',
-        image: 'images/categories/2.png',
-        price: 559000,
-        originalPrice: 799000,
-        quantity: 1,
-    },
+    cartItem('listingA', '100w'),
+    cartItem('listingB', '65w'),
+    cartItem('listingC', '87w'),
 ];
+
+async function request(path, options) {
+    const response = await fetch(path, options);
+    if (!response.ok) throw new Error(`Luna API ${path} returned HTTP ${response.status}`);
+    return response.json();
+}
 
 const suggestedProducts = [
     { id: 101, title: 'USB-C Fast Charging Cable 2M', image: 'images/categories/2.png', price: 79000, sold: '45.6k' },
@@ -51,14 +31,41 @@ function Cart() {
     const [selectedItemIds, setSelectedItemIds] = useState(
         () => new Set(initialCartItems.map(item => item.id)),
     );
+    const [catalog, setCatalog] = useState(null);
+    const [catalogError, setCatalogError] = useState('');
+
+    useEffect(() => {
+        const controller = new AbortController();
+        async function loadCatalog() {
+            try {
+                const session = await request('/api/demo-sessions', { method: 'POST', signal: controller.signal });
+                const { listings } = await request('/api/catalog', {
+                    headers: { Authorization: `Bearer ${session.token}` },
+                    signal: controller.signal,
+                });
+                const variants = new Map(listings.flatMap(listing => listing.variants.map(variant =>
+                    [`${listing.listing_id}:${variant.variant_id}`, { listing, variant }])));
+                const missingIds = initialCartItems.map(item => item.id).filter(id => !variants.has(id));
+                if (missingIds.length > 0) {
+                    throw new Error(`Cart products ${missingIds.join(', ')} are not in Luna's catalog`);
+                }
+                // The cart total adds prices together, which is only meaningful in one currency.
+                const currencies = new Set(initialCartItems.map(item => variants.get(item.id).variant.currency));
+                if (currencies.size !== 1) {
+                    throw new Error(`Cart products must share one currency, got ${[...currencies].join(', ')}`);
+                }
+                setCatalog({ variants, currency: [...currencies][0] });
+            } catch (failure) {
+                if (!controller.signal.aborted) setCatalogError(failure.message);
+            }
+        }
+        loadCatalog();
+        return () => controller.abort();
+    }, []);
 
     const selectedItems = cartItems.filter(item => selectedItemIds.has(item.id));
-    const subtotal = selectedItems.reduce(
-        (total, item) => total + item.price * item.quantity,
-        0,
-    );
-    const savings = selectedItems.reduce(
-        (total, item) => total + (item.originalPrice - item.price) * item.quantity,
+    const subtotal = catalog && selectedItems.reduce(
+        (total, item) => total + catalog.variants.get(item.id).variant.price_minor * item.quantity,
         0,
     );
     const selectedQuantity = selectedItems.reduce(
@@ -107,82 +114,97 @@ function Cart() {
                         <div className="ml-auto text-right">
                             <p className="text-sm font-medium text-gray-700">Compare products with Luna</p>
                             <p className="text-xs text-gray-500">
-                                Choose 2–4 exact backend variants on the comparison page.
+                                Tick 2–4 products, then compare them side by side.
                             </p>
                         </div>
                         <button
                             type="button"
-                            onClick={() => navigate('/Compare')}
+                            onClick={() => navigate('/Compare', {
+                                state: {
+                                    cartSelections: selectedItems.map(({ listingId, variantId }) => ({ listingId, variantId })),
+                                },
+                            })}
                             className="rounded-sm bg-shopee px-5 py-2 text-sm font-medium text-white hover:bg-shopee2"
                         >
                             Compare now
                         </button>
                     </header>
                     <p className="px-4 py-3 text-xs text-gray-500">
-                        Luna uses its verified backend catalog; cart products are never treated as evidence.
+                        Cart products come from Luna&apos;s verified backend catalog.
                     </p>
                 </section>
 
                 <section aria-label="Cart products" className="space-y-3">
-                    {cartItems.map(item => (
-                        <article key={item.id} className="grid gap-4 rounded-sm bg-white p-4 shadow-sm md:grid-cols-[auto_1fr_auto_auto_auto] md:items-center">
-                            <input
-                                type="checkbox"
-                                aria-label={`Select ${item.title}`}
-                                checked={selectedItemIds.has(item.id)}
-                                onChange={() => toggleItem(item.id)}
-                                className="h-4 w-4 accent-shopee"
-                            />
-                            <div className="flex min-w-0 gap-3">
-                                <img
-                                    src={item.image}
-                                    alt=""
-                                    className="h-20 w-20 flex-shrink-0 rounded bg-gray-50 object-contain"
+                    {catalogError && (
+                        <p role="alert" className="rounded-sm bg-white p-4 text-sm text-red-600 shadow-sm">
+                            Couldn&apos;t load your cart: {catalogError}
+                        </p>
+                    )}
+                    {!catalog && !catalogError && (
+                        <p className="rounded-sm bg-white p-4 text-sm text-gray-500 shadow-sm">Loading your cart…</p>
+                    )}
+                    {catalog && cartItems.map(item => {
+                        const { listing, variant } = catalog.variants.get(item.id);
+                        const name = `${listing.title} ${variant.label}`;
+                        return (
+                            <article key={item.id} className="grid gap-4 rounded-sm bg-white p-4 shadow-sm md:grid-cols-[auto_1fr_auto_auto_auto] md:items-center">
+                                <input
+                                    type="checkbox"
+                                    aria-label={`Select ${name}`}
+                                    checked={selectedItemIds.has(item.id)}
+                                    onChange={() => toggleItem(item.id)}
+                                    className="h-4 w-4 accent-shopee"
                                 />
-                                <div className="min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        {item.mall && <span className="rounded-sm bg-shopee px-1.5 py-0.5 text-[10px] font-medium text-white">Mall</span>}
-                                        <span className="text-xs text-gray-500">{item.shop}</span>
+                                <div className="flex min-w-0 gap-3">
+                                    {listing.image_url ? (
+                                        <img
+                                            src={listing.image_url}
+                                            alt=""
+                                            className="h-20 w-20 flex-shrink-0 rounded bg-gray-50 object-contain"
+                                        />
+                                    ) : (
+                                        <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded bg-gray-50 text-[10px] text-gray-400">
+                                            No image
+                                        </div>
+                                    )}
+                                    <div className="min-w-0">
+                                        <h2 className="text-sm text-gray-800">{listing.title}</h2>
+                                        <p className="mt-1 text-xs text-gray-400">Variation: {variant.label}</p>
                                     </div>
-                                    <h2 className="mt-1 text-sm text-gray-800">{item.title}</h2>
-                                    <p className="mt-1 text-xs text-gray-400">Variation: {item.variation}</p>
                                 </div>
-                            </div>
-                            <div className="text-sm">
-                                <span className="mr-2 text-xs text-gray-400 line-through">{formatPrice(item.originalPrice)}</span>
-                                <span className="text-gray-800">{formatPrice(item.price)}</span>
-                            </div>
-                            <div className="flex w-fit items-center border border-gray-300">
-                                <button
-                                    type="button"
-                                    aria-label={`Decrease ${item.title} quantity`}
-                                    onClick={() => updateQuantity(item.id, -1)}
-                                    className="h-8 w-8 text-gray-600 hover:bg-gray-100"
-                                >
-                                    −
-                                </button>
-                                <span className="w-10 border-x border-gray-300 py-1 text-center text-sm">{item.quantity}</span>
-                                <button
-                                    type="button"
-                                    aria-label={`Increase ${item.title} quantity`}
-                                    onClick={() => updateQuantity(item.id, 1)}
-                                    className="h-8 w-8 text-gray-600 hover:bg-gray-100"
-                                >
-                                    +
-                                </button>
-                            </div>
-                            <div className="flex items-center justify-between gap-4 md:block md:text-right">
-                                <p className="font-medium text-shopee">{formatPrice(item.price * item.quantity)}</p>
-                                <button
-                                    type="button"
-                                    onClick={() => removeItem(item.id)}
-                                    className="mt-1 text-xs text-gray-500 hover:text-shopee"
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </article>
-                    ))}
+                                <div className="text-sm text-gray-800">{formatMinor(variant.price_minor, variant.currency)}</div>
+                                <div className="flex w-fit items-center border border-gray-300">
+                                    <button
+                                        type="button"
+                                        aria-label={`Decrease ${name} quantity`}
+                                        onClick={() => updateQuantity(item.id, -1)}
+                                        className="h-8 w-8 text-gray-600 hover:bg-gray-100"
+                                    >
+                                        −
+                                    </button>
+                                    <span className="w-10 border-x border-gray-300 py-1 text-center text-sm">{item.quantity}</span>
+                                    <button
+                                        type="button"
+                                        aria-label={`Increase ${name} quantity`}
+                                        onClick={() => updateQuantity(item.id, 1)}
+                                        className="h-8 w-8 text-gray-600 hover:bg-gray-100"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                                <div className="flex items-center justify-between gap-4 md:block md:text-right">
+                                    <p className="font-medium text-shopee">{formatMinor(variant.price_minor * item.quantity, variant.currency)}</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeItem(item.id)}
+                                        className="mt-1 text-xs text-gray-500 hover:text-shopee"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </article>
+                        );
+                    })}
                     {cartItems.length === 0 && (
                         <div className="rounded-sm bg-white p-10 text-center text-sm text-gray-500 shadow-sm">
                             Your cart is empty.
@@ -215,9 +237,8 @@ function Cart() {
                         Select All ({cartItems.length})
                     </label>
                     <div className="ml-auto text-right">
-                        <p className="text-xs text-gray-500">Saved: <span className="text-shopee">{formatPrice(savings)}</span></p>
                         <p className="text-sm text-gray-600">
-                            Total ({selectedQuantity} items): <span className="text-xl font-bold text-shopee">{formatPrice(subtotal)}</span>
+                            Total ({selectedQuantity} items): <span className="text-xl font-bold text-shopee">{catalog ? formatMinor(subtotal, catalog.currency) : '—'}</span>
                         </p>
                     </div>
                     <Link
