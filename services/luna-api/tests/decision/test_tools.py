@@ -7,7 +7,12 @@ from eval.fixtures import SELECTIONS, build_sample_evidence
 
 from app.contracts.evidence import ComparisonEvidence, ComparisonSelection
 from app.contracts.session import Preferences
-from app.decision.comparisons import ComparisonNotFound, create_comparison, require_comparison
+from app.decision.comparisons import (
+    ComparisonNotFound,
+    RevisionConflict,
+    create_comparison,
+    require_comparison,
+)
 from app.decision.sessions import (
     MAX_COMPARISONS_PER_SESSION,
     ComparisonLimitReached,
@@ -16,7 +21,6 @@ from app.decision.sessions import (
     require_active_demo_session,
 )
 from app.decision.tools import (
-    RevisionConflict,
     UnknownEvidence,
     UnknownItem,
     UnknownReviewAspect,

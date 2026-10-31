@@ -31,9 +31,8 @@ from pydantic import ValidationError
 from websockets.exceptions import WebSocketException
 
 from app.contracts.session import DEFAULT_ACTIVE_TAB
-from app.decision.comparisons import require_comparison
+from app.decision.comparisons import RevisionConflict, require_comparison
 from app.decision.sessions import DemoSessionState, LiveSessionState, cancel_live_relays
-from app.decision.tools import RevisionConflict
 from app.errors import ApiFailure, ErrorCode, ErrorDetail, ToolErrorResponse
 from app.openai.text_agent import (
     EVIDENCE_POLICY,

@@ -38,7 +38,7 @@ def _supported_number(
     return fact.value
 
 
-def _priority_value(
+def priority_value(
     evidence: ComparisonEvidence,
     item_key: str,
     priority: RankingPriority,
@@ -99,7 +99,7 @@ def rank_comparison(
     for priority in objective_priorities:
         direction = OBJECTIVE_PRIORITY_DIRECTIONS[priority]
         for item_key in eligible_item_keys:
-            value = _priority_value(evidence, item_key, priority)
+            value = priority_value(evidence, item_key, priority)
             if value is None:
                 if record_uncertainty(item_key, priority):
                     limitations.append(

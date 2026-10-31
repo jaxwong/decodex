@@ -8,7 +8,10 @@ from app.contracts.session import (
     ListingBeatenBy,
     ListingGapField,
     ListingGapReport,
+    ListingLostPick,
+    PickReason,
 )
+from app.decision.pick_reasons import attribute_pick
 from app.evidence.schema import SCHEMA_FIELDS
 
 
@@ -27,10 +30,23 @@ def build_gap_report(
     competitor_keys: dict[tuple[str, str], list[str]] = {}
     exclusion_counts: dict[ExclusionReason, int] = {}
     uncertainty_counts: dict[str, int] = {}
+    lost_pick_counts: dict[tuple[str, str, PickReason, str | None], int] = {}
+    picked_count = 0
 
     for comparison in matching:
         evidence = comparison.evidence
         target_items = [item for item in evidence.items if item.listing_id == listing_id]
+        # A pick of any of this listing's items is a win; a pick of a competitor is a loss for
+        # each of this listing's items, attributed to the needs stated when the buyer picked.
+        pick = comparison.pick
+        if pick is not None and any(item.item_key == pick.item_key for item in target_items):
+            picked_count += 1
+        elif pick is not None:
+            attributions = attribute_pick(evidence, pick.preferences, pick.item_key)
+            for item in target_items:
+                attribution = attributions[item.item_key]
+                key = (item.item_key, pick.item_key, attribution.reason, attribution.field_key)
+                lost_pick_counts[key] = lost_pick_counts.get(key, 0) + 1
         for item in target_items:
             for fact in evidence.facts_by_item[item.item_key]:
                 if fact.status == "supported":
@@ -83,4 +99,17 @@ def build_gap_report(
         beaten_by=beaten_by,
         exclusion_counts=exclusion_counts,
         uncertainty_counts=uncertainty_counts,
+        lost_picks=[
+            ListingLostPick(
+                item_key=item_key,
+                competitor_item_key=competitor_item_key,
+                reason=reason,
+                field_key=field_key,
+                count=count,
+            )
+            for (item_key, competitor_item_key, reason, field_key), count in (
+                lost_pick_counts.items()
+            )
+        ],
+        picked_count=picked_count,
     )

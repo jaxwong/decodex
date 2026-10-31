@@ -7,6 +7,7 @@ from http import HTTPStatus
 
 from app.contracts.evidence import ComparisonEvidence, ComparisonSelection
 from app.contracts.session import (
+    ComparisonPick,
     ComparisonResponse,
     Preferences,
 )
@@ -16,7 +17,7 @@ from app.decision.sessions import (
     release_comparison_reservation,
     reserve_comparison,
 )
-from app.errors import ApiFailure, ErrorCode
+from app.errors import ApiFailure, ErrorCode, InvalidRequest
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,27 @@ class ComparisonNotFound(ApiFailure):
     http_status = HTTPStatus.NOT_FOUND
     public_message = "The comparison was not found in this demo session."
     retryable = False
+
+
+class RevisionConflict(ApiFailure):
+    """Raised before mutation when expected revision is not current."""
+
+    code = ErrorCode.STALE_COMPARISON
+    http_status = HTTPStatus.CONFLICT
+    public_message = "The comparison changed; refresh before applying the newer intent."
+    retryable = False
+
+    def __init__(self, current_revision: int) -> None:
+        super().__init__(
+            f"stale comparison revision; current revision is {current_revision}",
+            current_revision=current_revision,
+        )
+
+
+class PickedItemNotInComparison(InvalidRequest):
+    """Raised when a pick names an item the comparison does not contain."""
+
+    public_message = "The picked item is not in this comparison."
 
 
 async def create_comparison(
@@ -82,3 +104,35 @@ def require_comparison(
     if comparison is None:
         raise ComparisonNotFound("comparison not found in authorized session")
     return comparison
+
+
+def record_pick(
+    session_state: DemoSessionState,
+    comparison_id: str,
+    *,
+    item_key: str,
+    expected_revision: int,
+) -> ComparisonResponse:
+    """Save which item the buyer picked, with the needs stated at that revision.
+
+    The revision does not change: a pick alters no preference or recommendation. A later pick
+    replaces the earlier one, so one comparison contributes at most one pick to Seller Centre.
+    """
+    comparison = require_comparison(session_state, comparison_id)
+    if expected_revision != comparison.revision:
+        raise RevisionConflict(comparison.revision)
+    if item_key not in {item.item_key for item in comparison.evidence.items}:
+        raise PickedItemNotInComparison(
+            f"pick names {item_key!r}, which is not in comparison {comparison_id}"
+        )
+    picked = comparison.model_copy(
+        update={"pick": ComparisonPick(item_key=item_key, preferences=comparison.preferences)}
+    )
+    session_state.comparisons[comparison_id] = picked
+    logger.info(
+        "Recorded pick comparison_id=%s item_key=%s revision=%s",
+        comparison_id,
+        item_key,
+        comparison.revision,
+    )
+    return picked

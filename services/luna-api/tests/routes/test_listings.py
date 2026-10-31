@@ -44,6 +44,8 @@ def test_gap_report_returns_zero_before_any_buyer_comparison() -> None:
         "beaten_by": [],
         "exclusion_counts": {},
         "uncertainty_counts": {},
+        "lost_picks": [],
+        "picked_count": 0,
     }
 
 

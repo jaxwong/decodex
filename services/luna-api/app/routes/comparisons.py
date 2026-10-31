@@ -11,10 +11,12 @@ from app.contracts.session import (
     CreateComparisonRequest,
     LiveSessionRequest,
     LiveSessionResponse,
+    PickComparisonRequest,
 )
 from app.decision.comparisons import (
     BuildComparisonEvidence,
     create_comparison,
+    record_pick,
     require_comparison,
 )
 from app.decision.sessions import DemoSessionState
@@ -99,6 +101,30 @@ async def post_comparison_ask(
         expected_revision=ask_request.expected_revision,
         create_response=runtime.create_response,
         model=runtime.text_model,
+    )
+
+
+@router.post(
+    "/comparisons/{comparison_id}/pick",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        409: {"model": ErrorResponse},
+        422: {"model": ErrorResponse},
+    },
+)
+def post_comparison_pick(
+    comparison_id: str,
+    pick_request: PickComparisonRequest,
+    session_state: Annotated[DemoSessionState, Depends(require_demo_session_state)],
+) -> None:
+    """Record the item the buyer picked at the revision they saw; no model call, same revision."""
+    record_pick(
+        session_state,
+        comparison_id,
+        item_key=pick_request.item_key,
+        expected_revision=pick_request.expected_revision,
     )
 
 
