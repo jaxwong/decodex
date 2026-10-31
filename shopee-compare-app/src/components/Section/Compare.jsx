@@ -29,10 +29,7 @@ function Compare() {
                                 <h2 className="mt-1 text-xl font-semibold text-gray-900">{viewedProduct.title}</h2>
                                 <p className="mt-2 text-sm text-gray-600">{viewedProduct.variantLabel}</p>
                                 <p className="mt-1 text-lg font-semibold text-shopee">
-                                    {viewedProduct.currency} {(viewedProduct.priceMinor / 100).toFixed(2)}
-                                </p>
-                                <p className="mt-1 text-xs text-gray-500">
-                                    Price source: trusted catalog variant {viewedProduct.listingId} · {viewedProduct.variantId}
+                                    Delivered {viewedProduct.price.currency} {(viewedProduct.price.deliveredMinor / 100).toFixed(2)}
                                 </p>
                             </div>
                             <button
@@ -48,6 +45,24 @@ function Compare() {
                                 ? 'Synthetic demo listing from Luna’s trusted backend catalog; no Shopee product URL is claimed.'
                                 : 'Canonical listing snapshot from Luna’s trusted backend catalog.'}
                         </p>
+                        <div className="mt-4 rounded border border-orange-100 bg-orange-50 p-3">
+                            <dl aria-label="Price breakdown" className="grid gap-2 text-sm sm:grid-cols-2">
+                                <div className="flex justify-between gap-4"><dt>List price</dt><dd>{viewedProduct.price.currency} {(viewedProduct.price.listMinor / 100).toFixed(2)}</dd></div>
+                                <div className="flex justify-between gap-4"><dt>Shop voucher</dt><dd>− {viewedProduct.price.currency} {(viewedProduct.price.shopVoucherMinor / 100).toFixed(2)}</dd></div>
+                                <div className="flex justify-between gap-4"><dt>Shipping</dt><dd>+ {viewedProduct.price.currency} {(viewedProduct.price.shippingMinor / 100).toFixed(2)}</dd></div>
+                                <div className="flex justify-between gap-4 font-semibold"><dt>Delivered total</dt><dd>{viewedProduct.price.currency} {(viewedProduct.price.deliveredMinor / 100).toFixed(2)}</dd></div>
+                            </dl>
+                            <p className="mt-2 text-xs text-gray-500">Calculated from the exact listed components below.</p>
+                            <ul aria-label="Sources for price" className="mt-2 space-y-2">
+                                {viewedProduct.price.sources.map(source => (
+                                    <li key={source.evidenceId} className="border-l-2 border-shopee pl-2 text-xs text-gray-600">
+                                        <span className="font-medium text-gray-700">{source.label}</span>
+                                        <q className="mt-1 block">{source.text}</q>
+                                        <span className="mt-1 block font-mono text-[11px] text-gray-400">{source.location}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                         <ul aria-label="Product specifications" className="mt-4 grid gap-3 md:grid-cols-2">
                             {viewedProduct.specifications.map(specification => (
                                 <li key={specification.fieldKey} className="rounded border border-gray-200 bg-gray-50 p-3">
