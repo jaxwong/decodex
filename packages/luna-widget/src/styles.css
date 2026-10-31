@@ -1,0 +1,233 @@
+.luna-widget,
+.luna-widget * {
+  box-sizing: border-box;
+}
+
+.luna-widget {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #ffedd5;
+  border-radius: 12px;
+  background: #fff;
+  color: #1f2937;
+  font-family: Inter, system-ui, sans-serif;
+  line-height: 1.4;
+}
+
+.luna-widget header,
+.luna-widget .flex {
+  display: flex;
+}
+
+.luna-widget header,
+.luna-widget .justify-between {
+  justify-content: space-between;
+}
+
+.luna-widget .items-start {
+  align-items: flex-start;
+}
+
+.luna-widget .items-center {
+  align-items: center;
+}
+
+.luna-widget .flex-wrap {
+  flex-wrap: wrap;
+}
+
+.luna-widget .flex-1 {
+  flex: 1 1 0%;
+}
+
+.luna-widget .grid {
+  display: grid;
+}
+
+.luna-widget .gap-1,
+.luna-widget .gap-2,
+.luna-widget .gap-3 {
+  gap: 8px;
+}
+
+.luna-widget .space-y-1 > * + * {
+  margin-top: 4px;
+}
+
+.luna-widget .space-y-3 > * + *,
+.luna-widget .space-y-4 > * + *,
+.luna-widget .space-y-5 > * + * {
+  margin-top: 12px;
+}
+
+.luna-widget .p-2,
+.luna-widget .p-3 {
+  padding: 12px;
+}
+
+.luna-widget .p-4 {
+  padding: 16px;
+}
+
+.luna-widget .px-3,
+.luna-widget .px-4 {
+  padding-right: 12px;
+  padding-left: 12px;
+}
+
+.luna-widget .py-1,
+.luna-widget .py-2 {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.luna-widget .my-1,
+.luna-widget .my-3 {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.luna-widget .mb-1,
+.luna-widget .mb-2,
+.luna-widget .mb-3,
+.luna-widget .mb-4,
+.luna-widget .mb-5 {
+  margin-bottom: 12px;
+}
+
+.luna-widget .mt-1,
+.luna-widget .mt-2,
+.luna-widget .mt-3 {
+  margin-top: 8px;
+}
+
+.luna-widget .w-full {
+  width: 100%;
+}
+
+.luna-widget .min-w-0 {
+  min-width: 0;
+}
+
+.luna-widget .max-h-64,
+.luna-widget .max-h-72 {
+  max-height: 288px;
+}
+
+.luna-widget .overflow-y-auto {
+  overflow-y: auto;
+}
+
+.luna-widget .rounded,
+.luna-widget .rounded-lg,
+.luna-widget .rounded-xl,
+.luna-widget .rounded-full {
+  border-radius: 10px;
+}
+
+.luna-widget .border,
+.luna-widget .border-b,
+.luna-widget .border-t-0 {
+  border: 1px solid #e5e7eb;
+}
+
+.luna-widget .bg-gray-50 {
+  background: #f9fafb;
+}
+
+.luna-widget .bg-orange-50 {
+  background: #fff7ed;
+}
+
+.luna-widget .bg-orange-600 {
+  background: #ea580c;
+}
+
+.luna-widget .bg-red-50 {
+  background: #fef2f2;
+}
+
+.luna-widget .bg-white {
+  background: #fff;
+}
+
+.luna-widget .text-white {
+  color: #fff;
+}
+
+.luna-widget .text-gray-400,
+.luna-widget .text-gray-500 {
+  color: #6b7280;
+}
+
+.luna-widget .text-orange-600,
+.luna-widget .text-orange-700 {
+  color: #c2410c;
+}
+
+.luna-widget .text-red-700 {
+  color: #b91c1c;
+}
+
+.luna-widget .text-amber-700,
+.luna-widget .text-amber-800 {
+  color: #92400e;
+}
+
+.luna-widget .text-xs {
+  font-size: 12px;
+}
+
+.luna-widget .text-sm {
+  font-size: 14px;
+}
+
+.luna-widget .text-xl {
+  font-size: 20px;
+}
+
+.luna-widget .font-medium,
+.luna-widget .font-semibold,
+.luna-widget .font-bold {
+  font-weight: 600;
+}
+
+.luna-widget button,
+.luna-widget input {
+  font: inherit;
+}
+
+.luna-widget button {
+  cursor: pointer;
+}
+
+.luna-widget button:disabled,
+.luna-widget input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.luna-widget input[type='text'],
+.luna-widget input:not([type]) {
+  min-height: 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.luna-widget .underline {
+  text-decoration: underline;
+}
+
+.luna-widget .whitespace-pre-wrap {
+  white-space: pre-wrap;
+}
+
+@media (min-width: 768px) {
+  .luna-widget .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .luna-widget .md\:p-6 {
+    padding: 24px;
+  }
+}

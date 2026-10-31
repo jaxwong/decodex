@@ -11,6 +11,7 @@
     "build:single": "vite build --config vite.single.config.js && node scripts/inline-images.mjs"
   },
   "dependencies": {
+    "@luna/widget": "*",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

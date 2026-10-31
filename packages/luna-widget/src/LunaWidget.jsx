@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
-import { lunaClient } from './lunaClient';
-import { RecommendationCards, PreferenceChips, EvidenceViewer, Conversation } from './LunaPanels';
+import { assertHostAdapter, selectionKey } from './hostAdapter.js';
+import { LiveVoiceControls } from './LiveVoiceControls.jsx';
+import { lunaClient } from './lunaClient.js';
+import { RecommendationCards, PreferenceChips, EvidenceViewer, Conversation } from './LunaPanels.jsx';
 
 const initialMessage = {
   role: 'assistant',
@@ -13,7 +15,8 @@ const errorText = (error) => error?.status === 401
     ? 'The comparison changed. Please refresh the comparison before asking again.'
     : error?.message || 'Something went wrong.';
 
-export default function LunaWidget({ products = [], onClose }) {
+export default function LunaWidget({ adapter, apiBaseUrl = '/api', onClose }) {
+  const hostAdapter = useMemo(() => assertHostAdapter(adapter), [adapter]);
   const [session, setSession] = useState(null);
   const [catalog, setCatalog] = useState([]);
   const [selection, setSelection] = useState([]);
@@ -39,18 +42,19 @@ export default function LunaWidget({ products = [], onClose }) {
       setBusy(true);
       setError('');
       try {
-        const issued = await lunaClient.createSession(controller.signal);
-        const result = await lunaClient.getCatalog(issued.token, controller.signal);
+        const issued = await lunaClient.createSession(apiBaseUrl, controller.signal);
+        const result = await lunaClient.getCatalog(apiBaseUrl, issued.token, controller.signal);
         if (epoch !== generation.current) return;
         const listings = result.listings || [];
         setSession(issued);
         setCatalog(listings);
-        // Only preselect when the Shopee identifiers exactly match API identifiers.
-        const hostKeys = new Set(products.map(p =>
-          `${p.listing_id ?? p.lid ?? ''}:${p.variant_id ?? p.vid ?? ''}`));
-        setSelection(listings.flatMap(listing => listing.variants
-          .filter(variant => hostKeys.has(`${listing.listing_id}:${variant.variant_id}`))
-          .map(variant => `${listing.listing_id}:${variant.variant_id}`)).slice(0, 4));
+        const hostKey = selectionKey(hostAdapter.getCurrentSelection());
+        const availableKeys = new Set(listings.flatMap(listing => listing.variants
+          .map(variant => `${listing.listing_id}:${variant.variant_id}`)));
+        setSelection(hostKey && availableKeys.has(hostKey) ? [hostKey] : []);
+        if (hostKey && !availableKeys.has(hostKey)) {
+          setError(`Host selection ${hostKey} is unavailable in the Luna catalog.`);
+        }
       } catch (err) {
         if (!controller.signal.aborted) setError(errorText(err));
       } finally {
@@ -59,9 +63,29 @@ export default function LunaWidget({ products = [], onClose }) {
     }
     initialize();
     return () => { controller.abort(); generation.current += 1; };
-    // Initialize once per mount; changes to host selection do not silently reset a session.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // A new adapter or API base means a new host boundary and therefore a new demo session.
+  }, [apiBaseUrl, hostAdapter]);
+
+  useEffect(() => {
+    const unsubscribe = hostAdapter.onSelectionChange(hostSelection => {
+      if (comparison) return;
+      const hostKey = selectionKey(hostSelection);
+      if (!hostKey) return;
+      const isAvailable = catalog.some(listing => listing.variants.some(variant =>
+        `${listing.listing_id}:${variant.variant_id}` === hostKey));
+      if (!isAvailable) {
+        setError(`Host selection ${hostKey} is unavailable in the Luna catalog.`);
+        return;
+      }
+      setError('');
+      setSelection(previous => previous.includes(hostKey) || previous.length >= 4
+        ? previous : [...previous, hostKey]);
+    });
+    if (typeof unsubscribe !== 'function') {
+      throw new TypeError('Luna host adapter onSelectionChange() must return an unsubscribe function');
+    }
+    return unsubscribe;
+  }, [catalog, comparison, hostAdapter]);
 
   function toggle(itemKey) {
     if (comparison || busy) return;
@@ -74,7 +98,7 @@ export default function LunaWidget({ products = [], onClose }) {
     setBusy(true);
     setError('');
     try {
-      const result = await lunaClient.createComparison(session.token,
+      const result = await lunaClient.createComparison(apiBaseUrl, session.token,
         selectedItems.map(({ listing_id, variant_id }) => ({ listing_id, variant_id })));
       setComparison(result);
       setLastAnswer(null);
@@ -88,7 +112,11 @@ export default function LunaWidget({ products = [], onClose }) {
     setBusy(true);
     setError('');
     try {
-      setComparison(await lunaClient.getComparison(session.token, comparison.comparison_id));
+      setComparison(await lunaClient.getComparison(
+        apiBaseUrl,
+        session.token,
+        comparison.comparison_id,
+      ));
     } catch (err) { setError(errorText(err)); }
     finally { setBusy(false); }
   }
@@ -100,13 +128,17 @@ export default function LunaWidget({ products = [], onClose }) {
     setBusy(true);
     setError('');
     try {
-      const answer = await lunaClient.ask(session.token, comparison.comparison_id, {
+      const answer = await lunaClient.ask(apiBaseUrl, session.token, comparison.comparison_id, {
         conversation_id: conversationId.current,
         message,
         expected_revision: comparison.revision,
       });
       // The ask response does not contain the full canonical comparison.
-      const updated = await lunaClient.getComparison(session.token, comparison.comparison_id);
+      const updated = await lunaClient.getComparison(
+        apiBaseUrl,
+        session.token,
+        comparison.comparison_id,
+      );
       setComparison(updated);
       setLastAnswer(answer);
       setMessages(old => [...old, { role: 'user', text: message },
@@ -123,7 +155,7 @@ export default function LunaWidget({ products = [], onClose }) {
   const recommendation = comparison?.recommendation;
   const askSuggestion = (text) => { if (!busy && comparison) setInput(text); };
 
-  return <section aria-label="Luna shopping assistant" className="bg-white rounded-xl shadow-sm border border-orange-100 p-4 md:p-6 my-4 text-gray-800">
+  return <section aria-label="Luna shopping assistant" className="luna-widget bg-white rounded-xl shadow-sm border border-orange-100 p-4 md:p-6 my-4 text-gray-800">
     <header className="flex justify-between items-start gap-3 mb-5">
       <div>
         <h2 className="text-xl font-bold text-orange-600">✦ Luna <span className="text-xs font-normal text-gray-500 ml-2">Shopping decision assistant</span></h2>
@@ -166,7 +198,8 @@ export default function LunaWidget({ products = [], onClose }) {
           className="text-xs text-orange-700 underline disabled:opacity-50">Refresh results</button>
       </div>
       <PreferenceChips preferences={comparison.preferences} onSuggestion={askSuggestion} />
-      <RecommendationCards recommendation={recommendation} evidence={evidence} selectedItems={selectedItems}/>
+      <RecommendationCards recommendation={recommendation} evidence={evidence} selectedItems={selectedItems}
+        onNavigateToListing={hostAdapter.navigateToListing}/>
       <div>
         <button type="button" onClick={() => setShowEvidence(old => !old)}
           aria-expanded={showEvidence}
@@ -178,6 +211,13 @@ export default function LunaWidget({ products = [], onClose }) {
     </div>}
 
     <Conversation messages={messages} busy={busy && !!comparison}/>
+    {comparison && session && <LiveVoiceControls
+      apiBaseUrl={apiBaseUrl}
+      token={session.token}
+      comparisonId={comparison.comparison_id}
+      disabled={busy}
+      onCanonicalStateChanged={refreshComparison}
+    />}
     {comparison && <div className="flex flex-wrap gap-2 my-3">
       {['Prioritize price', 'Which is most portable?', 'Explain the evidence'].map(text =>
         <button key={text} type="button" onClick={() => askSuggestion(text)} disabled={busy}
@@ -197,6 +237,13 @@ export default function LunaWidget({ products = [], onClose }) {
 }
 
 LunaWidget.propTypes = {
-  products: PropTypes.arrayOf(PropTypes.object),
+  adapter: PropTypes.shape({
+    hostId: PropTypes.string.isRequired,
+    getCurrentSelection: PropTypes.func.isRequired,
+    onSelectionChange: PropTypes.func.isRequired,
+    navigateToListing: PropTypes.func.isRequired,
+    requestAddToCart: PropTypes.func,
+  }).isRequired,
+  apiBaseUrl: PropTypes.string,
   onClose: PropTypes.func,
 };

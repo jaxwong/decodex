@@ -1,0 +1,13 @@
+{
+  "name": "@luna/widget",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.jsx"
+  },
+  "peerDependencies": {
+    "prop-types": "^15.8.1",
+    "react": "^18.3.1"
+  }
+}

@@ -1,5 +1,3 @@
-const BASE = import.meta.env.VITE_LUNA_API_BASE_URL || '';
-
 export class LunaApiError extends Error {
   constructor(message, status, details) {
     super(message);
@@ -9,10 +7,10 @@ export class LunaApiError extends Error {
   }
 }
 
-async function request(path, { token, method = 'GET', body, signal } = {}) {
+async function request(apiBaseUrl, path, { token, method = 'GET', body, signal } = {}) {
   let response;
   try {
-    response = await fetch(`${BASE}${path}`, {
+    response = await fetch(`${apiBaseUrl}${path}`, {
       method,
       signal,
       headers: {
@@ -35,14 +33,18 @@ async function request(path, { token, method = 'GET', body, signal } = {}) {
 }
 
 export const lunaClient = {
-  createSession: (signal) => request('/api/demo-sessions', { method: 'POST', signal }),
-  getCatalog: (token, signal) => request('/api/catalog', { token, signal }),
-  createComparison: (token, items, signal) =>
-    request('/api/comparisons', { token, method: 'POST', body: { items }, signal }),
-  getComparison: (token, id, signal) =>
-    request(`/api/comparisons/${encodeURIComponent(id)}`, { token, signal }),
-  ask: (token, id, payload, signal) =>
-    request(`/api/comparisons/${encodeURIComponent(id)}/ask`, {
+  createSession: (apiBaseUrl, signal) => request(apiBaseUrl, '/demo-sessions', { method: 'POST', signal }),
+  getCatalog: (apiBaseUrl, token, signal) => request(apiBaseUrl, '/catalog', { token, signal }),
+  createComparison: (apiBaseUrl, token, items, signal) =>
+    request(apiBaseUrl, '/comparisons', { token, method: 'POST', body: { items }, signal }),
+  getComparison: (apiBaseUrl, token, comparisonId, signal) =>
+    request(apiBaseUrl, `/comparisons/${encodeURIComponent(comparisonId)}`, { token, signal }),
+  ask: (apiBaseUrl, token, comparisonId, payload, signal) =>
+    request(apiBaseUrl, `/comparisons/${encodeURIComponent(comparisonId)}/ask`, {
       token, method: 'POST', body: payload, signal,
+    }),
+  createLiveSession: (apiBaseUrl, token, comparisonId, sdp, signal) =>
+    request(apiBaseUrl, `/comparisons/${encodeURIComponent(comparisonId)}/live/session`, {
+      token, method: 'POST', body: { sdp }, signal,
     }),
 };
