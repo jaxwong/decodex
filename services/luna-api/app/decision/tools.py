@@ -4,6 +4,7 @@ import logging
 from http import HTTPStatus
 
 from app.contracts.session import (
+    DEFAULT_ACTIVE_TAB,
     ComparisonResponse,
     ComparisonSnapshot,
     ComparisonSnapshotItem,
@@ -157,7 +158,7 @@ def apply_preferences(
         active_tab=(
             "reviews"
             if preferences.priorities and preferences.priorities[0] == "review_reliability"
-            else "specs"
+            else DEFAULT_ACTIVE_TAB
         ),
     )
     session_state.comparisons[comparison_id] = ComparisonResponse(

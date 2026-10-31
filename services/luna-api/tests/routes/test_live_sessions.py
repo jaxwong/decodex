@@ -1,6 +1,7 @@
 from typing import Any, cast
 
 import pytest
+from eval.fixtures import SELECTIONS, build_sample_evidence
 from fastapi.testclient import TestClient
 from openai import AsyncOpenAI
 from openai.types.live import LiveCreateResponse
@@ -8,7 +9,6 @@ from openai.types.live import LiveCreateResponse
 from app.main import create_app
 from app.openai.capability_smoke import build_live_audio_offer_sdp
 from app.providers import MockCatalogProvider
-from tests.decision.fixtures import SELECTIONS, build_fixture_evidence
 
 
 def create_comparison(client: TestClient, headers: dict[str, str]) -> dict[str, Any]:
@@ -66,7 +66,7 @@ def test_live_session_route_authenticates_and_returns_provider_projection(
     client = TestClient(
         create_app(
             catalog_provider=MockCatalogProvider(),
-            build_evidence=build_fixture_evidence,
+            build_evidence=build_sample_evidence,
             openai_client=cast(AsyncOpenAI, runtime_client),
             text_model="gpt-6-luna",
             live_model="gpt-live-1",
@@ -104,7 +104,7 @@ def test_live_session_request_rejects_missing_audio_or_data_channel() -> None:
     client = TestClient(
         create_app(
             catalog_provider=MockCatalogProvider(),
-            build_evidence=build_fixture_evidence,
+            build_evidence=build_sample_evidence,
         )
     )
     token = client.post("/api/demo-sessions").json()["token"]

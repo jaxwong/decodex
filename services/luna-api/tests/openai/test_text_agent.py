@@ -6,6 +6,7 @@ from typing import Any, cast
 
 import httpx2
 import pytest
+from eval.fixtures import SELECTIONS, build_sample_evidence
 from openai import APITimeoutError
 from openai.lib._pydantic import to_strict_json_schema
 from openai.types.responses import Response
@@ -30,7 +31,6 @@ from app.openai.text_agent import (
     build_luna_tools,
     run_luna,
 )
-from tests.decision.fixtures import SELECTIONS, build_fixture_evidence
 
 
 def model_response(response_id: str, output: list[dict[str, object]]) -> Response:
@@ -101,7 +101,7 @@ async def create_comparison_state() -> tuple[DemoSessionState, str]:
     comparison = await create_comparison(
         session_state,
         selections,
-        build_evidence=build_fixture_evidence,
+        build_evidence=build_sample_evidence,
     )
     return session_state, comparison.comparison_id
 
@@ -334,7 +334,7 @@ def test_correction_uses_bounded_history_and_changes_same_comparison() -> None:
     asyncio.run(scenario())
 
 
-def test_agent_replaces_unsupported_citation_with_conservative_answer() -> None:
+def test_agent_rejects_unsupported_citation_without_recording_history() -> None:
     async def scenario() -> None:
         session_state, comparison_id = await create_comparison_state()
 
@@ -346,20 +346,19 @@ def test_agent_replaces_unsupported_citation_with_conservative_answer() -> None:
                 cited_ids=["invented:evidence"],
             )
 
-        result = await run_luna(
-            session_state,
-            comparison_id=comparison_id,
-            conversation_id="conv-1",
-            message="Which is best?",
-            expected_revision=0,
-            create_response=create_response,
-            model="gpt-6-luna",
-        )
+        with pytest.raises(LunaAgentContractError, match="unsupported citation identifiers"):
+            await run_luna(
+                session_state,
+                comparison_id=comparison_id,
+                conversation_id="conv-1",
+                message="Which is best?",
+                expected_revision=0,
+                create_response=create_response,
+                model="gpt-6-luna",
+            )
 
-        assert result.cited_ids == []
-        assert "could not verify" in result.answer.lower()
-        assert "Invented product claim" not in result.answer
-        assert result.recommendation.item_key is None
+        assert session_state.conversations == {}
+        assert session_state.pending_conversations == set()
 
     asyncio.run(scenario())
 
@@ -480,7 +479,7 @@ def test_conversation_cannot_cross_comparisons() -> None:
         second = await create_comparison(
             session_state,
             selections,
-            build_evidence=build_fixture_evidence,
+            build_evidence=build_sample_evidence,
         )
         provider_responses = [
             answer_response("resp_first", answer="First comparison.", cited_ids=[]),

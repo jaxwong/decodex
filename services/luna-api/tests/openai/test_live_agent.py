@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
+from eval.fixtures import SELECTIONS, build_sample_evidence
 from openai import AsyncOpenAI
 from openai.resources.live.sideband import AsyncSidebandConnection
 from openai.types.live import DelegationCreatedEvent, LiveCreateResponse, ResponseEvent
@@ -23,7 +24,6 @@ from app.openai.live_agent import (
     run_live_sideband,
     start_live_session,
 )
-from tests.decision.fixtures import SELECTIONS, build_fixture_evidence
 
 
 class FakeSidebandConnection:
@@ -90,7 +90,7 @@ async def create_comparison_state() -> tuple[DemoSessionState, str]:
     comparison = await create_comparison(
         session_state,
         selections,
-        build_evidence=build_fixture_evidence,
+        build_evidence=build_sample_evidence,
     )
     return session_state, comparison.comparison_id
 
@@ -427,6 +427,36 @@ def test_sideband_deduplicates_call_id_before_second_execution() -> None:
     asyncio.run(scenario())
 
 
+def test_sideband_rejects_empty_call_id_without_sending_an_unroutable_result() -> None:
+    async def scenario() -> None:
+        session_state, comparison_id = await create_comparison_state()
+        call = function_call_item("", "get_comparison", {"comparison_id": comparison_id})
+        connection = FakeSidebandConnection(
+            [
+                delegation_event("delegation_one", "resp_one"),
+                response_event(
+                    "delegation_one",
+                    nested_type="response.output_item.done",
+                    item=call,
+                ),
+            ]
+        )
+
+        with pytest.raises(LunaLiveProtocolError, match="omitted its call identifier"):
+            await run_live_sideband(
+                cast(AsyncSidebandConnection, connection),
+                session_state,
+                session_id="live_test",
+                comparison_id=comparison_id,
+                text_model="gpt-6-luna",
+            )
+
+        assert connection.sent == []
+        assert connection.closed is True
+
+    asyncio.run(scenario())
+
+
 def test_sideband_returns_structured_tool_error_for_unknown_item() -> None:
     async def scenario() -> None:
         session_state, comparison_id = await create_comparison_state()
@@ -467,7 +497,7 @@ def test_sideband_returns_structured_tool_error_for_unknown_item() -> None:
             "ok": False,
             "error": {
                 "code": "INVALID_TOOL_ARGUMENTS",
-                "message": "The tool referenced data outside this comparison.",
+                "message": "The tool request was invalid or outside this comparison.",
                 "retryable": False,
             },
         }

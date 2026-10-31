@@ -514,7 +514,7 @@ def _validated_answer(
         ) from failure
 
 
-def _safe_answer(
+def _validate_answer_citations(
     session_state: DemoSessionState,
     comparison_id: str,
     answer: LunaAnswer,
@@ -533,15 +533,10 @@ def _safe_answer(
         comparison_id,
         len(answer.cited_ids),
     )
-    return LunaAnswer(
-        answer=(
-            "Your comparison preferences were updated, but I could not verify the answer's "
-            "citations. Review the updated deterministic table."
-            if action_completed
-            else "I could not verify that answer's citations. The deterministic comparison "
-            "table remains available."
-        ),
-        cited_ids=[],
+    raise LunaAgentContractError(
+        "OpenAI Responses returned unsupported citation identifiers",
+        action_completed=action_completed,
+        current_revision=comparison.revision if action_completed else None,
     )
 
 
@@ -626,7 +621,7 @@ async def _run_luna_turn(
     if current_comparison.revision != expected_final_revision:
         raise RevisionConflict(current_comparison.revision)
 
-    answer = _safe_answer(
+    answer = _validate_answer_citations(
         session_state,
         comparison_id,
         _validated_answer(

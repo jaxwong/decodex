@@ -30,6 +30,7 @@ from openai.types.responses import ResponseFunctionToolCall, ResponseOutputItemD
 from pydantic import ValidationError
 from websockets.exceptions import WebSocketException
 
+from app.contracts.session import DEFAULT_ACTIVE_TAB
 from app.decision.comparisons import require_comparison
 from app.decision.sessions import DemoSessionState, LiveSessionState, cancel_live_relays
 from app.decision.tools import RevisionConflict
@@ -106,7 +107,9 @@ def _backend_instructions(session_state: DemoSessionState, comparison_id: str) -
         "preferences": snapshot.preferences.model_dump(mode="json"),
         "recommendation": snapshot.recommendation.model_dump(mode="json"),
         "item_keys": [item.item_key for item in snapshot.evidence.items],
-        "active_tab": snapshot.ui_patch.active_tab if snapshot.ui_patch is not None else "specs",
+        "active_tab": (
+            snapshot.ui_patch.active_tab if snapshot.ui_patch is not None else DEFAULT_ACTIVE_TAB
+        ),
     }
     return (
         EVIDENCE_POLICY
@@ -270,7 +273,7 @@ async def _handle_function_call(
     except LunaToolCallRejected:
         output = _tool_error(
             code=ErrorCode.INVALID_TOOL_ARGUMENTS,
-            message="The tool referenced data outside this comparison.",
+            message="The tool request was invalid or outside this comparison.",
         )
 
     if update is not None:
@@ -341,6 +344,8 @@ async def run_live_sideband(
                 continue
 
             function_call = completed_item.item
+            if not function_call.call_id:
+                raise LunaLiveProtocolError("Live function call omitted its call identifier")
             if function_call.call_id in processed_call_ids:
                 logger.info(
                     "Ignored duplicate Live tool call session_id=%s call_id=%s",

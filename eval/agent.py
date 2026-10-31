@@ -6,7 +6,6 @@ import hashlib
 import json
 import logging
 import os
-from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -15,6 +14,7 @@ from time import perf_counter
 from typing import Any, Literal
 
 from dotenv import load_dotenv
+from eval.fixtures import EVIDENCE_PATH, build_sample_evidence, load_sample_evidence
 from eval.live import RequestLimitExceeded, token_summary
 from eval.metrics import ratio
 from openai import AsyncOpenAI
@@ -38,7 +38,6 @@ from app.openai.text_agent import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-EVIDENCE_PATH = ROOT / "data" / "sample_comparison_evidence.json"
 AGENT_REPORT_PATH = ROOT / "eval" / "agent-results.json"
 TEXT_AGENT_PATH = ROOT / "services" / "luna-api" / "app" / "openai" / "text_agent.py"
 SCENARIO_SUITE_VERSION: Literal[1] = 1
@@ -374,23 +373,10 @@ def _scenario_suite_sha256() -> str:
     ).hexdigest()
 
 
-async def _build_sample_evidence(
-    selections: Sequence[ComparisonSelection],
-) -> ComparisonEvidence:
-    evidence = ComparisonEvidence.model_validate_json(EVIDENCE_PATH.read_text(encoding="utf-8"))
-    requested_item_keys = {
-        f"{selection.listing_id}:{selection.variant_id}" for selection in selections
-    }
-    evidence_item_keys = {item.item_key for item in evidence.items}
-    if requested_item_keys != evidence_item_keys:
-        raise RuntimeError("Agent benchmark selections differ from sample_comparison_evidence.json")
-    return evidence
-
-
 async def _create_scenario_state(
     scenario: AgentScenario,
 ) -> tuple[DemoSessionState, str]:
-    evidence = ComparisonEvidence.model_validate_json(EVIDENCE_PATH.read_text(encoding="utf-8"))
+    evidence = load_sample_evidence()
     selections = [
         ComparisonSelection(listing_id=item.listing_id, variant_id=item.variant_id)
         for item in evidence.items
@@ -399,7 +385,7 @@ async def _create_scenario_state(
     comparison = await create_comparison(
         session_state,
         selections,
-        build_evidence=_build_sample_evidence,
+        build_evidence=build_sample_evidence,
     )
     if scenario.setup_preferences is not None:
         apply_preferences(
