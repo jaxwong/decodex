@@ -213,7 +213,7 @@ function productSnapshot(evidence, item) {
 }
 
 export function ComparisonTable({
-  comparison, onOpenCell, imagesByListing, onNavigateToListing, onAskSeller, onChoose,
+  comparison, onOpenCell, imagesByListing, onNavigateToListing, onAskSeller, openQuestionKeys, onPick,
 }) {
   const [differencesOnly, setDifferencesOnly] = useState(true);
   const { evidence, recommendation, preferences } = comparison;
@@ -288,9 +288,9 @@ export function ComparisonTable({
                     View product
                   </button>
                 </span>
-                {onChoose && <button type="button" className="luna-button luna-button-small"
-                  aria-label={`Choose ${itemName(item)}`} onClick={() => onChoose(item)}>
-                  Choose this one
+                {onPick && <button type="button" className="luna-button luna-button-small"
+                  aria-label={`Pick ${itemName(item)}`} onClick={() => onPick(item)}>
+                  Pick this one
                 </button>}
               </th>;
             })}
@@ -314,11 +314,13 @@ export function ComparisonTable({
                       onClick={() => onOpenCell({ itemKey: item.item_key, fieldKey })}>
                       <CellContent cell={cell}/>
                     </button>
-                    {cell.status === 'missing' && <button type="button" className="luna-ask-seller"
-                      aria-label={`Ask the seller about ${label} for ${itemName(item)}`}
-                      onClick={() => onAskSeller({ itemKey: item.item_key, fieldKey })}>
-                      Ask seller
-                    </button>}
+                    {cell.status === 'missing' && (openQuestionKeys.has(`${item.item_key}:${fieldKey}`)
+                      ? <span className="luna-cell-note">Asked the seller</span>
+                      : <button type="button" className="luna-ask-seller"
+                        aria-label={`Ask the seller about ${label} for ${itemName(item)}`}
+                        onClick={() => onAskSeller({ itemKey: item.item_key, fieldKey })}>
+                        Ask seller
+                      </button>)}
                   </td>;
                 })}
               </tr>;
@@ -350,7 +352,8 @@ ComparisonTable.propTypes = {
   imagesByListing: PropTypes.instanceOf(Map).isRequired,
   onNavigateToListing: PropTypes.func.isRequired,
   onAskSeller: PropTypes.func.isRequired,
-  onChoose: PropTypes.func,
+  openQuestionKeys: PropTypes.instanceOf(Set).isRequired,
+  onPick: PropTypes.func,
 };
 
 // A cited ID points either at a listing fact (open that table cell) or at a quote

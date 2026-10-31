@@ -962,7 +962,10 @@
 }
 
 .luna-widget .luna-seller-listing {
-  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
   border: 1px solid var(--luna-line);
   border-radius: 10px;
   background: #fff;
@@ -981,6 +984,48 @@
 .luna-widget .luna-seller-listing:disabled {
   cursor: default;
   opacity: 0.6;
+}
+
+.luna-widget .luna-seller-listing img {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.luna-widget .luna-seller-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.luna-widget .luna-seller-head img {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.luna-widget .luna-seller-fix {
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.luna-widget .luna-seller-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.luna-widget .luna-seller-chips li {
+  padding: 3px 10px;
+  border: 1px solid var(--luna-line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12.5px;
 }
 
 .luna-widget .luna-seller-sources {
@@ -1238,19 +1283,38 @@
 }
 
 .luna-widget .luna-seller-inbox {
-  padding: 16px;
+  padding: 14px 16px;
   border: 1px solid var(--luna-line);
   border-radius: 12px;
   background: var(--luna-info-bg);
 }
 
-.luna-widget .luna-simulated-banner {
-  margin-bottom: 14px;
+.luna-widget .luna-inbox-answered {
   padding: 8px 12px;
-  border: 1px dashed var(--luna-warn-line);
   border-radius: 8px;
+  background: var(--luna-ok-bg);
+  color: var(--luna-ok-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Buyer side: questions sent to the seller that have no answer yet. */
+.luna-widget .luna-waiting {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 10px 14px;
+  border: 1px dashed var(--luna-warn-line);
+  border-radius: 10px;
   background: var(--luna-warn-bg);
-  color: var(--luna-warn-ink);
+  font-size: 13.5px;
+}
+
+.luna-widget .luna-waiting ul {
+  margin: 2px 0 0;
+  padding-left: 18px;
 }
 
 .luna-widget .luna-inbox-item {

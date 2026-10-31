@@ -2,8 +2,10 @@ import { useEffect, useId, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { itemName } from './display.js';
 
-// The buyer confirms the exact server-drafted question before anything reaches the seller.
-export function SellerQuestionDialog({ draft, busy, onSend, onCancel }) {
+const fieldWithUnit = field => (field.unit ? `${field.label} (${field.unit})` : field.label);
+
+// Buyer side: confirm before anything reaches the seller. The server words the question.
+export function SellerQuestionDialog({ item, field, busy, onSend, onCancel }) {
   const titleId = useId();
   const sendButton = useRef(null);
   useEffect(() => {
@@ -17,8 +19,11 @@ export function SellerQuestionDialog({ draft, busy, onSend, onCancel }) {
       onClick={event => event.stopPropagation()}
       onKeyDown={event => { if (event.key === 'Escape') onCancel(); }}>
       <h3 id={titleId}>Ask the seller</h3>
-      <p className="luna-muted">Luna will send this question to the seller of {itemName(draft.item)}:</p>
-      <p className="luna-confirm-question">“{draft.question}”</p>
+      <p className="luna-muted">Luna will ask the seller of {itemName(item)} for one value:</p>
+      <p className="luna-confirm-question">{fieldWithUnit(field)}</p>
+      <p className="luna-muted">
+        Their answer comes back into this comparison as a cited source. Luna never guesses it for them.
+      </p>
       <div className="luna-panel-foot">
         <button ref={sendButton} type="button" className="luna-button" disabled={busy} onClick={onSend}>
           Send to seller
@@ -29,57 +34,65 @@ export function SellerQuestionDialog({ draft, busy, onSend, onCancel }) {
   </div>;
 }
 SellerQuestionDialog.propTypes = {
-  draft: PropTypes.shape({
-    question: PropTypes.string.isRequired,
-    item: PropTypes.object.isRequired,
+  item: PropTypes.object.isRequired,
+  field: PropTypes.shape({
+    field_key: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    unit: PropTypes.string,
   }).isRequired,
   busy: PropTypes.bool.isRequired,
   onSend: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
 };
 
-// A labelled mock of the seller's side: one question, one blank. Nothing here is Seller Centre.
-export function SimulatedSellerInbox({ draft, field, busy, onAnswer, onBack }) {
+function QuestionCard({ question, field, variantName, busy, onAnswer }) {
   const [answer, setAnswer] = useState('');
-  const answerLabel = field.unit ? `${field.label} (${field.unit})` : field.label;
-  return <section aria-label="Simulated seller inbox" className="luna-seller-inbox">
-    <p role="note" className="luna-simulated-banner">
-      <strong>Simulated seller.</strong> In production this is Seller Centre chat.
+  return <article aria-label={`Question about ${field.label}`} className="luna-inbox-item">
+    <ul aria-label="Question details" className="luna-inbox-tags">
+      <li>Model: {variantName}</li>
+      <li>Field: {field.label}</li>
+    </ul>
+    <p className="luna-confirm-question">“{question.question}”</p>
+    <form className="luna-inbox-form" onSubmit={event => { event.preventDefault(); onAnswer(question, answer); }}>
+      <label>
+        <span>{fieldWithUnit(field)}</span>
+        <input value={answer} maxLength={40} required disabled={busy}
+          onChange={event => setAnswer(event.target.value)}/>
+      </label>
+      <button type="submit" className="luna-button" disabled={busy || !answer.trim()}>Send answer</button>
+    </form>
+    <p className="luna-muted">
+      Your answer is stored as listing text for this model. Buyers see it the next time Luna
+      compares it.
     </p>
-    <h3 className="luna-section-title">Seller inbox · 1 buyer question</h3>
-    <article className="luna-inbox-item">
-      <ul aria-label="Question details" className="luna-inbox-tags">
-        <li>Listing: {draft.item.title}</li>
-        <li>Variant: {draft.item.variant_label}</li>
-        <li>Field: {field.label}</li>
-      </ul>
-      <p className="luna-confirm-question">“{draft.question}”</p>
-      <form className="luna-inbox-form" onSubmit={event => { event.preventDefault(); onAnswer(answer); }}>
-        <label>
-          <span>{answerLabel}</span>
-          <input value={answer} maxLength={40} required disabled={busy}
-            onChange={event => setAnswer(event.target.value)}/>
-        </label>
-        <button type="submit" className="luna-button" disabled={busy || !answer.trim()}>Send answer</button>
-      </form>
-      <p className="luna-muted">
-        The answer is stored as listing text for {itemName(draft.item)}. Buyers see it once their
-        comparison is rebuilt.
-      </p>
-    </article>
-    <button type="button" className="luna-link" onClick={onBack}>Back to comparison</button>
-  </section>;
+  </article>;
 }
-SimulatedSellerInbox.propTypes = {
-  draft: PropTypes.shape({
-    question: PropTypes.string.isRequired,
-    item: PropTypes.object.isRequired,
-  }).isRequired,
-  field: PropTypes.shape({
-    label: PropTypes.string.isRequired,
-    unit: PropTypes.string,
-  }).isRequired,
+QuestionCard.propTypes = {
+  question: PropTypes.shape({ question: PropTypes.string.isRequired }).isRequired,
+  field: PropTypes.shape({ label: PropTypes.string.isRequired, unit: PropTypes.string }).isRequired,
+  variantName: PropTypes.string.isRequired,
   busy: PropTypes.bool.isRequired,
   onAnswer: PropTypes.func.isRequired,
-  onBack: PropTypes.func.isRequired,
+};
+
+// Seller side: the listing's open buyer questions, each answered with one value.
+export function SellerInbox({ questions, fieldFor, variantNameFor, lastAnswer, busy, onAnswer }) {
+  return <section aria-label="Buyer questions" className="luna-seller-inbox">
+    <h4>Buyer questions{questions.length > 0 ? ` (${questions.length})` : ''}</h4>
+    {lastAnswer && <p role="status" className="luna-inbox-answered">
+      Answered “{lastAnswer}”. Buyers see it in their next comparison.
+    </p>}
+    {questions.length === 0 && <p className="luna-muted">No open questions from buyers.</p>}
+    {questions.map(question => <QuestionCard key={`${question.variant_id}:${question.field_key}`}
+      question={question} field={fieldFor(question.field_key)}
+      variantName={variantNameFor(question.variant_id)} busy={busy} onAnswer={onAnswer}/>)}
+  </section>;
+}
+SellerInbox.propTypes = {
+  questions: PropTypes.arrayOf(PropTypes.object).isRequired,
+  fieldFor: PropTypes.func.isRequired,
+  variantNameFor: PropTypes.func.isRequired,
+  lastAnswer: PropTypes.string,
+  busy: PropTypes.bool.isRequired,
+  onAnswer: PropTypes.func.isRequired,
 };

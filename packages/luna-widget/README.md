@@ -24,9 +24,15 @@ The adapter supplies:
   includes identity, title, variant, synthetic status, the server-owned delivered-price
   breakdown and every normalized specification. Each listed price component and each supported
   or conflicting specification carries its exact evidence source text/location; and
-- optional `requestAddToCart(selection)`: when supplied, each comparison column shows **Choose
+- optional `requestAddToCart(selection)`: when supplied, each comparison column shows **Pick
   this one**; the widget calls it only on that press and requires `{ ok: boolean }` back. The host
-  decides what follows (Host A checks out that exact variant).
+  decides what follows (Host A returns to its cart with only that variant ticked; picking is not
+  buying).
+
+When `getCurrentSelections()` hands over 2–4 available variants, the host owns picking: the
+widget builds the comparison at start-up and never shows its own picker. If that build fails or
+the comparison is later lost, it shows the same picks with **Build the comparison again**. The
+picker appears only for hosts that hand over fewer than two picks (Host B).
 
 Invalid adapters and selections fail at the package boundary. The widget owns only its
 comparison bucket/view state. The API owns evidence, preferences, recommendation and revision.
@@ -55,8 +61,8 @@ The API keeps demo sessions in memory, so a server restart or the one-hour expir
 The widget always sends a token, so any 401 means its session is gone. Creating a comparison or
 reading a seller report then starts a new session and sends that request once more; the server
 rejected the first attempt before doing any work. A comparison-bound call (ask, refresh) cannot
-recover the lost comparison, so the widget returns to the picker with the same products still
-picked and says so. Whenever start-up issues a new session it also drops any comparison held
+recover the lost comparison, so the widget keeps the same products picked and says so: a
+host-picked comparison offers **Build the comparison again**, the picker otherwise. Whenever start-up issues a new session it also drops any comparison held
 from the previous one.
 
 ## Seller report ownership
@@ -74,7 +80,18 @@ gap report. The server counts every buyer comparison in all active sessions and 
 listing text behind each gap, so the page renders it inline without the buyer evidence panel.
 Hosts do not fetch, recount or reinterpret seller insights, and the report never exposes buyer
 identity, conversation, budget or preferences. There is no seller login: the page is labelled a
-demo seller view and any listing can be opened.
+demo seller view and any listing can be opened; it opens on the first listing.
+
+## Seller questions
+
+**Ask seller** on a missing cell asks the buyer to confirm, then `POST
+/api/listings/{listing_id}/variants/{variant_id}/questions` opens one fixed-wording question per
+variant field. The buyer's widget lists it under **Waiting on the seller** and never shows an
+answer form. **Check for the seller's answer** reads `GET /api/listings/{listing_id}/questions`
+(one read per asked listing, at most four) and, when the question is no longer open, rebuilds
+the same variants into a new comparison that cites the answer. The answer form is
+`SellerGapReport`'s **Buyer questions** section, which posts `seller-replies`; nothing seller-side
+renders in the buyer widget.
 
 ## Live ownership
 
