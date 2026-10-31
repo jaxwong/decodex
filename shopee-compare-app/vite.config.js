@@ -1,8 +1,16 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// base './' + HashRouter so the build works on any static host (GitHub Pages, Vercel, Netlify)
+// Same-origin /api proxy avoids browser CORS and keeps the demo token in browser memory.
 export default defineConfig({
   base: './',
   plugins: [react()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+    },
+  },
 })
