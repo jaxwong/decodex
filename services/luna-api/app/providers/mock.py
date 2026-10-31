@@ -53,6 +53,12 @@ CATALOG_FAILURES: dict[str, tuple[ErrorCode, HTTPStatus, str, bool]] = {
         "The selected variant does not exist.",
         False,
     ),
+    "seller_reply_exists": (
+        ErrorCode.SELLER_REPLY_EXISTS,
+        HTTPStatus.CONFLICT,
+        "The seller already answered this field for this variant.",
+        False,
+    ),
     "unsupported_provider": (
         ErrorCode.UNSUPPORTED_PROVIDER,
         HTTPStatus.SERVICE_UNAVAILABLE,
@@ -136,6 +142,26 @@ class MockCatalogProvider:
         return deepcopy(
             next((v for v in listing["variants"] if v["variant_id"] == variant_id), None)
         )
+
+    async def add_seller_reply(
+        self, listing_id: str, variant_id: str, field_key: str, text: str
+    ) -> None:
+        """Store one simulated seller answer as variant source text, in memory only.
+
+        One answer per field bounds the stored replies by the schema size. The listing
+        snapshot hashes the replies, so open comparisons stay untouched and a new
+        comparison re-extracts with the answer.
+        """
+        listing = self._listings.get(listing_id)
+        if listing is None:
+            raise CatalogError("unknown_listing")
+        variant = next((v for v in listing["variants"] if v["variant_id"] == variant_id), None)
+        if variant is None:
+            raise CatalogError("unknown_variant")
+        replies = variant.setdefault("seller_replies", [])
+        if any(reply["field_key"] == field_key for reply in replies):
+            raise CatalogError("seller_reply_exists")
+        replies.append({"field_key": field_key, "text": text})
 
     async def get_snapshot_version(self, listing_id: str) -> str:
         if listing_id not in self._listings:

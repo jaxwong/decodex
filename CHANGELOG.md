@@ -4,6 +4,24 @@ This file records implemented Luna milestones. The implementation spec remains t
 
 ## 31 October 2026
 
+### Implemented on `feat/seller-question-loop`
+
+- Proposal 4: a missing table cell offers **Ask seller**. `POST
+  /api/listings/{listing_id}/variants/{variant_id}/questions` returns a fixed-template question
+  (no model call, nothing stored); the buyer confirms it in a dialog.
+- A labelled **Simulated seller** inbox inside the shared widget takes a one-field answer.
+  `POST .../seller-replies` composes the labelled clause (a bare number takes the question's
+  unit), rejects anything extraction could not read with 422 `INVALID_REQUEST`, and stores one
+  answer per variant field in the mock provider (`SELLER_REPLY_EXISTS` 409 for a second).
+- The answer is indexed as exact-variant attribute evidence at `seller_replies/{n}`. The listing
+  snapshot changes, open comparisons are untouched, and the widget rebuilds the same variants
+  into a new comparison whose cell shows the value with "Confirmed by seller" and cites it.
+  A reply that disagrees with the listing becomes an ordinary conflict.
+- The deterministic e2e API now builds evidence through the real `EvidenceBuilder` with the
+  test extraction double, so provider changes reach new comparisons in browser tests.
+- No new source type, status or agent tool. The seller side is a labelled mock, not Seller
+  Centre chat; replies live in memory and reset on API restart.
+
 ### Implemented on `feat/cart-luna-link`
 
 - Linked Host A's cart to the backend catalog. Cart rows are now exact catalog variants (Atlas

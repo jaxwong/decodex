@@ -226,8 +226,8 @@ test('Host A cart lists catalog variants and compares the ticked ones in Luna', 
   await expect(page.getByRole('table', { name: 'Product comparison' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Pick 2–4 products to compare' })).toHaveCount(0);
 
-  // Luna asks for exactly the ticked products. The deterministic test API only has evidence for
-  // all three, so this request meets an outage instead: the picker stays open with the picks.
+  // Luna asks for exactly the ticked products. This request meets a simulated outage, so the
+  // picker stays open with the picks.
   await page.getByRole('link', { name: '< Back to Cart' }).click();
   await tickBreeze.uncheck();
   let requestedItems = null;
@@ -310,6 +310,63 @@ test('Seller Centre counts an excluded listing from another buyer session', asyn
   await expect(warrantyText.getByText('Warranty: 1 year')).toBeVisible();
   await expect(warrantyText.getByText('Warranty: 24 months')).toBeVisible();
   await expect(report.getByText('Weight: SYNTHETIC Atlas')).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+});
+
+test('a missing value becomes a seller-confirmed source after one simulated seller answer', async ({ page }, testInfo) => {
+  // Seller answers persist in the shared test API, so one host proves the flow on a variant
+  // (Comet 100W) that no other test compares.
+  test.skip(testInfo.project.name !== 'host-a-chromium', 'Shared package needs one seller-loop proof');
+  const consoleErrors = [];
+  page.on('console', message => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  const widget = page.getByRole('region', { name: 'Luna shopping assistant' });
+  const cometWeight = /^Weight for SYNTHETIC Comet power bank family · 100W synthetic SKU: /;
+
+  await page.goto('/#/Compare');
+  await page.getByRole('checkbox', { name: /100W synthetic SKU.*Shipping \+SGD 15\.00/ }).check();
+  await page.getByRole('checkbox', { name: /100W synthetic SKU.*Shipping \+SGD 3\.00/ }).check();
+  await page.getByRole('button', { name: 'Compare 2 products' }).click();
+  await expect(page.getByRole('button', { name: cometWeight })).toContainText('Not stated');
+
+  await page.getByRole('button', {
+    name: 'Ask the seller about Weight for SYNTHETIC Comet power bank family · 100W synthetic SKU',
+  }).click();
+  const confirm = page.getByRole('dialog', { name: 'Ask the seller' });
+  await expect(confirm.getByText('“What is the Weight (g) of the 100W synthetic SKU?”')).toBeVisible();
+  await confirm.getByRole('button', { name: 'Send to seller' }).click();
+
+  const inbox = page.getByRole('region', { name: 'Simulated seller inbox' });
+  await expect(inbox.getByRole('note')).toHaveText('Simulated seller. In production this is Seller Centre chat.');
+  await expect(inbox.getByText('Field: Weight')).toBeVisible();
+  await expect(page.getByRole('table', { name: 'Product comparison' })).toHaveCount(0);
+  await inbox.getByLabel('Weight (g)').fill('about 200');
+  await inbox.getByRole('button', { name: 'Send answer' }).click();
+  await expect(page.getByRole('alert'))
+    .toContainText('Answer with one value in the unit the question asks for, for example 198.');
+  await expect(inbox).toBeVisible();
+  // The rejected answer above logs its expected request error; everything after must stay clean.
+  consoleErrors.length = 0;
+
+  await inbox.getByLabel('Weight (g)').fill('198');
+  await inbox.getByRole('button', { name: 'Send answer' }).click();
+  await expect(inbox).toHaveCount(0);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(widget).toHaveAttribute('data-revision', '0');
+  const answeredWeight = page.getByRole('button', { name: /^Weight for SYNTHETIC Comet .*100W.*: 198 g, confirmed by seller$/ });
+  await expect(answeredWeight).toContainText('Confirmed by seller');
+  await expect(page.getByRole('button', { name: /^Ask the seller about Weight/ })).toHaveCount(0);
+  await expect(page.getByText(/The seller answered “Weight: 198 g”/)).toBeVisible();
+
+  await answeredWeight.click();
+  const sourcePanel = page.getByRole('dialog');
+  await expect(sourcePanel.locator('.luna-status')).toHaveText('Confirmed by seller');
+  await expect(sourcePanel.locator('.luna-quote-from')).toHaveText('Confirmed by seller');
+  await expect(sourcePanel.getByText('Weight: 198 g')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: /^Source: .*Weight: 198 g/ }).click();
+  await expect(sourcePanel.getByRole('heading', { name: /^Weight · SYNTHETIC Comet/ })).toBeVisible();
   expect(consoleErrors).toEqual([]);
 });
 

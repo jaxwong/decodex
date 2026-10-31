@@ -51,6 +51,14 @@ def build_evidence_index(listing: dict[str, Any], variant: dict[str, Any]) -> di
             f"variants/{variant['variant_id']}/attributes/{number}",
             variant["variant_id"],
         )
+    # A seller's answer is exact-variant seller text, extracted like any other attribute.
+    for number, reply in enumerate(variant.get("seller_replies", [])):
+        add(
+            "attribute",
+            reply["text"],
+            f"variants/{variant['variant_id']}/seller_replies/{number}",
+            variant["variant_id"],
+        )
     for number, attribute in enumerate(listing.get("attributes", [])):
         add("attribute", attribute["text"], f"attributes/{number}", attribute.get("variant_id"))
     for number, paragraph in enumerate(listing["description"]):

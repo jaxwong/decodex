@@ -107,6 +107,9 @@ B2 exposes exactly four Python tool functions for B3 text and B4 Live delegation
 - `get_comparison` returns compact normalized facts without raw source text.
 - `get_review_aspect` returns bounded aggregates and literal supporting mentions.
 - `apply_preferences` is the only mutation; it enforces optimistic revision checks.
+
+The simulated seller loop (`routes/seller_replies.py`) is a plain route, not a tool. It writes
+one parsable answer per variant field into the mock provider; comparison state is never edited.
 - `inspect_evidence` returns exact sources only for stored evidence IDs.
 
 Ranking applies budget and minimum-power constraints before lexicographic objective priorities.

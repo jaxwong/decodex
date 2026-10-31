@@ -8,6 +8,7 @@ from app.contracts.evidence import (
     ComparisonSelection,
     Evidence,
     Fact,
+    FieldKey,
     ReviewAspectSummary,
     ReviewMention,
     SchemaField,
@@ -98,6 +99,37 @@ class ListingGapReport(_SessionModel):
     beaten_by: list[ListingBeatenBy]
     exclusion_counts: dict[ExclusionReason, int]
     uncertainty_counts: dict[str, int]
+
+
+class SellerQuestionRequest(_SessionModel):
+    """A buyer's request to ask the seller for one comparison field of one variant."""
+
+    field_key: FieldKey
+
+
+class SellerQuestion(_SessionModel):
+    """The exact question Luna will show the seller; it is not stored server-side."""
+
+    listing_id: str
+    variant_id: str
+    field_key: FieldKey
+    question: str
+
+
+class SellerReplyRequest(_SessionModel):
+    """A simulated seller's one-field answer. One clause: no separators or line breaks."""
+
+    field_key: FieldKey
+    answer: str = Field(min_length=1, max_length=40, pattern=r"^[^;\n]*$")
+
+
+class SellerReply(_SessionModel):
+    """The seller source text stored for the variant, as later comparisons will cite it."""
+
+    listing_id: str
+    variant_id: str
+    field_key: FieldKey
+    text: str
 
 
 class UiPatch(_SessionModel):

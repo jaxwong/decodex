@@ -294,6 +294,12 @@ The model can access exactly four functions:
 | `inspect_evidence` | Read | Exact stored evidence IDs only |
 | `apply_preferences` | **Write** | The only mutation; revision checked |
 
+The simulated seller question loop is deliberately not a tool. Two plain routes under
+`/api/listings/{listing_id}/variants/{variant_id}/` draft a fixed-template question and store one
+parsable seller answer per field in the mock provider. The answer becomes variant text at
+`variants/{variant_id}/seller_replies/{n}`; open comparisons keep their evidence, and only a newly
+built comparison extracts and cites it. Replies live in memory and reset on API restart.
+
 ## Responses text-agent flow
 
 The server, not the browser, owns the model request and tool execution.

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { lunaClient } from './lunaClient.js';
-import { errorText, exclusionLabel, fieldLabel, itemName, sourceLabel } from './display.js';
+import { errorText, evidenceLabel, exclusionLabel, fieldLabel, itemName } from './display.js';
 import { SparkleIcon } from './LunaPanels.jsx';
 
 const STATUS_LABELS = { missing: 'Not stated', conflicting: 'Listing disagrees', unresolved: 'Couldn’t verify' };
@@ -122,7 +122,7 @@ export function SellerGapReport({ apiBaseUrl = '/api' }) {
             </p>}
             {gap.evidence.length > 0 && <ul aria-label={`Your listing text for ${label(gap.field_key)}`} className="luna-seller-sources">
               {gap.evidence.map(source => <li key={source.id}>
-                <span className="luna-muted">{sourceLabel(source.source_type)}:</span> “{source.source_text}”
+                <span className="luna-muted">{evidenceLabel(source)}:</span> “{source.source_text}”
               </li>)}
             </ul>}
           </div>)}
