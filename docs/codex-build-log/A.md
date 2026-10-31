@@ -43,3 +43,35 @@ access, human user study, production evaluation or deployed integration is claim
   credential helper for that command only; push succeeded. No credential values
   were printed or committed and global Git configuration was not changed.
 - Human corrections: none supplied. B/C consumers have not yet been exercised.
+
+## A2/A3 extraction, normalization and review intelligence
+
+- Codex implemented indexing, prompts, typed Responses candidates, deterministic
+  normalization, provenance validation, partial-failure handling and public DI in
+  `app/evidence/`. The SDK call uses `AsyncOpenAI.responses.parse(text_format=...)`,
+  matching the fetched official Structured Outputs guide and installed 3.42.0
+  signature. No live SDK success is claimed. Official reference:
+  https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses
+- One spec request per selected item, no automatic retry or alternate extractor.
+  Numeric source clauses must have recognized field labels and units. Unfamiliar
+  prose is retained but abstains instead of becoming an unsupported measurement.
+  Explicit seller contradictions are reconciled even if model cites just one side.
+- Exact-SKU reviews are sent in balanced batches of at most twenty; unknown/sibling
+  variants stay in the source index but never enter exact-SKU mentions or counts.
+  Mixed reviews count once for each expressed sentiment, so sentiment totals may
+  exceed the number of analyzed reviews. Failed batches do not enter denominators.
+- Public boundary: `from app.evidence import build_comparison_evidence,
+  evidence_dependencies, EvidenceBuilder`. B may inject dependencies with the
+  task-local context manager or bind `EvidenceBuilder(provider, model).build`.
+  Returned item metadata includes `analysis_status`, `review_status` and
+  `review_coverage`; these keys live inside the contract's prescribed `list[dict]`.
+- Actual checks:
+  `PYTHONPATH=services/luna-api /tmp/luna-evidence-venv/bin/python -m pytest services/luna-api/tests/evidence -q`
+  → **76 passed**; provider subset → **6 passed, 48 deselected**.
+- Codex corrected a missing-key failure boundary before verification: SDK
+  construction now occurs inside the typed exception handler, so absent credentials
+  produce unresolved fields and preserve provider prices rather than crashing.
+  This was an automated correction, not a human-supplied correction.
+- `OPENAI_API_KEY` is absent from the process environment. No .env file was read,
+  credentials requested, or live request attempted. API smoke and real model quality,
+  token/cost and latency measurements remain pending.
