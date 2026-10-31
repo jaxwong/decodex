@@ -113,6 +113,7 @@ stateDiagram-v2
 | I-58 | When a host hands over a full comparison (2–4 picks), the widget never shows its picker: it builds the comparison at start-up, shows those products loading meanwhile, and after a failed build or a lost session shows the same picks with **Build the comparison again**. Host A enables **Compare now** only for 2–4 ticked cart products and sends `#/Compare` without them back to the cart. `requestAddToCart` is called only from an explicit **Pick this one** press, must resolve to `{ ok: boolean }`, and in Host A ticks only that variant in the cart without leaving the comparison; it never checks out. | `LunaWidget.jsx`, `Compare.jsx`, Host A cart, checkout and session-renewal Playwright tests |
 | I-62 | Deciding and buying are two presses. After a successful pick the widget shows a **Your pick** bar and badge; **Check out** appears only when the host supplies `requestCheckout`, is pressed by the shopper, hands over exactly the picked variant and requires `{ ok: boolean }`. The widget never navigates, charges or removes other lines; **Keep comparing** hides the bar without undoing the pick; a comparison that no longer holds the picked column drops it. Host A's cart ticks have one owner (`shop.jsx`), so the pick is already ticked when the cart is next shown. | `LunaWidget.jsx`, `hostAdapter.js`, `shop.jsx`, Host A checkout Playwright test |
 | I-59 | Buyer and seller UI never mix. The buyer widget sends a seller question and shows it as waiting; the only answer form is `SellerGapReport`'s **Buyer questions** on the host's seller page, which has its own header without buyer search, cart or account links. A question is open server-side until one parsable reply closes it, and a buyer learns of the answer only through an explicit **Check for the seller's answer** read. | `routes/seller_replies.py`, `SellerQuestion.jsx`, `SellerGapReport.jsx`, `SellerNav.jsx`, Seller Centre Playwright tests |
+| I-61 | A lost-pick reason is a pure function of the recorded pick, the preferences stated when it was made and the cited facts: constraints first, then priorities in the buyer's order, with no model call. When nothing stated separates the two items the report says "no stated reason"; it never guesses one from other evidence. The pick is stored against `expected_revision`, replaces any earlier pick of the same comparison, and never serializes to buyers or the model. | `decision/pick_reasons.py`, `decision/comparisons.py::record_pick`, `ComparisonResponse.pick` with `Field(exclude=True)`, attribution/route/gap-report tests, Seller Centre Playwright test |
 
 ## Ownership invariants
 
@@ -124,6 +125,7 @@ stateDiagram-v2
 | Preferences, recommendation and revision | B decision layer |
 | Ranking outcome | Deterministic `rank_comparison` |
 | Seller gap report | Pure `build_gap_report` projection over every active session's comparisons |
+| Pick attribution | Pure `attribute_pick` over the recorded pick, its preference snapshot and evidence |
 | HTTP error wording/status | `app.errors` |
 | Text/Live model invocation | B OpenAI modules |
 | Browser rendering and media | C frontend |
