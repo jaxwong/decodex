@@ -21,7 +21,8 @@ def test_create_demo_session_uses_opaque_unique_tokens() -> None:
     assert first_session.token != second_session.token
     assert len(first_session.token) >= 32
     assert first_session.expires_at == created_at + timedelta(hours=1)
-    assert session_store[first_session.token] == first_session
+    assert session_store[first_session.token].expires_at == first_session.expires_at
+    assert session_store[first_session.token].comparisons == {}
 
 
 def test_require_active_demo_session_rejects_unknown_token() -> None:

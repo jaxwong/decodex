@@ -1,11 +1,25 @@
 import secrets
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
-from app.contracts.session import DemoSession
+from app.contracts.session import ComparisonResponse, DemoSession
 
 DEMO_SESSION_LIFETIME = timedelta(hours=1)
 
-type DemoSessionStore = dict[str, DemoSession]
+
+@dataclass(slots=True)
+class DemoSessionState:
+    """Private process-local state owned by one opaque demo session token."""
+
+    expires_at: datetime
+    comparisons: dict[str, ComparisonResponse] = field(default_factory=dict)
+
+
+type DemoSessionStore = dict[str, DemoSessionState]
+
+
+class DemoSessionRequired(PermissionError):
+    """Raised when a protected API request has no bearer token."""
 
 
 class DemoSessionNotFound(LookupError):
@@ -31,7 +45,7 @@ def create_demo_session(
         token=token,
         expires_at=session_created_at + DEMO_SESSION_LIFETIME,
     )
-    session_store[token] = demo_session
+    session_store[token] = DemoSessionState(expires_at=demo_session.expires_at)
     return demo_session
 
 
@@ -40,17 +54,17 @@ def require_active_demo_session(
     *,
     token: str,
     checked_at: datetime | None = None,
-) -> DemoSession:
+) -> DemoSessionState:
     """Return an active demo session or raise a typed unknown/expired failure."""
-    demo_session = session_store.get(token)
-    if demo_session is None:
+    session_state = session_store.get(token)
+    if session_state is None:
         raise DemoSessionNotFound("unknown demo session token")
 
     session_checked_at = checked_at or datetime.now(UTC)
     if session_checked_at.tzinfo is None:
         raise ValueError("checked_at must include timezone information")
-    if session_checked_at >= demo_session.expires_at:
+    if session_checked_at >= session_state.expires_at:
         del session_store[token]
         raise DemoSessionExpired("expired demo session token")
 
-    return demo_session
+    return session_state
