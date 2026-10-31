@@ -25,6 +25,8 @@ This file records implemented Luna milestones. The implementation spec remains t
   | + snapshot reuse | 10.1 s | 0.003 s, 0 model calls | 22 / 51 / 0 / 1 |
   | + low effort | 8.6 s | 0.002 s, 0 model calls | 22 / 51 / 0 / 1 |
 
+
+
 ### Implemented on `feat/deploy-render`
 
 - One image now serves both hosts and the API from one origin: multi-stage `Dockerfile`, allowlist
