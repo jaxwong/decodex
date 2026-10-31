@@ -2,8 +2,10 @@ import asyncio
 import secrets
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+from http import HTTPStatus
 
 from app.contracts.session import ComparisonResponse, DemoSession
+from app.errors import ApiFailure, ErrorCode
 
 DEMO_SESSION_LIFETIME = timedelta(hours=1)
 
@@ -45,16 +47,31 @@ class DemoSessionState:
 type DemoSessionStore = dict[str, DemoSessionState]
 
 
-class DemoSessionRequired(PermissionError):
+class DemoSessionRequired(ApiFailure):
     """Raised when a protected API request has no bearer token."""
 
+    code = ErrorCode.SESSION_REQUIRED
+    http_status = HTTPStatus.UNAUTHORIZED
+    public_message = "A valid demo session bearer token is required."
+    retryable = False
 
-class DemoSessionNotFound(LookupError):
+
+class DemoSessionNotFound(ApiFailure):
     """Raised when a demo session token is not owned by this process."""
 
+    code = ErrorCode.SESSION_REQUIRED
+    http_status = HTTPStatus.UNAUTHORIZED
+    public_message = "A valid demo session bearer token is required."
+    retryable = False
 
-class DemoSessionExpired(PermissionError):
+
+class DemoSessionExpired(ApiFailure):
     """Raised when a known demo session has reached its server-owned expiry."""
+
+    code = ErrorCode.SESSION_EXPIRED
+    http_status = HTTPStatus.UNAUTHORIZED
+    public_message = "The demo session expired; create a new session."
+    retryable = False
 
 
 def create_demo_session(

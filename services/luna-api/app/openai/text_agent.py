@@ -4,6 +4,7 @@ import logging
 import os
 import secrets
 from collections.abc import Awaitable, Callable
+from http import HTTPStatus
 from time import perf_counter
 from typing import Any, cast
 
@@ -36,6 +37,7 @@ from app.decision.tools import (
     get_review_aspect,
     inspect_evidence,
 )
+from app.errors import ApiFailure, ErrorCode
 
 logger = logging.getLogger(__name__)
 
@@ -121,43 +123,95 @@ ANSWER_TEXT_CONFIG: ResponseTextConfigParam = {
 }
 
 
-class ConversationComparisonMismatch(PermissionError):
+class ConversationComparisonMismatch(ApiFailure):
     """Raised when a conversation ID is reused for another comparison."""
 
+    code = ErrorCode.CONVERSATION_COMPARISON_MISMATCH
+    http_status = HTTPStatus.CONFLICT
+    public_message = "Start a new conversation for this comparison."
+    retryable = False
 
-class LunaToolCallRejected(ValueError):
+
+class LunaToolCallRejected(ApiFailure):
     """Raised when a model requests a tool or argument outside the allowlist."""
 
+    code = ErrorCode.LUNA_INVALID_RESPONSE
+    http_status = HTTPStatus.BAD_GATEWAY
+    public_message = (
+        "Luna returned an invalid tool request or answer. Refresh the comparison before retrying."
+    )
+    retryable = False
 
-class LunaToolLimitReached(RuntimeError):
+
+class LunaToolLimitReached(ApiFailure):
     """Raised without another provider call when three tool rounds are exhausted."""
+
+    code = ErrorCode.LUNA_TOOL_LIMIT
+    http_status = HTTPStatus.BAD_GATEWAY
+    public_message = "Luna could not finish within the three-round tool limit."
+    retryable = False
 
     def __init__(self, *, action_completed: bool, current_revision: int) -> None:
         self.action_completed = action_completed
-        self.current_revision = current_revision
-        super().__init__("Luna reached the three-round tool limit")
+        super().__init__(
+            "Luna reached the three-round tool limit",
+            current_revision=current_revision if action_completed else None,
+        )
 
 
-class LunaAgentTimeout(TimeoutError):
+class LunaAgentTimeout(ApiFailure):
     """Raised when the provider times out, including whether this turn already mutated state."""
 
     def __init__(self, *, action_completed: bool, current_revision: int) -> None:
         self.action_completed = action_completed
-        self.current_revision = current_revision
-        super().__init__("OpenAI Responses timed out")
+        self.http_status = HTTPStatus.SERVICE_UNAVAILABLE
+        if action_completed:
+            self.code = ErrorCode.LUNA_TIMEOUT_AFTER_UPDATE
+            self.public_message = (
+                "Preferences were applied, but Luna's reply timed out. Refresh the comparison."
+            )
+            self.retryable = False
+        else:
+            self.code = ErrorCode.LUNA_TIMEOUT
+            self.public_message = "Luna timed out; the comparison was not changed."
+            self.retryable = True
+        super().__init__(
+            "OpenAI Responses timed out",
+            current_revision=current_revision if action_completed else None,
+        )
 
 
-class LunaAgentUnavailable(RuntimeError):
+class LunaAgentUnavailable(ApiFailure):
     """Raised for a typed provider failure without retry or alternate strategy."""
 
     def __init__(self, *, action_completed: bool, current_revision: int) -> None:
         self.action_completed = action_completed
-        self.current_revision = current_revision
-        super().__init__("OpenAI Responses is unavailable")
+        self.http_status = HTTPStatus.SERVICE_UNAVAILABLE
+        if action_completed:
+            self.code = ErrorCode.LUNA_UNAVAILABLE_AFTER_UPDATE
+            self.public_message = (
+                "Preferences were applied, but Luna's reply failed. Refresh the comparison."
+            )
+            self.retryable = False
+        else:
+            self.code = ErrorCode.LUNA_UNAVAILABLE
+            self.public_message = "Luna is temporarily unavailable; the comparison was not changed."
+            self.retryable = True
+        super().__init__(
+            "OpenAI Responses is unavailable",
+            current_revision=current_revision if action_completed else None,
+        )
 
 
-class LunaAgentContractError(RuntimeError):
+class LunaAgentContractError(ApiFailure):
     """Raised when a provider response violates the contract, with durable mutation context."""
+
+    code = ErrorCode.LUNA_INVALID_RESPONSE
+    http_status = HTTPStatus.BAD_GATEWAY
+    public_message = (
+        "Luna returned an invalid tool request or answer. Refresh the comparison before retrying."
+    )
+    retryable = False
 
     def __init__(
         self,
@@ -171,12 +225,16 @@ class LunaAgentContractError(RuntimeError):
                 "LunaAgentContractError requires a revision exactly when an action completed"
             )
         self.action_completed = action_completed
-        self.current_revision = current_revision
-        super().__init__(message)
+        super().__init__(message, current_revision=current_revision)
 
 
-class LunaAgentConfigurationError(RuntimeError):
+class LunaAgentConfigurationError(ApiFailure):
     """Raised when the runtime text-agent credentials or model are absent."""
+
+    code = ErrorCode.LUNA_NOT_CONFIGURED
+    http_status = HTTPStatus.SERVICE_UNAVAILABLE
+    public_message = "Luna model access is not configured on this server."
+    retryable = False
 
 
 def create_runtime_openai_client() -> AsyncOpenAI:

@@ -6,6 +6,7 @@ import logging
 import os
 import secrets
 from dataclasses import dataclass
+from http import HTTPStatus
 from time import perf_counter
 from typing import cast
 
@@ -33,6 +34,7 @@ from websockets.exceptions import WebSocketException
 from app.decision.comparisons import require_comparison
 from app.decision.sessions import DemoSessionState, LiveSessionState
 from app.decision.tools import RevisionConflict
+from app.errors import ApiFailure, ErrorCode, ErrorDetail, ToolErrorResponse
 from app.openai.text_agent import (
     EVIDENCE_POLICY,
     MAX_OUTPUT_TOKENS,
@@ -73,12 +75,22 @@ class _LiveDelegationState:
     limit_continuation_sent: bool = False
 
 
-class LunaLiveUnavailable(ConnectionError):
+class LunaLiveUnavailable(ApiFailure):
     """Raised when Live creation or the initial sideband attach fails without retry."""
 
+    code = ErrorCode.LIVE_UNAVAILABLE
+    http_status = HTTPStatus.SERVICE_UNAVAILABLE
+    public_message = "Luna voice is temporarily unavailable; no Live session was returned."
+    retryable = True
 
-class LunaLiveProtocolError(RuntimeError):
+
+class LunaLiveProtocolError(ApiFailure):
     """Raised when Live emits an event that violates the configured delegation contract."""
+
+    code = ErrorCode.LIVE_INVALID_RESPONSE
+    http_status = HTTPStatus.BAD_GATEWAY
+    public_message = "The Live provider returned an invalid session response."
+    retryable = False
 
 
 def require_runtime_live_model() -> str:
@@ -184,18 +196,18 @@ def _session_update(
 
 def _tool_error(
     *,
-    code: str,
+    code: ErrorCode,
     message: str,
     current_revision: int | None = None,
 ) -> str:
-    error: dict[str, object] = {
-        "code": code,
-        "message": message,
-        "retryable": False,
-    }
-    if current_revision is not None:
-        error["current_revision"] = current_revision
-    return json.dumps({"ok": False, "error": error}, separators=(",", ":"))
+    return ToolErrorResponse(
+        error=ErrorDetail(
+            code=code,
+            message=message,
+            retryable=False,
+            current_revision=current_revision,
+        )
+    ).model_dump_json(exclude_none=True)
 
 
 async def _send_tool_result(
@@ -239,7 +251,7 @@ async def _handle_function_call(
             connection,
             call_id=function_call.call_id,
             output=_tool_error(
-                code="TOOL_ROUND_LIMIT",
+                code=ErrorCode.TOOL_ROUND_LIMIT,
                 message="Luna reached the three-round tool limit for this voice request.",
             ),
             continue_response=should_continue,
@@ -261,13 +273,13 @@ async def _handle_function_call(
         )
     except RevisionConflict as failure:
         output = _tool_error(
-            code="STALE_COMPARISON",
+            code=ErrorCode.STALE_COMPARISON,
             message="The comparison changed; refresh before applying this correction.",
             current_revision=failure.current_revision,
         )
     except LunaToolCallRejected:
         output = _tool_error(
-            code="INVALID_TOOL_ARGUMENTS",
+            code=ErrorCode.INVALID_TOOL_ARGUMENTS,
             message="The tool referenced data outside this comparison.",
         )
 

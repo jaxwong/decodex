@@ -175,6 +175,12 @@ def test_openapi_exposes_bearer_auth_and_canonical_comparison_contract() -> None
     assert "ComparisonResponse" in schema["components"]["schemas"]
     assert "AskComparisonRequest" in schema["components"]["schemas"]
     assert "AskComparisonResponse" in schema["components"]["schemas"]
+    assert set(schema["components"]["schemas"]["ErrorCode"]["enum"]) >= {
+        "INVALID_REQUEST",
+        "SESSION_REQUIRED",
+        "STALE_COMPARISON",
+        "LUNA_INVALID_RESPONSE",
+    }
 
 
 def agent_response(response_id: str, output: list[dict[str, object]]) -> Response:
