@@ -47,10 +47,10 @@ function Hero() {
                                 Discover exclusive deals and discounts curated just for you. Save up to 70% on top brands!
                             </p>
                             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center md:justify-start">
-                                <Link to="/" className="bg-white text-shopee font-bold px-5 sm:px-6 py-2 sm:py-2.5 rounded-sm hover:bg-yellow-300 transition-all shadow-lg text-xs sm:text-sm">
+                                <Link to="/Search?q=power%20bank" className="bg-white text-shopee font-bold px-5 sm:px-6 py-2 sm:py-2.5 rounded-sm hover:bg-yellow-300 transition-all shadow-lg text-xs sm:text-sm">
                                     Shop Now
                                 </Link>
-                                <Link to="/" className="border-2 border-white/80 text-white font-medium px-5 sm:px-6 py-2 sm:py-2.5 rounded-sm hover:bg-white/10 transition-all text-xs sm:text-sm">
+                                <Link to="/Search?q=power%20bank" className="border-2 border-white/80 text-white font-medium px-5 sm:px-6 py-2 sm:py-2.5 rounded-sm hover:bg-white/10 transition-all text-xs sm:text-sm">
                                     View All Deals
                                 </Link>
                             </div>
@@ -64,9 +64,8 @@ function Hero() {
                     {/* Featured Categories - Right side */}
                     <aside className="grid grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
                         {featuredCategories.map((category) => (
-                            <Link 
+                            <div
                                 key={category.id}
-                                to="/"
                                 className={`bg-gradient-to-br ${category.bgGradient} rounded-sm p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover:shadow-xl transition-all duration-300 group border border-gray-100`}
                             >
                                 <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 relative">
@@ -87,7 +86,7 @@ function Hero() {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" className="text-gray-400 group-hover:text-shopee group-hover:translate-x-1 transition-all flex-shrink-0">
                                     <path fill="currentColor" d="M8.59 16.59L13.17 12L8.59 7.41L10 6l6 6l-6 6l-1.41-1.41z"/>
                                 </svg>
-                            </Link>
+                            </div>
                         ))}
                     </aside>
                 </div>

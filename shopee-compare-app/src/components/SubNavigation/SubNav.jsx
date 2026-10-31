@@ -34,6 +34,7 @@ function SubNav() {
                             src="/images/shopee_logo.webp" 
                             alt="Shopee" 
                             className="h-[30px] sm:h-[40px] md:h-[45px] w-auto object-contain"
+                            style={{ filter: 'brightness(0) invert(1)' }}
                         />
                     </Link>
                     

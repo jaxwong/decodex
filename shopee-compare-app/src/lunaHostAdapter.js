@@ -1,4 +1,4 @@
-export function createShopeeLunaAdapter(openProduct, cartSelections, checkOutProduct) {
+export function createShopeeLunaAdapter(openProduct, cartSelections, pickProduct) {
   return {
     hostId: 'shopee-compare-app',
     getCurrentSelections() {
@@ -10,9 +10,9 @@ export function createShopeeLunaAdapter(openProduct, cartSelections, checkOutPro
     navigateToListing(product) {
       openProduct(product);
     },
-    // Shopee's "Buy Now" for the product the shopper chose in Luna: check out only that variant.
+    // The product the shopper picked in Luna: the host puts it in the cart, ticked alone.
     async requestAddToCart(selection) {
-      checkOutProduct(selection);
+      pickProduct(selection);
       return { ok: true };
     },
   };

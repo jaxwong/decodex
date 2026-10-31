@@ -13,16 +13,16 @@ function BelowHeader() {
     ];
 
     const quickLinks = [
-        { src: "/images/banner_below1.png", text: "50% Off Deals", link: "/", badge: "Hot" },
-        { src: "/images/banner_below2.png", text: "Shopee Mall", link: "/" },
-        { src: "/images/banner_below3.png", text: "On-time Delivery", link: "/" },
-        { src: "/images/banner_below5.png", text: "Shopee Choice", link: "/", badge: "New" },
-        { src: "/images/banner_below6.png", text: "Beauty Sale", link: "/" },
-        { src: "/images/banner_below7.png", text: "Free Shipping", link: "/" },
-        { src: "/images/banner_below8.png", text: "Shopee Coins", link: "/" },
-        { src: "/images/banner_below9.png", text: "Gadget Zone", link: "/" },
-        { src: "/images/banner_below4.png", text: "Supermarket", link: "/" },
-        { src: "/images/banner_below10.png", text: "Daily Promos", link: "/" },
+        { src: "/images/banner_below1.png", text: "50% Off Deals", badge: "Hot" },
+        { src: "/images/banner_below2.png", text: "Shopee Mall" },
+        { src: "/images/banner_below3.png", text: "On-time Delivery" },
+        { src: "/images/banner_below5.png", text: "Shopee Choice", badge: "New" },
+        { src: "/images/banner_below6.png", text: "Beauty Sale" },
+        { src: "/images/banner_below7.png", text: "Free Shipping" },
+        { src: "/images/banner_below8.png", text: "Shopee Coins" },
+        { src: "/images/banner_below9.png", text: "Gadget Zone" },
+        { src: "/images/banner_below4.png", text: "Supermarket" },
+        { src: "/images/banner_below10.png", text: "Daily Promos" },
     ];
 
     const flashDeals = [
@@ -142,8 +142,7 @@ function BelowHeader() {
                 <div className="bg-white rounded-sm shadow-sm p-3 sm:p-4 mb-3 sm:mb-4">
                     <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 sm:gap-3">
                         {quickLinks.map((item, index) => (
-                            <Link 
-                                to={item.link} 
+                            <div
                                 key={index}
                                 className="flex flex-col items-center gap-1.5 p-1.5 sm:p-2.5 hover:shadow-lg hover:-translate-y-0.5 rounded-sm transition-all duration-200 group relative"
                             >
@@ -162,7 +161,7 @@ function BelowHeader() {
                                 <span className="text-[9px] sm:text-[11px] text-gray-700 text-center leading-tight line-clamp-2 group-hover:text-shopee transition-colors font-medium">
                                     {item.text}
                                 </span>
-                            </Link>
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -198,7 +197,7 @@ function BelowHeader() {
                                 <span className="text-white font-bold text-lg">:</span>
                                 <span className="bg-black text-white text-xs sm:text-sm px-2 sm:px-2.5 py-1 sm:py-1.5 rounded font-mono font-bold shadow-lg">{formatTime(flashDealTime.seconds)}</span>
                             </div>
-                            <Link to="/" className="hidden sm:block text-white text-xs font-medium hover:underline ml-2">
+                            <Link to="/Search?q=power%20bank" className="hidden sm:block text-white text-xs font-medium hover:underline ml-2">
                                 Shop All &gt;
                             </Link>
                         </div>
@@ -225,9 +224,8 @@ function BelowHeader() {
                             className="flex gap-2 sm:gap-3 p-3 sm:p-4 overflow-x-auto scrollbar-hide scroll-smooth"
                         >
                             {flashDeals.map((deal) => (
-                                <Link 
+                                <div
                                     key={deal.id}
-                                    to="/"
                                     className="flex-shrink-0 w-[110px] sm:w-[145px] md:w-[160px] bg-white border border-gray-100 rounded-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden"
                                 >
                                     <div className="relative aspect-square overflow-hidden bg-gradient-to-b from-gray-50 to-white">
@@ -259,7 +257,7 @@ function BelowHeader() {
                                             </span>
                                         </div>
                                     </div>
-                                </Link>
+                                </div>
                             ))}
                         </div>
                     </div>
