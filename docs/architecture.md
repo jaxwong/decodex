@@ -31,10 +31,11 @@ The repository contains three different levels of completion:
 - **Deployment incomplete:** the single-image runtime, deployment files and public smoke proof
   remain missing.
 
-Host A, Host B and the API now share one canonical comparison path. The remaining storefront
-boundary is deliberate: the clone cart is presentation-only and buyers select exact trusted
-catalog variants inside Luna. Mapping real cart identities requires an authorized marketplace
-catalog and is not faked in this demo.
+Host A, Host B and the API now share one canonical comparison path. Host A's demo cart holds
+exact trusted catalog variants: it renders their titles and prices from `/api/catalog`, and
+**Compare now** hands the ticked listing/variant IDs to Luna, which pre-ticks them. The cart
+never sends product text as evidence. Its three rows are demo contents; a real marketplace cart
+still needs an authorized catalog contract before its identities can be used.
 
 ## System map
 
@@ -43,7 +44,7 @@ flowchart LR
     Buyer[Buyer]
 
     subgraph HostA["Host A: shopee-compare-app"]
-        Cart[Storefront-local cart]
+        Cart[Catalog-backed demo cart]
         HostARoute[Thin #/Compare route]
         HostAAdapter[Host A navigation adapter]
     end
@@ -458,7 +459,8 @@ audible output. The remaining ordered work is:
 
 1. add the single-origin runtime and deployment;
 2. run the public Host A, Host B and `/api/health` smoke checks;
-3. map storefront cart identities only when an authorized marketplace catalog contract exists.
+3. map a real marketplace cart's identities only when an authorized marketplace catalog contract
+   exists; the demo cart already uses canonical catalog IDs.
 
 Do not represent real voice audio, Docker or deployment as complete before their individual
 gates pass. The seller view counts every active in-process demo session; it is not seller

@@ -46,9 +46,8 @@ passed, one intentional Host B skip for the single shared-package transport life
 
 ## Remaining and explicitly unverified
 
-- Host A cart IDs are not mapped to an authorized marketplace catalog. The demo therefore asks
-  buyers to choose exact backend variants in Luna instead of treating clone cart data as
-  evidence.
+- Host A's demo cart holds three hardcoded backend catalog variants; no real marketplace cart is
+  connected. Cart text is never treated as evidence.
 - One real paid microphone run produced captions and a visible revision 0→1 but no audible Luna
   response. It was not retried; G4 failed and voice is excluded from the main demo.
 - The full cross-product review-aspect view, Docker/Render deployment and public smoke proof

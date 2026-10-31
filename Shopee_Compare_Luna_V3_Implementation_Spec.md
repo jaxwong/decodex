@@ -36,8 +36,8 @@ This document began as the developer handoff and remains the implementation sour
   model calls and exposes no buyer identity, conversation, budget or preferences.
 - **Host A canonical replacement is implemented:** `#/Compare` mounts `@luna/widget` directly;
   the old `src/compare` provider, browser ranking, sample data, panels, API-key UI and direct
-  OpenAI request are deleted. The storefront cart is presentation-only, and exact trusted
-  variants are chosen inside Luna rather than inferred from clone cart IDs.
+  OpenAI request are deleted. The storefront cart holds exact trusted catalog variants and
+  **Compare now** opens its ticked rows pre-selected in Luna; no clone cart ID is mapped.
 - **Still incomplete:** the single-image runtime, deployment and public smoke proof remain.
   Voice is cut from the main demo because the real G4 check did not pass audible output.
 
@@ -80,7 +80,7 @@ original starter-code lint baseline; it is historical, not the current gate.
 | Existing path | Keep / change | Target responsibility |
 |---|---|---|
 | `shopee-compare-app/src/App.jsx` | **Implemented: shell/routes retained; legacy provider removed** | Host A routes only; no duplicated comparison provider |
-| `shopee-compare-app/src/components/Section/cart.jsx` | **Implemented: storefront-local presentation** | Link to Compare; never submit unverified clone cart IDs as evidence |
+| `shopee-compare-app/src/components/Section/cart.jsx` | **Implemented: catalog-backed demo cart** | Rows are exact catalog variants rendered from `/api/catalog`; Compare now hands the ticked IDs to Luna; cart text is never submitted as evidence |
 | `shopee-compare-app/src/components/Section/Compare.jsx` | **Implemented: thin route component** | Mount `LunaWidget` on `#/Compare` with Host A's navigation adapter |
 | `shopee-compare-app/src/compare/CompareContext.jsx` | **Deleted** | Widget owns browser view state; backend owns canonical comparison/preferences/revision |
 | `shopee-compare-app/src/compare/engine.js` | **Deleted** | Server owns evidence validation, extraction and ranking; no direct browser OpenAI call |
@@ -473,7 +473,7 @@ export type HostProduct = Selection & {
 };
 export interface LunaHostAdapter {
   hostId: string;                 // 'shopee-compare-app' / 'minimal-host'
-  getCurrentSelection(): Selection | null;
+  getCurrentSelections(): Selection[];  // at most 4; pre-ticked when the widget opens
   onSelectionChange(cb: (s: Selection | null) => void): () => void;
   navigateToListing(product: HostProduct): void;
   requestAddToCart?(selection: Selection): Promise<{ ok: boolean }>;

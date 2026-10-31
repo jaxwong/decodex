@@ -68,9 +68,9 @@ Open Host A at `http://127.0.0.1:5173/#/Cart` and Host B at
   microphone speech produced captions and changed the comparison from revision 0 to 1, but no
   audible Luna response was heard. The run was not retried. Use text in the main demo and do
   not claim working voice audio.
-- Host A now has one comparison implementation: `@luna/widget` on `#/Compare`. The storefront
-  cart is presentation-only; buyers choose 2–4 exact backend variants inside Luna, so cart IDs
-  are never treated as trusted evidence.
+- Host A now has one comparison implementation: `@luna/widget` on `#/Compare`. The demo cart
+  holds exact backend catalog variants, and **Compare now** opens the ticked ones pre-selected in
+  Luna. Cart text is never treated as trusted evidence.
 - Docker/Render deployment and public smoke proof are not implemented.
 - `npm install` currently reports dependency audit findings; no automatic or breaking audit fix
   has been applied.

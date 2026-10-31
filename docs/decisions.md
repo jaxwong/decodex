@@ -217,8 +217,8 @@ text/voice behavior.
 **Consequences:** The former `shopee-compare-app/src/compare` implementation is deleted rather
 than retained as a fallback. Host A mounts the shared widget directly, and Playwright asserts
 that the old directory, browser model-key UI and direct OpenAI request do not return. The cart
-does not invent a mapping from clone product IDs to trusted catalog IDs; exact variants are
-selected inside Luna until an authorized marketplace adapter can provide canonical identity.
+never invents a mapping from clone product IDs to trusted catalog IDs; D-19 replaces the clone
+rows with catalog variants instead.
 
 ## D-15 — Seller insights are a read-only session projection
 
@@ -295,3 +295,21 @@ no seller login or listing ownership: any active demo session can read any listi
 which carry no buyer identity, conversation, budget or preferences. The page is labelled a demo
 seller view. Restarting the API clears all counts. Host B, the buyer portability proof, has no
 seller page.
+
+## D-19 — Host A's demo cart holds catalog variants and preselects Luna
+
+**Decision:** Host A's cart rows are exact backend catalog variants identified by `listingId` and
+`variantId`. The cart renders their titles and list prices from `/api/catalog`, and **Compare
+now** passes the ticked IDs to `#/Compare` in router state. The widget host contract replaces
+`getCurrentSelection()` (one selection or `null`) with `getCurrentSelections()` (an array of at
+most four), which the widget pre-ticks.
+
+**Why:** The clone rows (Anker, UGREEN and Baseus in VND) had no counterpart in the catalog, so
+**Compare now** opened an unrelated product list. Mapping clone rows onto synthetic listings would
+be invented identity; making the cart hold canonical IDs removes the mapping altogether.
+
+**Consequences:** No clone product ID or cart text reaches the API, and the widget still checks
+every handed-over ID against its own catalog and reports unavailable ones. The three cart rows
+are hardcoded demo contents; a real marketplace cart still needs an authorized catalog contract.
+Host B returns its single selection as a one-item array. Checkout and "You May Also Like" remain
+clone presentation.
