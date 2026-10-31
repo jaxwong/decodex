@@ -2,34 +2,34 @@
 
 import argparse
 import asyncio
+import json
 import os
+from pathlib import Path
 
-from app.evidence import EvidenceBuilder, OpenAIModelClient
+from dotenv import load_dotenv
+from eval.live import RequestBudget
+from eval.smoke import run_smoke
+from openai import AsyncOpenAI, DefaultAsyncHttpxClient
+
+from app.evidence import OpenAIModelClient
 from app.providers import MockCatalogProvider
 
+ROOT = Path(__file__).resolve().parents[4]
 
-async def smoke() -> None:
-    model = OpenAIModelClient()
-    result = await EvidenceBuilder(MockCatalogProvider(), model).build(
-        [
-            {"listing_id": "listingA", "variant_id": "100w"},
-            {"listing_id": "listingB", "variant_id": "65w"},
-            {"listing_id": "listingC", "variant_id": "87w"},
-        ]
-    )
-    assert all(item["analysis_status"] == "completed" for item in result.items), (
-        "Live spec extraction unavailable"
-    )
-    assert all(item["review_status"] == "completed" for item in result.items), (
-        "Live review extraction unavailable"
-    )
-    assert any(f.status == "supported" for facts in result.facts_by_item.values() for f in facts)
-    assert result.review_mentions, "No grounded review mentions returned"
-    print(
-        f"Validated {len(result.items)} exact variants, "
-        f"{len(result.review_mentions)} cited review mentions; "
-        f"{len(model.observations)} actual Responses calls."
-    )
+
+async def smoke() -> dict[str, object]:
+    budget = RequestBudget(limit=6)
+    async with AsyncOpenAI(
+        max_retries=0,
+        timeout=30,
+        http_client=DefaultAsyncHttpxClient(event_hooks={"request": [budget.track]}),
+    ) as sdk:
+        model = OpenAIModelClient(sdk)
+        report = await run_smoke(MockCatalogProvider(), model)
+        report["model"] = model.model
+        report["attempted_requests"] = len(budget.attempts)
+        report["usage_records"] = [o["usage"] for o in model.observations]
+    return report
 
 
 if __name__ == "__main__":
@@ -38,6 +38,20 @@ if __name__ == "__main__":
         "--live", action="store_true", required=True, help="Authorize actual OpenAI API requests"
     )
     parser.parse_args()
+    load_dotenv(ROOT / ".env", override=False)
     if not os.environ.get("OPENAI_API_KEY"):
         parser.exit(2, "OPENAI_API_KEY missing: live smoke not executed.\n")
-    asyncio.run(smoke())
+    report = asyncio.run(smoke())
+    output = ROOT / "eval/live-smoke.json"
+    output.write_text(json.dumps(report, indent=2) + "\n")
+    print(
+        json.dumps(
+            {
+                "output": str(output),
+                "status": report["status"],
+                "attempted_requests": report["attempted_requests"],
+            }
+        )
+    )
+    if report["status"] != "passed":
+        parser.exit(2, "Live smoke acceptance failed; report retained.\n")
