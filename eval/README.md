@@ -16,6 +16,17 @@ Responses evaluation is separate and paid:
 PYTHONPATH=services/luna-api:. services/luna-api/.venv/bin/python -m eval.run --live --output eval/live-results.json
 ```
 
+The paid decision-agent benchmark is a separate fixed workload:
+
+```bash
+cd services/luna-api
+PYTHONPATH=../.. uv run --frozen python -m eval.agent --live
+```
+
+It writes only `eval/agent-results.json`. A later `make eval` validates the evidence and
+scenario-suite hashes and projects that artifact into `eval/results.json`; `make eval` does not
+make a provider call.
+
 The live CLI loads the ignored root `.env` without overwriting process variables.
 It requires `OPENAI_API_KEY` and uses `OPENAI_TEXT_MODEL` (default `gpt-6-luna`).
 Credentials and authorization headers are never written to the report.
@@ -90,7 +101,45 @@ comparisons. Three grounded samples are too few to establish a production p95.
 Reports distinguish configured from returned model names, separate smoke token
 usage, preserve the grounded evidence graph and record source hashes. Token totals
 are labelled with their observed coverage; missing fields remain null.
-B's agent-output benchmark remains unavailable until B supplies its outputs.
+The agent benchmark runs twelve fixed buyer utterances over
+`data/sample_comparison_evidence.json` through the production `run_luna` loop and its same four
+tools. It covers hard constraints, preference correction, unclear intent, review evidence,
+contradictory and missing facts, stale revision protection, an invalid item, no survivors,
+no comparable winner and recommendation explanation. One scenario intentionally fails before
+the model call on a stale revision. The other eleven can make at most four Responses requests
+each, so an HTTP hook blocks request 45. SDK retries, repair passes and alternate models are
+disabled. The artifact stores application outputs, checks, latency and usage, but no provider
+response IDs, reasoning or credentials.
+
+## Executed agent run — 31 October 2026
+
+[`agent-results.json`](agent-results.json) records one actual `gpt-6-luna` run. It used 28 of
+44 permitted provider requests and completed with `partial` status: 10 of 12 scenarios passed.
+The CLI exited 2 as designed for a partial run. It was not retried.
+
+| Metric | Observed result |
+|---|---:|
+| Scenario success | 10/12 |
+| Expected tool behavior | 11/11 |
+| Expected UI/state outcome | 12/12 |
+| Citation behavior | 4/5 |
+| State correction | 1/1 |
+| Stale-turn protection | 1/1 |
+
+The review-query scenario reached the correct review tool and preserved state, but the model
+returned unsupported citation IDs. The production citation boundary replaced that output with
+the conservative unverified answer, so citation behavior failed. The review-reliability
+scenario correctly left the recommendation empty and changed preferences once, but attempted
+a third tool after the mutation; the one-mutation boundary rejected it with
+`LunaToolCallRejected`. These failures remain in the artifact rather than being repaired or
+removed.
+
+The eleven model-backed scenario latencies had p50 5.911s and nearest-rank p95 8.094s. All 28
+responses reported usage: 71,663 input tokens and 1,935 output tokens. Cost remains unavailable
+because no verified price table is configured. These are one synthetic run's observations, not
+a production accuracy claim or latency SLO. The frozen fixture has no objective value tie, so
+the no-comparable-winner scenario measures abstention when review reliability cannot produce an
+objective ranking.
 
 ## Executed live run — 31 October 2026
 
