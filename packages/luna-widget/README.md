@@ -88,6 +88,15 @@ Hosts do not fetch, recount or reinterpret seller insights, and the report never
 identity, conversation, budget or preferences. There is no seller login: the page is labelled a
 demo seller view and any listing can be opened; it opens on the first listing.
 
+**Pick this one** first posts `{ item_key, expected_revision }` to
+`/api/comparisons/{id}/pick`, then calls the host's `requestAddToCart`. A 409 refreshes the
+comparison and shows the stale-comparison message instead of retrying; a 401 recovers the lost
+session as elsewhere. Under **Why buyers dropped you**, the report renders the server's
+`lost_picks` in plain words ("2 buyers picked Atlas Portable Power Bank · 100W because they
+ranked by Weight and your 87W model doesn't state it", "… because your delivered price was over
+their budget", "… with no stated reason") and shows **Picked over competitors: N** from
+`picked_count`. The wording is a fixed mapping of the server's reason; the page infers nothing.
+
 ## Seller questions
 
 **Ask seller** on a missing cell asks the buyer to confirm, then `POST

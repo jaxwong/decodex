@@ -17,6 +17,9 @@ from app.contracts.evidence import (
 
 type RankingPriority = Literal["weight_g", "price_minor", "max_output_w", "review_reliability"]
 type ExclusionReason = Literal["over_budget", "below_min_output"]
+type PickReason = Literal[
+    "over_budget", "below_min_output", "not_stated", "beaten_on", "no_stated_reason"
+]
 type ActiveTab = Literal["specs", "reviews"]
 DEFAULT_ACTIVE_TAB: ActiveTab = "specs"
 
@@ -72,6 +75,20 @@ class Recommendation(_SessionModel):
     limitations: list[str]
 
 
+class PickComparisonRequest(_SessionModel):
+    """The buyer's explicit pick of one compared item at the revision they were looking at."""
+
+    item_key: str = Field(min_length=1)
+    expected_revision: int = Field(ge=0)
+
+
+class ComparisonPick(_SessionModel):
+    """The item a buyer picked and the needs they had stated when they picked it."""
+
+    item_key: str
+    preferences: Preferences
+
+
 class ListingGapField(_SessionModel):
     """One unsupported listing field plus the listing text that produced it."""
 
@@ -90,6 +107,16 @@ class ListingBeatenBy(_SessionModel):
     competitor_item_keys: list[str]
 
 
+class ListingLostPick(_SessionModel):
+    """How many buyers picked one competitor over this listing's item, and the stated reason."""
+
+    item_key: str
+    competitor_item_key: str
+    reason: PickReason
+    field_key: str | None
+    count: int = Field(ge=1)
+
+
 class ListingGapReport(_SessionModel):
     """Read-only seller projection over current buyer comparisons in every active session."""
 
@@ -100,6 +127,8 @@ class ListingGapReport(_SessionModel):
     beaten_by: list[ListingBeatenBy]
     exclusion_counts: dict[ExclusionReason, int]
     uncertainty_counts: dict[str, int]
+    lost_picks: list[ListingLostPick]
+    picked_count: int = Field(ge=0)
 
 
 class SellerQuestionRequest(_SessionModel):
@@ -159,6 +188,8 @@ class ComparisonResponse(_SessionModel):
     recommendation: Recommendation
     ui_patch: UiPatch | None = None
     evidence: ComparisonEvidence
+    # Seller Centre reads the pick; buyers and the model never see it serialized.
+    pick: ComparisonPick | None = Field(default=None, exclude=True)
 
 
 class ComparisonSnapshotItem(_SessionModel):

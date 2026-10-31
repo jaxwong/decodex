@@ -194,6 +194,7 @@ A missing, unknown or expired token never reveals whether another session owns a
 | `POST` | `/api/comparisons` | Builds immutable evidence once and stores revision `0` |
 | `GET` | `/api/comparisons/{id}` | Returns the latest authorized comparison state |
 | `POST` | `/api/comparisons/{id}/ask` | Runs one bounded text-agent turn |
+| `POST` | `/api/comparisons/{id}/pick` | Records the item the buyer picked at `expected_revision` (204; 409 when stale; 422 for an item outside the comparison); no model call, revision unchanged |
 | `POST` | `/api/comparisons/{id}/live/session` | Creates Live WebRTC transport and attaches one server sideband |
 
 ```mermaid
@@ -291,9 +292,13 @@ flowchart TD
     Comparison --> Revision
 ```
 
-`apply_preferences` is the only comparison mutation. It requires the caller's
-`expected_revision`, calculates a deterministic recommendation, increments the revision once,
-and returns a revision-guarded `UiPatch`. A stale request fails before mutation.
+`apply_preferences` is the only mutation of preferences and recommendation. It requires the
+caller's `expected_revision`, calculates a deterministic recommendation, increments the revision
+once, and returns a revision-guarded `UiPatch`. A stale request fails before mutation.
+`record_pick` is the only other write: it stores the buyer's picked item together with the
+preferences in force at that revision (`ComparisonResponse.pick`, excluded from every
+serialization), leaves the revision unchanged, and a later pick replaces it. Changing
+preferences afterwards carries the pick forward unchanged.
 
 ## Deterministic decision layer
 
@@ -323,6 +328,14 @@ answer per field in the mock provider, which closes the question. The answer bec
 text at `variants/{variant_id}/seller_replies/{n}`; open comparisons keep their evidence, and
 only a newly built comparison extracts and cites it. Questions and replies live in memory and
 reset on API restart.
+
+Seller Centre also learns which product each buyer picked and why. `attribute_pick`
+(`app/decision/pick_reasons.py`) is a pure function of the recorded pick, the preferences stored
+with it and the cited facts: for each rival it reports the first stated need the picked item
+wins on (a constraint only the rival fails, then each priority in the buyer's order as
+`not_stated` or `beaten_on`), or `no_stated_reason` when nothing stated separates them. It
+reuses `rank_comparison` for constraints and `priority_value` for values, makes no model call,
+and the gap report projects it on request as `lost_picks` and `picked_count`.
 
 ## Responses text-agent flow
 

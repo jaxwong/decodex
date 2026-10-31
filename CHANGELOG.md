@@ -4,6 +4,23 @@ This file records implemented Luna milestones. The implementation spec remains t
 
 ## 31 October 2026
 
+### Implemented on `feat/pick-attribution`
+
+- `POST /api/comparisons/{id}/pick` records which product a buyer picked at the revision they
+  saw (204; 409 when stale; 422 for an item outside the comparison). The pick and the
+  preferences in force at that moment live on the comparison, replace an earlier pick, and are
+  excluded from buyer and model serialization. `RevisionConflict` now lives in
+  `decision/comparisons.py`.
+- `attribute_pick` (`decision/pick_reasons.py`) explains each lost pick deterministically with
+  the first stated need the picked product wins on: a constraint only the rival fails, then each
+  priority in the buyer's order as `not_stated` or `beaten_on`, else `no_stated_reason`. No
+  model call; nothing guessed. The gap report gains `lost_picks` and `picked_count`.
+- Seller Centre says "N buyers picked <competitor> because they ranked by Weight and your 87W
+  model doesn't state it" / "… because your delivered price was over their budget" / "… with no
+  stated reason" under **Why buyers dropped you**, plus **Picked over competitors: N**.
+- The widget's **Pick this one** records the pick before calling the host's `requestAddToCart`;
+  on 409 it refreshes and shows the stale-comparison message, on 401 it recovers the session.
+
 ### Implemented on `feat/extraction-latency`
 
 - A product's spec extraction and review extraction now run concurrently; disputes attach once
@@ -24,6 +41,8 @@ This file records implemented Luna milestones. The implementation spec remains t
   | concurrent calls | 11.5 s | same | 22 / 52 / 0 / 1 |
   | + snapshot reuse | 10.1 s | 0.003 s, 0 model calls | 22 / 51 / 0 / 1 |
   | + low effort | 8.6 s | 0.002 s, 0 model calls | 22 / 51 / 0 / 1 |
+
+
 
 ### Implemented on `feat/deploy-render`
 

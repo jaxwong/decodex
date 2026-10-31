@@ -77,10 +77,18 @@ curl --fail -H "Authorization: Bearer $LUNA_DEMO_TOKEN" \
 ```
 
 The response contains current-session comparison count, unsupported fields, competitors with
-supported values, exclusion-reason counts and uncertainty-field counts. It never contains a
-buyer identity, conversation, budget or preference. One request makes at most one catalog
-lookup, then reads at most the server-owned ceiling of ten comparisons with four items each.
-There is no model call, retry, cross-session aggregation or retained report state.
+supported values, exclusion-reason counts, uncertainty-field counts, `lost_picks` and
+`picked_count`. It never contains a buyer identity, conversation, budget or preference. One
+request makes at most one catalog lookup, then reads at most the server-owned ceiling of ten
+comparisons with four items each. There is no model call, retry or retained report state.
+
+A buyer's pick arrives through `POST /api/comparisons/{comparison_id}/pick` with
+`{ item_key, expected_revision }` (204; 409 `STALE_COMPARISON` with `current_revision` when the
+revision moved; 422 for an item outside the comparison). It is stored on the comparison with
+the preferences in force at that revision, replaces an earlier pick, and never serializes to
+buyers or the model. `decision/pick_reasons.py::attribute_pick` explains each lost pick with the
+first stated need the picked item wins on: a constraint only the rival fails, then each priority
+in order as `not_stated` or `beaten_on`, else `no_stated_reason`. Nothing is guessed.
 
 ## GPT-Live server boundary
 
@@ -121,7 +129,8 @@ Budget checks and the `price_minor` priority both use the contract-validated del
 list price minus the listed shop voucher plus listed shipping. Missing facts remain uncertain,
 review reliability is not converted into a score, and absent criteria produce no invented winner.
 Ranking also retains server-only exclusion reasons and uncertain field names for the seller report.
-Those fields are structurally excluded from existing comparison API and agent serialization.
+Those fields, like the recorded pick, are structurally excluded from existing comparison API and
+agent serialization.
 
 ## Verify
 

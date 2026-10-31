@@ -55,6 +55,7 @@ flowchart TD
 | D-17 | Accepted and implemented | Refresh Live UI after confirmed events; never mutate from captions |
 | D-21 | Accepted and implemented | Separate buyer and seller UI; picking in Luna returns to the cart; Host A has no picker |
 | D-22 | Accepted and implemented | Cut compare latency: concurrent spec/review calls, snapshot-keyed analysis reuse, low reasoning effort |
+| D-23 | Accepted and implemented | Record the buyer's pick and attribute it to the first stated need; report no stated reason rather than guess |
 | D-24 | Accepted and implemented | A Your pick bar puts checkout one explicit press from the comparison without making a pick a purchase |
 
 ## D-01 — Labelled synthetic marketplace provider
@@ -435,6 +436,33 @@ reused analysis never appears as a measured latency. The model rejects `minimal`
 efforts are `none`, `low`, `medium`, `high`, `xhigh`. Not measured: `medium` and above, more than
 one run per effort, and the paid `make eval --live` benchmark against the recorded labels; the
 recorded live run's implementation hash was already stale before this change (D-20).
+
+## D-23 — The buyer's pick is recorded and attributed to the first stated need
+
+**Decision:** **Pick this one** first calls `POST /api/comparisons/{id}/pick` with the item and
+the revision on screen; the server stores the pick on the comparison with the preferences in
+force at that moment and never serializes it to buyers or the model. Seller Centre's gap report
+explains each lost pick with a pure, model-free attribution (`attribute_pick`): (1) if the
+losing item failed a hard constraint (over budget, below minimum output) and the picked item
+did not, that constraint is the reason; (2) otherwise each stated priority is walked in the
+buyer's order, with price read from the delivered total; (3) a priority the losing item does
+not state while the picked item does is `not_stated` for that field; (4) a priority on which
+the picked item is strictly better is `beaten_on` for that field; (5) a tie, or a priority the
+rival wins, falls through to the next; (6) with no stated needs, or nothing stated that
+separates them, the reason is `no_stated_reason`. The report shows these per competitor and
+reason with counts, plus how many comparisons picked this listing.
+
+**Why:** Exclusion and uncertainty counts say why a listing was dropped from a ranking, not what
+the buyer finally chose or why. A seller acts on "2 buyers picked Atlas because they ranked by
+weight and your model doesn't state it". Guessing a reason from evidence the buyer never asked
+for would be an invented explanation.
+
+**Consequences:** The pick is one more in-memory field on the comparison; a second pick replaces
+the first, so a comparison contributes at most one pick. A stale pick fails with the existing
+409 and the widget refreshes instead of retrying. The stored preference snapshot keeps the
+reason stable when the buyer changes needs after picking. Attribution cost is bounded by
+comparisons × items × priorities per report request. Where the host goes after a pick is the
+host's decision and unchanged by this.
 
 ## D-24 — Deciding and buying sit together on the comparison but stay two presses
 

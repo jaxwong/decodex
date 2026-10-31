@@ -1,7 +1,6 @@
 """Own the four allowlisted Luna decision tools and their only state mutation."""
 
 import logging
-from http import HTTPStatus
 
 from app.contracts.evidence import Aspect
 from app.contracts.session import (
@@ -15,10 +14,9 @@ from app.contracts.session import (
     ReviewAspectResult,
     UiPatch,
 )
-from app.decision.comparisons import require_comparison
+from app.decision.comparisons import RevisionConflict, require_comparison
 from app.decision.ranking import rank_comparison
 from app.decision.sessions import DemoSessionState
-from app.errors import ApiFailure, ErrorCode
 
 logger = logging.getLogger(__name__)
 
@@ -33,21 +31,6 @@ class UnknownEvidence(ValueError):
 
 class UnknownReviewAspect(ValueError):
     """Raised when a tool references an aspect absent from the evidence contract."""
-
-
-class RevisionConflict(ApiFailure):
-    """Raised before mutation when expected revision is not current."""
-
-    code = ErrorCode.STALE_COMPARISON
-    http_status = HTTPStatus.CONFLICT
-    public_message = "The comparison changed; refresh before applying the newer intent."
-    retryable = False
-
-    def __init__(self, current_revision: int) -> None:
-        super().__init__(
-            f"stale comparison revision; current revision is {current_revision}",
-            current_revision=current_revision,
-        )
 
 
 def get_comparison(
@@ -188,6 +171,7 @@ def apply_preferences(
         recommendation=recommendation,
         ui_patch=ui_patch,
         evidence=comparison.evidence,
+        pick=comparison.pick,
     )
     logger.info(
         "Applied preferences comparison_id=%s base_revision=%s new_revision=%s "

@@ -24,7 +24,7 @@ from app.contracts.session import (
     Preferences,
     PreferenceUpdate,
 )
-from app.decision.comparisons import require_comparison
+from app.decision.comparisons import RevisionConflict, require_comparison
 from app.decision.sessions import (
     ConversationState,
     ConversationTurn,
@@ -33,7 +33,6 @@ from app.decision.sessions import (
     reserve_conversation,
 )
 from app.decision.tools import (
-    RevisionConflict,
     UnknownEvidence,
     UnknownItem,
     UnknownReviewAspect,

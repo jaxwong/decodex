@@ -5,8 +5,12 @@ from datetime import UTC, datetime
 from eval.fixtures import SELECTIONS, build_sample_evidence
 
 from app.contracts.evidence import ComparisonEvidence, ComparisonSelection
-from app.contracts.session import ComparisonResponse, Preferences
-from app.decision.comparisons import BuildComparisonEvidence, create_comparison
+from app.contracts.session import ComparisonResponse, ListingLostPick, Preferences
+from app.decision.comparisons import (
+    BuildComparisonEvidence,
+    create_comparison,
+    record_pick,
+)
 from app.decision.gap_report import build_gap_report
 from app.decision.sessions import (
     DemoSessionState,
@@ -78,6 +82,8 @@ def test_no_comparisons_returns_zero_report() -> None:
         "beaten_by": [],
         "exclusion_counts": {},
         "uncertainty_counts": {},
+        "lost_picks": [],
+        "picked_count": 0,
     }
 
 
@@ -153,6 +159,8 @@ def test_supported_listing_has_no_gaps_or_exclusions() -> None:
     assert report.beaten_by == []
     assert report.exclusion_counts == {}
     assert report.uncertainty_counts == {}
+    assert report.lost_picks == []
+    assert report.picked_count == 0
 
 
 def test_report_adds_up_comparisons_from_every_buyer_session() -> None:
@@ -187,3 +195,81 @@ def test_disagreeing_extractions_are_both_reported() -> None:
     ]
     assert report.comparisons_count == 2
     assert warranty_values == [["12", "24"], ["24", "12"]]
+
+
+def test_report_attributes_a_recorded_pick_to_each_losing_listing() -> None:
+    session_state, comparison_id = create_comparison_state()
+    apply_preferences(
+        session_state,
+        comparison_id,
+        preferences=Preferences(
+            max_price_minor=8000,
+            min_output_w=65,
+            priorities=["weight_g", "price_minor"],
+        ),
+        expected_revision=0,
+    )
+    record_pick(session_state, comparison_id, item_key="listingA:100w", expected_revision=1)
+
+    comet = build_gap_report(session_state.comparisons.values(), "listingC")
+    breeze = build_gap_report(session_state.comparisons.values(), "listingB")
+    atlas = build_gap_report(session_state.comparisons.values(), "listingA")
+
+    assert comet.picked_count == 0
+    assert comet.lost_picks == [
+        ListingLostPick(
+            item_key="listingC:87w",
+            competitor_item_key="listingA:100w",
+            reason="not_stated",
+            field_key="weight_g",
+            count=1,
+        )
+    ]
+    assert breeze.lost_picks == [
+        ListingLostPick(
+            item_key="listingB:65w",
+            competitor_item_key="listingA:100w",
+            reason="over_budget",
+            field_key=None,
+            count=1,
+        )
+    ]
+    assert atlas.picked_count == 1
+    assert atlas.lost_picks == []
+
+
+def test_pick_is_attributed_to_the_needs_stated_when_it_was_made() -> None:
+    session_store: DemoSessionStore = {}
+    first_buyer, first_id = create_comparison_state(session_store)
+    second_buyer, second_id = create_comparison_state(session_store)
+    apply_preferences(
+        first_buyer,
+        first_id,
+        preferences=Preferences(max_price_minor=8000),
+        expected_revision=0,
+    )
+    record_pick(first_buyer, first_id, item_key="listingA:100w", expected_revision=1)
+    # Changing needs after the pick neither drops it nor rewrites why it was made.
+    apply_preferences(first_buyer, first_id, preferences=Preferences(), expected_revision=1)
+    record_pick(second_buyer, second_id, item_key="listingA:100w", expected_revision=0)
+
+    report = build_gap_report(every_comparison(session_store), "listingB")
+
+    assert first_buyer.comparisons[first_id].revision == 2
+    assert report.comparisons_count == 2
+    assert report.lost_picks == [
+        ListingLostPick(
+            item_key="listingB:65w",
+            competitor_item_key="listingA:100w",
+            reason="over_budget",
+            field_key=None,
+            count=1,
+        ),
+        ListingLostPick(
+            item_key="listingB:65w",
+            competitor_item_key="listingA:100w",
+            reason="no_stated_reason",
+            field_key=None,
+            count=1,
+        ),
+    ]

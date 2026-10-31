@@ -11,6 +11,21 @@ const EXCLUSION_HINTS = {
   below_min_output: 'The buyer needed more output power than this listing states.',
 };
 
+// Why one buyer picked a competitor, in the seller's terms. The server attributed the pick
+// to the first stated need the competitor won on; "no stated reason" is reported, never guessed.
+function lostPickText(entry, label, nameOf, variantLabelOf) {
+  const buyers = `${entry.count} buyer${entry.count === 1 ? '' : 's'} picked ${nameOf(entry.competitor_item_key)}`;
+  const model = `your ${variantLabelOf(entry.item_key)} model`;
+  switch (entry.reason) {
+    case 'over_budget': return `${buyers} because your delivered price was over their budget`;
+    case 'below_min_output': return `${buyers} because ${model} states less output than they needed`;
+    case 'not_stated': return `${buyers} because they ranked by ${label(entry.field_key)} and ${model} doesn’t state it`;
+    case 'beaten_on': return `${buyers} because they ranked by ${label(entry.field_key)} and it beat ${model} on it`;
+    case 'no_stated_reason': return `${buyers} with no stated reason`;
+    default: throw new TypeError(`Unknown pick reason ${entry.reason}`);
+  }
+}
+
 function variantOf(listings, itemKey) {
   for (const listing of listings) {
     const variant = listing.variants.find(candidate => `${listing.listing_id}:${candidate.variant_id}` === itemKey);
@@ -170,6 +185,7 @@ export function SellerGapReport({ apiBaseUrl = '/api' }) {
           <div>
             <h3>{listing.title}</h3>
             <p className="luna-muted">{comparisonsText(report.comparisons_count)}</p>
+            {hasComparisons && <p className="luna-muted">Picked over competitors: {report.picked_count}</p>}
           </div>
         </div>
 
@@ -217,7 +233,16 @@ export function SellerGapReport({ apiBaseUrl = '/api' }) {
           <div>
             <h4>Why buyers dropped you</h4>
             {Object.keys(report.exclusion_counts).length === 0 && Object.keys(report.uncertainty_counts).length === 0
-              && <p className="luna-muted">No buyer excluded this listing, and nothing was too unclear to rank.</p>}
+              && report.lost_picks.length === 0
+              && <p className="luna-muted">No buyer excluded this listing, nothing was too unclear to rank, and no buyer picked a competitor over it.</p>}
+            {report.lost_picks.map(entry => <div key={`${entry.item_key}:${entry.competitor_item_key}:${entry.reason}:${entry.field_key}`} className="luna-seller-row">
+              <div className="luna-seller-row-head">
+                <strong>Lost a pick</strong>
+                <span>{entry.count} buyer{entry.count === 1 ? '' : 's'}</span>
+              </div>
+              <p className="luna-muted">{nameOf(entry.item_key)}</p>
+              <p className="luna-seller-fix">{lostPickText(entry, label, nameOf, variantLabelOf)}</p>
+            </div>)}
             {Object.entries(report.exclusion_counts).map(([reason, count]) => <div key={reason} className="luna-seller-row">
               <div className="luna-seller-row-head">
                 <strong>{exclusionLabel(reason)}</strong>
