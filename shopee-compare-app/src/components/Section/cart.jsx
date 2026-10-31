@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCompare } from '../../compare/CompareContext';
 import ProductThumb from '../../compare/ProductThumb';
+import HostCatalogPicker from '../../luna/HostCatalogPicker';
 
 const peso = n => n.toLocaleString('vi-VN') + '₫';
 
@@ -15,6 +16,14 @@ const suggestedProducts = [
 function Cart() {
     const { cart, listings, toggleCompare, setVariant, updateQty, removeItem, compareItems, compareNow } = useCompare();
     const navigate = useNavigate();
+    const launchLuna = (items) => {
+  sessionStorage.setItem(
+    'luna-host-selection',
+    JSON.stringify(items)
+  );
+
+  navigate('/Compare');
+};
     const [selectedItems, setSelectedItems] = useState(new Set(cart.map(i => i.id)));
 
     // Resolve cart rows (power banks come from listings + selected variant)
@@ -73,6 +82,9 @@ function Cart() {
 
     return (
         <main className="bg-gray-100 min-h-screen py-3 sm:py-6">
+            <div className="max-w-[1200px] mx-auto px-2 sm:px-4">
+                <HostCatalogPicker onCompare={launchLuna} />
+                </div>
             <div className="max-w-[1200px] mx-auto px-2 sm:px-4">
                 {/* Header */}
                 <div className="bg-white rounded-sm shadow-sm mb-3">

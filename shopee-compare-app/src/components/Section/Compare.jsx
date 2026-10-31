@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import { useEffect, useState } from 'react';
 import LunaWidget from '../../luna/LunaWidget';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCompare } from '../../compare/CompareContext';
@@ -20,6 +21,27 @@ function Compare() {
     const [drawer, setDrawer] = useState(null); // {type, i, k}
     const [added, setAdded] = useState(null);
     const [lunaOpen, setLunaOpen] = useState(false);
+    const [hostProducts, setHostProducts] = useState([]);
+
+    useEffect(() => {
+    const saved = sessionStorage.getItem('luna-host-selection');
+
+    if (!saved) return;
+
+    try {
+        const items = JSON.parse(saved);
+
+        if (Array.isArray(items) && items.length >= 2 && items.length <= 4) {
+        setHostProducts(items);
+        setLunaOpen(true);
+        }
+    } catch {
+        console.error('Invalid Luna selection');
+    }
+
+    sessionStorage.removeItem('luna-host-selection');
+    }, []);
+
 
     useEffect(() => {
         if (!run && !running) { compareItems().length >= 2 ? compareNow() : navigate('/Cart'); }
@@ -128,7 +150,7 @@ function Compare() {
                     </div>
                 </div>
 
-                {lunaOpen && <LunaWidget products={R.map(r => ({ id: `${r.lid}:${r.vid}`, name: r.L.short }))} onClose={() => setLunaOpen(false)} />}
+                {lunaOpen && <LunaWidget key={hostProducts?.map(p => `${p.listing_id}:${p.variant_id}`).join('|') || 'legacy'} products={hostProducts || []} onClose={() => setLunaOpen(false)} />}
                 {/* Run log */}
                 <div className="bg-white rounded-sm shadow-sm mb-3 px-3 sm:px-4 py-2.5 flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500">
                     <span>Run #{run.n}</span>
@@ -203,7 +225,7 @@ function Compare() {
                     <div className="bg-white rounded-sm shadow-sm mt-3 overflow-hidden">
                         <div className="px-3 sm:px-4 py-3 border-b border-gray-100"><h3 className="text-sm font-medium text-gray-700">Trade-offs for your priorities</h3></div>
                         <ul className="list-disc pl-8 pr-4 py-3 text-sm text-gray-700">{explain}</ul>
-                        <p className="px-4 pb-3 text-xs text-gray-400">No single “best” product. Rankings use only verified listing values; items that can't be verified are named, not guessed.</p>
+                        <p className="px-4 pb-3 text-xs text-gray-400">No single “best” product. Rankings use only verified listing values; items that can&apost be verified are named, not guessed.</p>
                     </div>
                 )}
                 <p className="text-[11px] text-gray-400 mt-3">Sample listings — specs are illustrative, not real product data.</p>

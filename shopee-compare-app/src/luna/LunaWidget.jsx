@@ -18,8 +18,10 @@ export default function LunaWidget({ products = [], onClose }) {
   const [catalog, setCatalog] = useState([]);
   const [selection, setSelection] = useState([]);
   const [comparison, setComparison] = useState(null);
+  const [autoStarted, setAutoStarted] = useState(false);
   const [messages, setMessages] = useState([initialMessage]);
   const [input, setInput] = useState('');
+  const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [lastAnswer, setLastAnswer] = useState(null);
@@ -68,6 +70,29 @@ export default function LunaWidget({ products = [], onClose }) {
     setSelection(old => old.includes(itemKey) ? old.filter(k => k !== itemKey)
       : old.length < 4 ? [...old, itemKey] : old);
   }
+
+  useEffect(() => {
+    if (!session || !catalog.length || autoStarted || comparison || busy || products.length < 2) return;
+    const keys = products.map(p => `${p.listing_id}:${p.variant_id}`);
+    const valid = keys.length <= 4 && new Set(keys).size === keys.length && keys.every(key =>
+      catalog.some(listing => listing.variants.some(v => `${listing.listing_id}:${v.variant_id}` === key)));
+    if (!valid) return;
+    setAutoStarted(true);
+    // Create directly from exact host-selected identities, not from stale selection state.
+    async function start() {
+      setBusy(true);
+      setError('');
+      try {
+        const result = await lunaClient.createComparison(session.token, products.map(p => ({
+          listing_id: p.listing_id, variant_id: p.variant_id,
+        })));
+        setComparison(result);
+        setMessages([{ role: 'assistant', text: 'Comparison created from Host A selections. Ask Luna what matters to you.' }]);
+      } catch (err) { setError(errorText(err)); }
+      finally { setBusy(false); }
+    }
+    start();
+  }, [session, catalog, autoStarted, comparison, busy, products]);
 
   async function createComparison() {
     if (!session || selectedItems.length < 2 || selectedItems.length > 4 || busy) return;
@@ -121,7 +146,17 @@ export default function LunaWidget({ products = [], onClose }) {
 
   const evidence = comparison?.evidence;
   const recommendation = comparison?.recommendation;
-  const askSuggestion = (text) => { if (!busy && comparison) setInput(text); };
+
+  const askSuggestion = (text) => {
+  if (!comparison || busy) return;
+
+  setInput(text);
+  inputRef.current?.focus();
+  inputRef.current?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'center',
+  });
+};
 
   return <section aria-label="Luna shopping assistant" className="bg-white rounded-xl shadow-sm border border-orange-100 p-4 md:p-6 my-4 text-gray-800">
     <header className="flex justify-between items-start gap-3 mb-5">
@@ -138,7 +173,7 @@ export default function LunaWidget({ products = [], onClose }) {
       {error.includes('expired') && <button type="button" onClick={() => window.location.reload()} className="underline ml-2">Restart session</button>}
     </div>}
 
-    {!comparison && <div className="mb-5">
+    {!comparison && !autoStarted && <div className="mb-5">
       <h3 className="font-semibold text-sm mb-1">Choose products to compare</h3>
       <p className="text-xs text-gray-500 mb-3">Select 2–4 variants from the Luna demo catalog. Shopee products are preselected only when IDs match.</p>
       <div className="grid md:grid-cols-2 gap-2 max-h-72 overflow-y-auto">
@@ -184,7 +219,7 @@ export default function LunaWidget({ products = [], onClose }) {
           className="text-xs border border-orange-200 text-orange-700 rounded-full px-3 py-2 hover:bg-orange-50 disabled:opacity-50">{text}</button>)}
     </div>}
     <form onSubmit={send} className="flex gap-2 mt-3">
-      <input aria-label="Message Luna" maxLength={2000}
+      <input ref={inputRef} aria-label="Message Luna" maxLength={2000}
         className="border rounded-lg px-3 py-2 flex-1 min-w-0 text-sm"
         value={input} onChange={event => setInput(event.target.value)}
         placeholder={comparison ? 'Ask about price, power, reviews…' : 'Create a comparison first'}
