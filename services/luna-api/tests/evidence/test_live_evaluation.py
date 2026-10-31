@@ -8,8 +8,8 @@ from typing import Any
 
 import httpx2
 import pytest
-from eval.live import RequestBudget, RequestLimitExceeded, free_form_specs
-from eval.run import evaluate, request_plan, token_summary
+from eval.live import RequestBudget, RequestLimitExceeded, free_form_specs, token_summary
+from eval.run import evaluate, request_plan
 from eval.smoke import check_smoke
 from openai import AsyncOpenAI, DefaultAsyncHttpxClient
 

@@ -41,6 +41,25 @@ class RequestBudget:
         logger.info("Live request %d/%d: %s", len(self.attempts), self.limit, self.stage)
 
 
+def token_summary(usages: list[dict[str, Any] | None], attempted: int) -> dict[str, Any]:
+    """Sum complete provider usage while preserving unknown fields as null."""
+    keys = ("input_tokens", "output_tokens", "total_tokens")
+    records = [usage for usage in usages if usage is not None]
+    totals = {
+        key: sum(usage[key] for usage in records)
+        if records and all(type(usage.get(key)) is int for usage in records)
+        else None
+        for key in keys
+    }
+    return {
+        "observed_totals": totals,
+        "responses_with_usage": len(records),
+        "attempted_requests": attempted,
+        "complete": len(records) == attempted
+        and all(value is not None for value in totals.values()),
+    }
+
+
 class BaselineFact(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     field_key: FieldKey

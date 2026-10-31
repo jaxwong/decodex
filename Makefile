@@ -4,7 +4,7 @@ API_DIRECTORY := services/luna-api
 
 .DEFAULT_GOAL := api-test
 
-.PHONY: api-sync api-format-check api-lint api-typecheck api-unit api-test api-dev api-capability-smoke
+.PHONY: api-sync api-format-check api-lint api-typecheck api-unit api-test api-dev api-capability-smoke eval
 
 api-sync:
 	cd $(API_DIRECTORY) && uv sync --frozen
@@ -29,3 +29,6 @@ api-dev:
 api-capability-smoke:
 	set -eu; set -a; . ./.env; set +a; cd $(API_DIRECTORY); \
 		uv run --frozen python -m app.openai.capability_smoke
+
+eval:
+	cd $(API_DIRECTORY) && PYTHONPATH=../.. uv run --frozen python -m eval.run
