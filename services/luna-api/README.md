@@ -1,16 +1,16 @@
-# Luna API — Developer B phases B1–B5
+# Luna API
 
-The service owns the API shell, authenticated demo sessions, canonical comparison state, deterministic ranking, four decision tools, bounded Responses chat, the GPT-Live server sideband, and OpenAI capability checks. A owns immutable marketplace evidence and C owns its frontend projection and WebRTC media.
+The service owns the API shell, authenticated demo sessions, canonical comparison state, deterministic ranking, four decision tools, bounded Responses chat, the GPT-Live server sideband, and OpenAI capability checks. `app/evidence/` and `app/providers/` own immutable marketplace evidence; the React hosts and `@luna/widget` own its frontend projection and WebRTC media.
 
 ## Ownership boundary
 
-| Owner | Owns here | Integrates through |
+| Layer | Owns | Integrates through |
 | --- | --- | --- |
-| Developer B | `pyproject.toml`, `uv.lock`, app composition, routes, demo sessions, decision state, and `app/openai/*` | The HTTP/OpenAPI surface and A's public evidence contract |
-| Developer A | Evidence contracts, providers, evidence building, and evidence tests | The immutable evidence contract; never B's session store or OpenAI decision calls |
-| Developer C | React hosts, widget, and browser tests | The HTTP/OpenAPI surface; never Python state or API keys |
+| API shell (`app/main.py`, `app/routes/`, `app/decision/`, `app/openai/`) | `pyproject.toml`, `uv.lock`, app composition, routes, demo sessions, decision state and OpenAI calls | The HTTP/OpenAPI surface and the public evidence contract |
+| Evidence (`app/evidence/`, `app/providers/`, `app/contracts/evidence.py`) | Evidence contracts, providers, evidence building and evidence tests | The immutable evidence contract; never the session store or OpenAI decision calls |
+| Browser (`packages/luna-widget/`, both hosts) | React hosts, widget and browser tests | The HTTP/OpenAPI surface; never Python state or API keys |
 
-Developer B is the only dependency-lock owner. A new Python dependency is requested from B rather than added through a second project or lockfile.
+`services/luna-api/pyproject.toml` and `uv.lock` are the only Python dependency owners; no second project or lockfile.
 
 ## Vocabulary
 
@@ -48,7 +48,7 @@ curl --fail -X POST \
   http://127.0.0.1:8000/api/comparisons
 ```
 
-Comparison creation calls A's evidence builder exactly once. Runtime has no fixture fallback; the frozen fixture builder exists only under `tests/`.
+Comparison creation calls the evidence builder exactly once. Runtime has no fixture fallback; the frozen fixture builder exists only under `tests/`.
 
 Copy the returned `comparison_id` and current `revision`, then ask Luna:
 
@@ -82,7 +82,7 @@ There is no model call, retry, cross-session aggregation or retained report stat
 
 ## GPT-Live server boundary
 
-The C-owned browser creates an audio-plus-data WebRTC offer and posts its SDP to:
+The browser (`@luna/widget`) creates an audio-plus-data WebRTC offer and posts its SDP to:
 
 ```text
 POST /api/comparisons/{comparison_id}/live/session
@@ -92,17 +92,17 @@ Content-Type: application/json
 {"sdp":"<browser RTCPeerConnection offer SDP>"}
 ```
 
-The response contains only the unchanged provider `session.id`, transport type, and answer SDP. B creates at most one provider session and attaches exactly one server-authenticated sideband, both without retries. The sideband is the only tool executor; the browser owns microphone capture, audio playback, captions, mute/stop controls, and comparison polling.
+The response contains only the unchanged provider `session.id`, transport type, and answer SDP. The server creates at most one provider session and attaches exactly one server-authenticated sideband, both without retries. The sideband is the only tool executor; the browser owns microphone capture, audio playback, captions, mute/stop controls, and comparison polling.
 
 Successful Live creation logs the session/comparison IDs, revision, its fixed two external calls, elapsed milliseconds, and zero attach retries. It does not log SDP, credentials, or marketplace source text.
 
 Each Responses delegation executes only completed function-call items, deduplicates call IDs, permits at most three sequential tool rounds, and sends one continuation after each result. A successful `apply_preferences` is committed before its function output and refreshes the Live tool schema to the new comparison revision. No raw marketplace page text is placed in Live UI context.
 
-The API can verify session creation and sideband attachment without C, but genuine microphone input, spoken output, and a provider-driven tool mutation require C's browser WebRTC path. Do not claim the full voice feature until that joint check passes.
+The API can verify session creation and sideband attachment on its own, but genuine microphone input, spoken output, and a provider-driven tool mutation require the browser WebRTC path. Do not claim the full voice feature until that joint check passes.
 
 ## Decision tools
 
-B2 exposes exactly four Python tool functions for B3 text and B4 Live delegation:
+`app/decision/tools.py` exposes exactly four Python tool functions for text and Live delegation:
 
 - `get_comparison` returns compact normalized facts without raw source text.
 - `get_review_aspect` returns bounded aggregates and literal supporting mentions.
@@ -122,7 +122,7 @@ Those fields are structurally excluded from existing comparison API and agent se
 make api-test
 ```
 
-The B-owned B2–B5 behavior subset is independently runnable without network or API credits:
+The decision, route and OpenAI test subset is independently runnable without network or API credits:
 
 ```bash
 cd services/luna-api

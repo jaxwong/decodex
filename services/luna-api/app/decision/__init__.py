@@ -1,1 +1,1 @@
-"""B-owned deterministic decision state."""
+"""Deterministic decision state."""

@@ -14,7 +14,7 @@ Shopee API access or production integration.
 
 ## Install and verify
 
-Requirements: Node 18+, npm, `uv`, Python from `services/luna-api/.python-version`, and Chromium
+Requirements: Node 18+, npm, `uv`, Python 3.12+ (see `services/luna-api/pyproject.toml`), and Chromium
 installed once with `npx playwright install chromium`.
 
 ```bash
