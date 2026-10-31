@@ -135,7 +135,7 @@ These are current repository facts, not accepted implementation shortcuts:
 1. One real spoken provider turn produced captions and a visible revision 0→1, but no audible
    output. G4 failed and voice is excluded from the main demo; generation versus browser
    playback was not isolated and must not be guessed.
-2. The single-origin Docker/deployment shape and public smoke proof are not implemented.
+2. The single-origin image passes locally, but no public deployment or smoke proof exists.
 3. Host A's demo cart contents are three hardcoded canonical catalog variants; no real
    marketplace cart is connected. A future authorized marketplace integration must supply
    canonical identities rather than infer or hardcode a mapping from its own product IDs.

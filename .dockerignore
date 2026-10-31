@@ -1,0 +1,16 @@
+# Allowlist: a new secret or local file at the root can never reach the build context.
+*
+!package.json
+!package-lock.json
+!shopee-compare-app
+!packages
+!apps
+!services
+!data
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/.env*
+**/*.log
+**/.DS_Store

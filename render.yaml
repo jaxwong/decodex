@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: shopee-compare-luna-demo
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeployTrigger: "off"
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_TEXT_MODEL
+        value: gpt-6-luna
+      - key: OPENAI_LIVE_MODEL
+        value: gpt-live-1

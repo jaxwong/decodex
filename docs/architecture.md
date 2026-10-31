@@ -28,8 +28,8 @@ The repository contains three different levels of completion:
   comparison state, and the former `src/compare` provider, ranking, sample data, browser key UI
   and direct OpenAI request are deleted. Playwright asserts that the directory and forbidden
   browser strings do not return.
-- **Deployment incomplete:** the single-image runtime, deployment files and public smoke proof
-  remain missing.
+- **Deployment incomplete:** the single-image runtime, `Dockerfile` and `render.yaml` exist and
+  pass locally; a public deployment and its smoke proof remain missing.
 
 Host A, Host B and the API now share one canonical comparison path. Host A's storefront
 (`src/shop.jsx`) loads `/api/catalog` once and keeps a cart of exact trusted catalog variants.
@@ -125,7 +125,7 @@ flowchart LR
 | Marketplace boundary | `app/providers/` | Catalog protocol and labelled synthetic provider |
 | OpenAI decision boundary | `app/openai/` | Bounded Responses loop and Live sideband executor |
 | Evaluation | `eval/` | Evidence metrics, paid evidence run, the agent benchmark and honest artifacts |
-| Delivery | `Makefile`, future `Dockerfile`, future `render.yaml` | Commands and eventual single-service runtime |
+| Delivery | `Makefile`, `Dockerfile`, `render.yaml` | Commands and single-service runtime |
 
 ### Product view evidence flow
 
@@ -472,8 +472,8 @@ make api-capability-smoke  # paid capability check
 
 `make e2e` is deterministic: it injects SDK-shaped text responses, uses a browser WebRTC test
 double, starts both independent hosts and makes no provider call. It is not proof of real
-microphone/provider audio. `make test`, `make test-live`, `make demo`, `Dockerfile` and
-`render.yaml` are not implemented. Do not infer deployment or G4 readiness from offline tests.
+microphone/provider audio. `make test`, `make test-live` and `make demo` are not
+implemented. Do not infer deployment or G4 readiness from offline tests.
 
 ## Required next integration
 
@@ -481,7 +481,7 @@ The next system-level milestone is deployment, not another comparison engine. G3
 replacement are automated. The G4 browser path remains excluded from the demo after failing
 audible output. The remaining ordered work is:
 
-1. add the single-origin runtime and deployment;
+1. deploy the single-origin image;
 2. run the public Host A, Host B and `/api/health` smoke checks;
 3. map a real marketplace cart's identities only when an authorized marketplace catalog contract
    exists; the demo cart already uses canonical catalog IDs.

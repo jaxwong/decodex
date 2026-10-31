@@ -38,7 +38,8 @@ This document began as the developer handoff and remains the implementation sour
   the old `src/compare` provider, browser ranking, sample data, panels, API-key UI and direct
   OpenAI request are deleted. The storefront cart holds exact trusted catalog variants and
   **Compare now** opens Luna straight on its ticked rows' comparison; no clone cart ID is mapped.
-- **Still incomplete:** the single-image runtime, deployment and public smoke proof remain.
+- **Single-image runtime implemented and verified locally;** public deployment and smoke proof
+  remain.
   Voice is cut from the main demo because the real G4 check did not pass audible output.
 
 1. Push `shopee-compare-app/` and this spec together. Do not push `node_modules/`, generated `dist/`, `.env`, API keys or unrelated local files.
@@ -1002,8 +1003,7 @@ npm run dev --workspace shopee-compare
 npm run dev --workspace minimal-host -- --port 5174
 ```
 
-The single Docker image and `make demo` are not implemented as of the status date. Do not use
-the following future deployment URLs until section 11's runtime files exist and pass review:
+`make demo` is not implemented. Build and run the single image, then use:
 
 ```bash
 curl --fail http://127.0.0.1:8080/api/health
@@ -1054,10 +1054,10 @@ The multi-stage root `Dockerfile` must:
 1. Run the locked root npm install and build both frontends.
 2. Install the locked Python service dependencies.
 3. Copy Host A's built files into the API image's static root.
-4. Copy Host B under `/minimal/` and build it with that base path.
+4. Copy Host B into that root's `minimal/` directory; its relative asset base needs no rebuild.
 5. Start one FastAPI/Uvicorn process on `0.0.0.0:${PORT:-8080}`.
 
-FastAPI registers `/api/*` first, mounts Host B at `/minimal`, then mounts Host A at `/` **last**. The existing HashRouter makes Host A's `/#/Cart` work without server rewrites. Both hosts call relative `/api` URLs, so there is no CORS configuration. Keep demo state in memory, one process, no database, worker, queue, cache or persistent disk. A restart clears sessions; that is acceptable and must be disclosed for the demo.
+FastAPI registers `/api/*` first, then mounts the static root at `/` **last**, which serves Host A at `/` and Host B at `/minimal/`. The existing HashRouter makes Host A's `/#/Cart` work without server rewrites. Both hosts call relative `/api` URLs, so there is no CORS configuration. Keep demo state in memory, one process, no database, worker, queue, cache or persistent disk. A restart clears sessions; that is acceptable and must be disclosed for the demo.
 
 ### 11.2 Render Blueprint
 
@@ -1071,7 +1071,7 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /api/health
-    autoDeployTrigger: off
+    autoDeployTrigger: "off"
     envVars:
       - key: OPENAI_API_KEY
         sync: false
@@ -1079,8 +1079,6 @@ services:
         value: gpt-6-luna
       - key: OPENAI_LIVE_MODEL
         value: gpt-live-1
-      - key: LUNA_CATALOG_PROVIDER
-        value: mock
 ```
 
 `OPENAI_API_KEY` is entered in the Render dashboard during Blueprint creation and is never a Docker build argument, repository value or frontend variable. Render requires the service to bind `0.0.0.0` and the `PORT` environment value; do not hardcode a production port. Current official references: [Render Blueprints](https://render.com/docs/infrastructure-as-code), [Docker deploys](https://render.com/docs/docker), and [web-service port binding](https://render.com/docs/web-services#port-binding).
