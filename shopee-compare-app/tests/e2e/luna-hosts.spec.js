@@ -70,9 +70,47 @@ test('same packaged widget completes add, compare, ask, cite, and voice fallback
   await expect(productView.getByRole('heading', { name: 'SYNTHETIC Atlas power bank family' })).toBeVisible();
   await expect(productView.getByText('100W synthetic SKU', { exact: true })).toBeVisible();
   await expect(productView.getByText('SGD 60.00', { exact: true })).toBeVisible();
+  const specifications = productView.getByRole('list', { name: 'Product specifications' });
+  const specificationRows = specifications.locator(':scope > li');
+  await expect(specificationRows).toHaveCount(8);
+  for (const [label, value] of [
+    ['Capacity', '20,000 mAh'],
+    ['Max output', '100 W'],
+    ['USB-C ports', '2'],
+    ['Weight', '420 g'],
+    ['Max input', '65 W'],
+    ['USB PD', 'Yes'],
+    ['Included cable', 'Yes'],
+    ['Warranty', '12 months'],
+  ]) {
+    const specification = specificationRows.filter({ hasText: label });
+    await expect(specification.getByText(value, { exact: true })).toBeVisible();
+  }
+  const capacity = specificationRows.filter({ hasText: 'Capacity' });
+  const capacitySources = capacity.getByRole('list', { name: 'Sources for Capacity' });
+  await expect(capacitySources.getByRole('listitem')).toHaveCount(1);
+  await expect(capacitySources.getByText('Spec table', { exact: true })).toBeVisible();
+  await expect(capacitySources.getByText('Capacity: 20 Ah', { exact: true })).toBeVisible();
+  await expect(capacitySources.getByText('variants/100w/attributes/0', { exact: true })).toBeVisible();
   await productView.getByRole('button', { name: 'Close product view' }).click();
   await expect(productView).toHaveCount(0);
   await expect(widget).toHaveAttribute('data-revision', '0');
+
+  await page.getByRole('button', { name: 'View product' }).last().click();
+  await expect(productView.getByRole('heading', { name: 'SYNTHETIC Comet power bank family' })).toBeVisible();
+  const cometSpecifications = productView.getByRole('list', { name: 'Product specifications' });
+  const cometSpecificationRows = cometSpecifications.locator(':scope > li');
+  const missingWeight = cometSpecificationRows.filter({ hasText: 'Weight' });
+  await expect(missingWeight.getByText('Not stated', { exact: true })).toBeVisible();
+  await expect(missingWeight.getByText('No verified seller source. Luna does not guess.', { exact: true })).toBeVisible();
+  const conflictingWarranty = cometSpecificationRows.filter({ hasText: 'Warranty' });
+  await expect(conflictingWarranty.getByText('Listing disagrees: 12 vs 24 months', { exact: true })).toBeVisible();
+  const warrantySources = conflictingWarranty.getByRole('list', { name: 'Sources for Warranty' });
+  await expect(warrantySources.getByRole('listitem')).toHaveCount(2);
+  await expect(warrantySources.getByText('Warranty: 1 year', { exact: true })).toBeVisible();
+  await expect(warrantySources.getByText('Warranty: 24 months', { exact: true })).toBeVisible();
+  await productView.getByRole('button', { name: 'Close product view' }).click();
+  await expect(productView).toHaveCount(0);
   await page.getByRole('button', { name: /^Warranty for SYNTHETIC Comet .*: Listing disagrees, 12 vs 24 months$/ }).click();
   await expect(sourcePanel.getByText('Listing disagrees with itself')).toBeVisible();
   await expect(sourcePanel.getByText('Warranty: 1 year')).toBeVisible();

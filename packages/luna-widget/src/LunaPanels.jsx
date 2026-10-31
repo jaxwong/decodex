@@ -123,6 +123,44 @@ const cellSpokenText = cell => ({
   unresolved: 'Couldn’t verify',
 }[cell.status] || cell.text);
 
+function productSnapshot(evidence, item) {
+  return {
+    listingId: item.listing_id,
+    variantId: item.variant_id,
+    title: item.title,
+    variantLabel: item.variant_label,
+    priceMinor: item.price_minor,
+    currency: item.currency,
+    synthetic: item.synthetic,
+    specifications: evidence.schema_fields.map(field => {
+      const fact = factFor(evidence, item.item_key, field.field_key);
+      const cell = describeCell(evidence, item, field.field_key);
+      const value = {
+        conflicting: `Listing disagrees: ${cell.text}`,
+        missing: 'Not stated',
+        unresolved: 'Couldn’t verify',
+      }[cell.status] || cell.text;
+      const sources = fact.evidence_ids.map(evidenceId => {
+        const record = evidence.evidence[evidenceId];
+        if (!record) throw new TypeError(`Product specification source ${evidenceId} is missing`);
+        return {
+          evidenceId,
+          label: sourceLabel(record.source_type),
+          text: record.source_text,
+          location: record.source_location,
+        };
+      });
+      return {
+        fieldKey: field.field_key,
+        label: field.label,
+        status: fact.status,
+        value,
+        sources,
+      };
+    }),
+  };
+}
+
 export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing, onOpenSellerReport }) {
   const [differencesOnly, setDifferencesOnly] = useState(true);
   const { evidence, recommendation, preferences } = comparison;
@@ -188,15 +226,8 @@ export function ComparisonTable({ comparison, onOpenCell, onNavigateToListing, o
                   Delivered {money(item.landed_price_minor, item.currency)}
                 </span>
                 <span className="luna-product-actions">
-                  <button type="button" className="luna-link" onClick={() => onNavigateToListing({
-                    listingId: item.listing_id,
-                    variantId: item.variant_id,
-                    title: item.title,
-                    variantLabel: item.variant_label,
-                    priceMinor: item.price_minor,
-                    currency: item.currency,
-                    synthetic: item.synthetic,
-                  })}>
+                  <button type="button" className="luna-link"
+                    onClick={() => onNavigateToListing(productSnapshot(evidence, item))}>
                     View product
                   </button>
                   {status?.tone === 'out' && <button type="button" className="luna-link"
