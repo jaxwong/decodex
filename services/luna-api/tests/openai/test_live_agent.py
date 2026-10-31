@@ -5,15 +5,22 @@ from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import Any, cast
 
+import pytest
 from openai import AsyncOpenAI
 from openai.resources.live.sideband import AsyncSidebandConnection
 from openai.types.live import DelegationCreatedEvent, LiveCreateResponse, ResponseEvent
 
-from app.contracts.session import ComparisonSelection
+from app.contracts.session import ComparisonSelection, PreferencePatch
 from app.decision.comparisons import create_comparison, require_comparison
 from app.decision.sessions import DemoSessionState
+from app.decision.tools import apply_preferences
 from app.openai.capability_smoke import build_live_audio_offer_sdp
-from app.openai.live_agent import run_live_sideband, start_live_session
+from app.openai.live_agent import (
+    LunaLiveProtocolError,
+    LunaLiveUnavailable,
+    run_live_sideband,
+    start_live_session,
+)
 from tests.decision.fixtures import SELECTIONS, build_fixture_evidence
 
 
@@ -421,5 +428,133 @@ def test_sideband_caps_tool_execution_at_three_rounds_per_delegation() -> None:
         assert [output["ok"] for output in outputs] == [True, True, True, False]
         assert outputs[-1]["error"]["code"] == "TOOL_ROUND_LIMIT"
         assert [event["type"] for event in connection.sent].count("response.create") == 4
+
+    asyncio.run(scenario())
+
+
+def test_live_create_failure_leaves_no_sideband_or_live_state() -> None:
+    class FailingLive:
+        def __init__(self, connection: FakeSidebandConnection) -> None:
+            self.sideband = FakeSideband(connection)
+            self.requests: list[dict[str, Any]] = []
+
+        async def create(self, **request: Any) -> LiveCreateResponse:
+            self.requests.append(request)
+            raise OSError("provider unavailable")
+
+    class FailingClient:
+        def __init__(self, connection: FakeSidebandConnection) -> None:
+            self.live = FailingLive(connection)
+
+    async def scenario() -> None:
+        session_state, comparison_id = await create_comparison_state()
+        connection = FakeSidebandConnection([])
+        fake_client = FailingClient(connection)
+
+        with pytest.raises(LunaLiveUnavailable):
+            await start_live_session(
+                cast(AsyncOpenAI, fake_client),
+                session_state,
+                comparison_id=comparison_id,
+                offer_sdp=build_live_audio_offer_sdp(),
+                live_model="gpt-live-1",
+                text_model="gpt-6-luna",
+            )
+
+        assert len(fake_client.live.requests) == 1
+        assert fake_client.live.sideband.requests == []
+        assert session_state.live_sessions == {}
+        assert connection.closed is False
+
+    asyncio.run(scenario())
+
+
+def test_sideband_returns_stale_error_when_concurrent_correction_wins() -> None:
+    async def scenario() -> None:
+        session_state, comparison_id = await create_comparison_state()
+        winning_update = apply_preferences(
+            session_state,
+            comparison_id,
+            patch=PreferencePatch(
+                max_price_minor=7000,
+                min_output_w=65,
+                priorities=["price_minor"],
+            ),
+            expected_revision=0,
+        )
+        stale_call = function_call_item(
+            "call_stale",
+            "apply_preferences",
+            {
+                "comparison_id": comparison_id,
+                "patch": {
+                    "max_price_minor": 8000,
+                    "min_output_w": 65,
+                    "priorities": ["weight_g"],
+                },
+                "expected_revision": 0,
+            },
+        )
+        connection = FakeSidebandConnection(
+            [
+                delegation_event("delegation_stale", "resp_stale"),
+                response_event(
+                    "delegation_stale",
+                    nested_type="response.output_item.done",
+                    item=stale_call,
+                ),
+                closed_event(),
+            ]
+        )
+
+        await run_live_sideband(
+            cast(AsyncSidebandConnection, connection),
+            session_state,
+            session_id="live_test",
+            comparison_id=comparison_id,
+            text_model="gpt-6-luna",
+        )
+
+        output_event = next(
+            event for event in connection.sent if event["type"] == "response.item.create"
+        )
+        assert json.loads(output_event["item"]["output"]) == {
+            "ok": False,
+            "error": {
+                "code": "STALE_COMPARISON",
+                "message": "The comparison changed; refresh before applying this correction.",
+                "retryable": False,
+                "current_revision": 1,
+            },
+        }
+        comparison = require_comparison(session_state, comparison_id)
+        assert comparison.revision == winning_update.ui_patch.new_revision == 1
+        assert comparison.preferences.max_price_minor == 7000
+        assert comparison.preferences.priorities == ["price_minor"]
+        assert [event["type"] for event in connection.sent] == [
+            "response.item.create",
+            "response.create",
+        ]
+
+    asyncio.run(scenario())
+
+
+def test_sideband_protocol_error_closes_connection_without_fallback() -> None:
+    async def scenario() -> None:
+        session_state, comparison_id = await create_comparison_state()
+        connection = FakeSidebandConnection([SimpleNamespace(type="error")])
+
+        with pytest.raises(LunaLiveProtocolError):
+            await run_live_sideband(
+                cast(AsyncSidebandConnection, connection),
+                session_state,
+                session_id="live_test",
+                comparison_id=comparison_id,
+                text_model="gpt-6-luna",
+            )
+
+        assert connection.sent == []
+        assert connection.closed is True
+        assert require_comparison(session_state, comparison_id).revision == 0
 
     asyncio.run(scenario())
