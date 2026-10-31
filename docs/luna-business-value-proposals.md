@@ -69,11 +69,97 @@ A read-only view per listing with three blocks:
 - B2 must expose exclusion **reasons**, not only excluded item keys. Checked on 31 October: `services/luna-api/app/decision/ranking.py` records `excluded_item_keys` and `uncertain_item_keys` as sets, and the uncertainty cause survives only as a prose note. B adds a per-item reason enum (failed budget, failed minimum power, uncertain on a named field) to `Recommendation` in `app/contracts/session.py`. That is a B-owned session-contract addition, not an A evidence-contract change, but C's generated types must be regenerated.
 - Demo exclusions must be produced live during the demo or in the rehearsal session visible to judges. Say "in this session" on screen.
 
-### Ownership
+### Exact implementation
 
-- **B:** `GET /api/listings/{listing_id}/gap-report` (session-authenticated like the other routes) plus the exclusion-reason aggregation. Tests: empty session, listing with no gaps, listing in zero comparisons, second run gives the same counts.
-- **C:** one plain page in Host A under a `#/Seller` route, rendering B's response. Must also render in `minimal-host` through the adapter, or it does not count as portable.
-- **A:** nothing new. A confirms field status semantics are not reinterpreted.
+Design decision, stated once: the ranking already knows the reason at the exact line it excludes an item. Record it there. Everything else is a read of saved state. No new model call, no new storage, no new exception class, no history table.
+
+**Developer A: nothing.** A reviews B's PR only to confirm no `Fact.status` meaning was reinterpreted.
+
+**Developer B**
+
+B-1. `services/luna-api/app/contracts/session.py`
+
+- Add the type alias next to `RankingPriority`:
+  `type ExclusionReason = Literal["over_budget", "below_min_output"]`
+- Add two fields to `Recommendation`, after `uncertain_item_keys`:
+  `exclusion_reasons: dict[str, ExclusionReason]` (item_key to reason)
+  `uncertain_fields: dict[str, list[str]]` (item_key to field keys that had no supported value)
+- Keep `excluded_item_keys` and `uncertain_item_keys`. They are derived from the two dicts inside `rank_comparison` and nowhere else, so there is one owner.
+- Add three response models:
+  `ListingGapField`: `item_key: str`, `field_key: str`, `status: Literal["missing", "conflicting", "unresolved"]`, `conflicting_values: list[str]`, `evidence_ids: list[str]`
+  `ListingBeatenBy`: `item_key: str`, `field_key: str`, `competitor_item_keys: list[str]`
+  `ListingGapReport`: `listing_id: str`, `comparisons_count: int`, `gaps: list[ListingGapField]`, `beaten_by: list[ListingBeatenBy]`, `exclusion_counts: dict[ExclusionReason, int]`, `uncertainty_counts: dict[str, int]`
+
+B-2. `services/luna-api/app/decision/ranking.py`, function `rank_comparison`
+
+- Replace `excluded_item_keys: set[str] = set()` with `exclusion_reasons: dict[str, ExclusionReason] = {}`.
+- Replace `uncertain_item_keys: set[str] = set()` with `uncertain_fields: dict[str, list[str]] = {}`.
+- At the budget branch: `exclusion_reasons[item_key] = "over_budget"`.
+- At the `max_output_w < preferences.min_output_w` branch: `exclusion_reasons[item_key] = "below_min_output"`.
+- At the `max_output_w is None` branch: `uncertain_fields.setdefault(item_key, []).append("max_output_w")`.
+- In the priority loop where `value is None`: `uncertain_fields.setdefault(item_key, []).append(priority)`.
+- Membership checks for eligible and comparable items use the dicts.
+- In the `return Recommendation(...)`: `excluded_item_keys=[k for k in item_keys if k in exclusion_reasons]`, `uncertain_item_keys=[k for k in item_keys if k in uncertain_fields]`, plus `exclusion_reasons=exclusion_reasons`, `uncertain_fields=uncertain_fields`.
+- Checked on 31 October: `rank_comparison` is the only place that constructs `Recommendation`. Nothing else changes.
+
+B-3. New file `services/luna-api/app/decision/gap_report.py`, one pure function
+
+`def build_gap_report(session_state: DemoSessionState, listing_id: str) -> ListingGapReport`
+
+- `comparisons` = every value in `session_state.comparisons` where some `evidence.items[i]["listing_id"] == listing_id`.
+- For each such comparison and each of its items with that listing id:
+  gaps: every fact in `evidence.facts_by_item[item_key]` with `status != "supported"`, deduplicated on `(item_key, field_key, status)`.
+  beaten_by: for each of those fields, the other item keys in the same comparison whose fact for that field is `supported`, deduplicated on `(item_key, field_key)` with competitors unioned.
+  counts: `comparison.recommendation.exclusion_reasons.get(item_key)` increments `exclusion_counts`; each entry of `comparison.recommendation.uncertain_fields.get(item_key, [])` increments `uncertainty_counts`.
+- `comparisons_count = len(comparisons)`.
+- The store keeps only the latest `ComparisonResponse` per comparison id, so a count means "comparisons whose current state excludes this listing". There is no revision history and you must not add one.
+- A listing in zero comparisons returns a report with zero counts and empty lists. That is a valid answer, not an error.
+- Scope is the authorized session only. Reading across all sessions is one loop over the store's values, but it is a deliberate exception to B2's isolation. Do not do it today; the page says "in this demo session".
+
+B-4. New file `services/luna-api/app/routes/listings.py`
+
+- `GET /api/listings/{listing_id}/gap-report`, `response_model=ListingGapReport`, dependency `require_demo_session_state` from `app/routes/session_auth.py`, exactly like `get_catalog`.
+- Body: `provider = cast(CatalogProvider, request.app.state.catalog_provider)`; if `await provider.get_listing(listing_id) is None` raise `CatalogError("unknown_listing")`; else `return build_gap_report(session_state, listing_id)`.
+- `CatalogError("unknown_listing")` is already mapped to HTTP 400 `UNKNOWN_LISTING` in `app/errors.py`. No new exception class, no new handler.
+- Register the router in `create_app` in `app/main.py` after `catalog_router`.
+
+B-5. Tests, no model calls
+
+- `tests/decision/test_ranking.py`: in the existing hard-constraint test add `assert recommendation.exclusion_reasons == {"listingC:87w": "over_budget"}`; in the missing-weight test add `assert recommendation.uncertain_fields == {"listingC:87w": ["weight_g"]}`.
+- New `tests/decision/test_gap_report.py` using `tests/decision/fixtures.py`:
+  empty session returns `comparisons_count == 0` and empty collections;
+  after one fixture comparison, the `listingC` report has a `weight_g` gap with status `missing`, a `warranty_months` gap with status `conflicting` and both values, and `beaten_by` for `weight_g` lists `["listingA:100w", "listingB:65w"]`;
+  after `apply_preferences` with `max_price_minor=7000, min_output_w=65, priorities=["weight_g", "price_minor"]`, `exclusion_counts == {"over_budget": 1}`;
+  after `apply_preferences` with `max_price_minor=8000, priorities=["weight_g", "price_minor"]` on a fresh comparison, `uncertainty_counts == {"weight_g": 1}`;
+  the `listingA` report has empty `gaps` and empty `exclusion_counts`;
+  calling the function twice returns equal objects.
+- New `tests/routes/test_listings.py` using `create_authorized_client` from `tests/routes/test_comparisons.py`: 401 without a token with the existing `SESSION_REQUIRED` envelope; 400 `UNKNOWN_LISTING` for `listingZ`; 200 zero report before any comparison; the path appears in `GET /openapi.json`.
+- Verify: `make api-test` exits 0.
+
+**Developer C**
+
+C-1. Types. After B-4 merges, regenerate `packages/luna-widget/src/contracts.ts` from the running service's `GET /openapi.json`. Do not hand-write the report type.
+
+C-2. Component `packages/luna-widget/src/SellerGapReport` with props `{ report, onOpenEvidence }`.
+
+- Renders three lists straight from the report: gaps, beaten by, why buyers dropped you. It computes nothing: no counting, no sorting, no status reinterpretation.
+- Each gap row calls `onOpenEvidence(gap.evidence_ids)`. `onOpenEvidence` is the same callback the comparison table already uses to open the evidence drawer. There is no second drawer.
+- Fixed banner text: "Demo seller view. Counts cover comparisons in this demo session only."
+
+C-3. Fetch. Same API client and bearer token as the comparison: `GET /api/listings/{listingId}/gap-report`. On an error envelope show `error.message`. No retry, no fallback data.
+
+C-4. Host A: in `shopee-compare-app/src/App.jsx` add `<Route path="/Seller/:listingId" ...>` beside the existing `/Compare` route. On the comparison page, a "Seller view" link next to each excluded item passes its `listing_id`.
+
+C-5. Host B: mount the same component in `apps/minimal-host` through its own adapter, different layout. No edit to the widget or the service.
+
+C-6. Playwright: after the Story C flow, open `#/Seller/listingC` and assert the gaps list contains "Weight" and the over-budget count reads 1.
+
+**Done when**
+
+- `make api-test` exits 0 with the new tests.
+- `GET /api/listings/listingC/gap-report` returns a zero report before any comparison and, after Story C, shows the missing weight gap and `over_budget: 1`.
+- A second GET returns identical JSON.
+- Host A and Host B both render the page from the same response.
 
 ---
 
@@ -118,15 +204,75 @@ Persona: Minh is choosing between three power banks for a week of travel.
 
 ### Honest cost and constraints
 
-- **This is a contract change after G0.** Either a new `Status` literal (for example `disputed`) or a new `Fact` field such as `disputing_mention_ids`. Spec §1.1: all three approve, and the fixture, OpenAPI snapshot and compatibility test change in the **same commit**. C's generated types must be regenerated.
-- A's structured-output prompt and validator need a new rule: a disputed fact keeps its `value` (unlike `conflicting`), so the existing `check_status` invariant in `app/contracts/evidence.py` must be extended deliberately, not bypassed.
+- **This is a contract change after G0.** Decision: one new optional field on `Fact`, `disputing_mention_ids`, defaulting to empty. Not a new `Status`. Spec §1.1: all three approve, and the fixture, the OpenAPI contract test and C's regenerated types change in the **same commit**.
+- A's structured-output prompt and review validator gain one rule each (see exact steps). `check_status` keeps its invariant that only supported facts carry a value; a disputed fact is a supported fact with citations against it.
 - Risk of over-claiming. One or two negative reviews must not flip a status. A sets a minimum mention count and records it in `eval/`.
 
-### Ownership
+### Exact implementation
 
-- **A:** status or field, extraction rule, two fixture reviews, validator, eval row.
-- **B:** OpenAPI snapshot, compatibility test, ranking unchanged (disputed facts stay out of the lexicographic sort; they are explanation only, same rule as review reliability in spec §6.4).
-- **C:** disputed marker in the table cell and the evidence drawer.
+Design decision, stated once: a disputed claim is still a consistent seller claim, so it stays `supported` and keeps its value. The dispute is a list of review mention ids attached to the fact. Ranking reads only status and value, so it cannot change by construction. The existing fixture validates unchanged because the default is empty. A fifth status would force ranking, tools, the agent prompt and C's table to each handle a new case.
+
+**Developer A**
+
+A-1. `services/luna-api/app/contracts/evidence.py`
+
+- `Fact`: add `disputing_mention_ids: list[str] = Field(default_factory=list)`.
+- `Fact.check_status`: add `if self.disputing_mention_ids and self.status != "supported": raise ValueError("Only supported facts can be disputed")`.
+- `ComparisonEvidence.check_relationships`: for every fact, every id in `disputing_mention_ids` must be a key of `self.review_mentions` whose `item_key` equals the fact's item key, else `raise ValueError("Unknown or wrong-item disputing mention")`.
+- `tests/evidence/test_contract.py`: one accepting case, one case per new rejection.
+
+A-2. `services/luna-api/app/evidence/model.py`: `CandidateMention` gains `disputes_field_key: FieldKey | None`. The structured-output schema follows automatically because `responses.parse` uses this model.
+
+A-3. `services/luna-api/app/evidence/prompt.py`, `REVIEW_PROMPT`, one added sentence: "If the reviewer reports an experienced or measured value that contradicts a listed specification field, set disputes_field_key to that field key; otherwise null. Opinions are not disputes."
+
+A-4. `services/luna-api/app/evidence/reviews.py`
+
+- `ReviewValidation` gains `disputes: dict[str, set[str]]` (field key to mention ids).
+- In `validate_review_mentions`, build the `ReviewMention` with `candidate.model_dump(exclude={"disputes_field_key"})` because `ReviewMention` forbids extra fields, and when `candidate.disputes_field_key` is set add the mention id under that field key. Rejected candidates never reach `disputes`.
+
+A-5. `services/luna-api/app/evidence/build.py`, `_analyze`, after the review batch loop
+
+- Constant in `app/evidence/schema.py`: `DISPUTE_MIN_REVIEWS = 2`.
+- For each field key in the merged disputes: count distinct `review_id` among those mentions. If the count is at least `DISPUTE_MIN_REVIEWS` and the fact for that field has `status == "supported"`, replace that fact with `fact.model_copy(update={"disputing_mention_ids": sorted(ids)})`. Otherwise leave the fact untouched. Facts are frozen, so copy rather than mutate.
+- If spec extraction failed earlier, all facts are `unresolved` and nothing attaches. No special case needed.
+
+A-6. Fixture `data/generate_fixtures.py`
+
+- Add two reviews on `listingB` variant `65w` whose text contradicts the capacity claim in the reviewer's own words, for example "Charges my phone twice, nowhere near 20000mAh." Listing review count goes from 18 to 20, still inside spec §2.4's 12 to 20.
+- Ground truth: label both as mentions with an existing aspect and a `disputes` block `{"listingB:65w": {"capacity_mah": [review ids]}}`.
+- Regenerate `data/listings.json`, `data/reviews.json`, `data/ground_truth.json` with the generator, then regenerate `data/sample_comparison_evidence.json` with the same method used at A1 so `listingB:65w`'s `capacity_mah` fact carries the two mention ids. B2 and C tests load this file.
+
+A-7. Tests and eval
+
+- `tests/evidence/test_reviews.py`: one disputing review attaches nothing; two attach; two against a `missing` field attach nothing; a dispute from a sibling variant review is rejected as today.
+- `eval/metrics.py`: add dispute precision and recall rows (emitted disputes matching labelled over emitted, and over labelled). Rerun `PYTHONPATH=services/luna-api python -m eval.run` from the repository root and update the table in `eval/README.md`.
+
+**Developer B**
+
+B-1. Ranking, tools, session store: no change. The field passes through `ComparisonResponse.evidence` and `get_comparison` untouched.
+
+B-2. `tests/routes/test_comparisons.py`, `test_openapi_exposes_bearer_auth_and_canonical_comparison_contract`: assert `disputing_mention_ids` appears in the `Fact` schema.
+
+B-3. `services/luna-api/app/openai/text_agent.py`, trusted system instruction, one added sentence: "A fact with disputing_mention_ids is a seller claim that analysed reviews contradict. Say so, cite those mention ids, and never change or drop the value." Confirm the existing citation validation accepts review mention ids as citations; spec §6.5 step 4 says it must.
+
+B-4. Live delegation: no change, same tools.
+
+**Developer C**
+
+C-1. Regenerate `contracts.ts` from `GET /openapi.json`.
+
+C-2. Specs table cell: when `fact.disputing_mention_ids.length > 0`, render a marker reading "disputed in N reviews analysed", where N is the number of distinct `review_id` among those mentions looked up in `comparison.evidence.review_mentions`. That is a lookup, not a computation of evidence.
+
+C-3. Clicking the marker opens the existing evidence drawer with two sections: the fact's `evidence_ids` sources (the seller claim) and the disputing mentions' excerpts with review ids. No new drawer, no new state.
+
+C-4. Never render the marker when the list is empty. Never change the cell's value or the row's position.
+
+**Done when**
+
+- Contract tests, review tests and `make api-test` exit 0.
+- The regenerated fixture loads in B's tests with `listingB:65w` capacity disputed by two reviews.
+- Asking "Is B's capacity claim reliable?" returns an answer citing the claim and both mention ids while `recommendation` is unchanged.
+- `eval/results.json` contains the dispute rows with real numbers.
 
 ---
 
@@ -175,6 +321,44 @@ Persona: Hoa has S$80 to spend and three power banks in her bucket.
 - Vouchers are user- and time-specific on the real platform. In the demo we show "assuming the listed shop voucher applies"; we do not claim personalised voucher eligibility.
 - Highest buyer resonance of the five, highest coordination cost: touches A fixture, A contract, B ranking, C table. Do not start unless all three have spare time after G3.
 
+### Exact implementation
+
+Design decision, stated once: prices stay provider-owned and are never extracted, which `app/evidence/schema.py` already states. Two provider inputs are added per variant and one derived number is computed in exactly one place. The contract validator checks the arithmetic at load time, so a wrong fixture fails before ranking ever sees it. No toggle, no per-user voucher logic, no platform promotions.
+
+**Developer A**
+
+A-1. `data/generate_fixtures.py`: each variant gains `shipping_minor` and `shop_voucher_minor`, non-negative integers in SGD minor units, with `shop_voucher_minor <= price_minor`. Choose values so one listing changes order, for example `listingB` cheapest by sticker and most expensive delivered. Regenerate the three data files. Ground truth is untouched because prices are not labelled.
+
+A-2. `services/luna-api/app/providers/mock.py`, `list_listings`: pass both fields through in each variant dict.
+
+A-3. `services/luna-api/app/evidence/build.py`, `_analyze`, the `item` dict: add `shop_voucher_minor`, `shipping_minor`, and `landed_price_minor = price_minor - shop_voucher_minor + shipping_minor`. This is the only place it is computed.
+
+A-4. `services/luna-api/app/contracts/evidence.py`, `ComparisonEvidence.check_relationships`, beside the existing price check: require the three new values to be non-negative integers and `landed_price_minor == price_minor - shop_voucher_minor + shipping_minor`, else `raise ValueError("Landed price must equal price minus shop voucher plus shipping")`. Regenerate `data/sample_comparison_evidence.json`. Add one rejecting contract test.
+
+**Developer B**
+
+B-1. `services/luna-api/app/decision/ranking.py`: rename `_price_minor` to `_landed_price_minor` and read `item["landed_price_minor"]`. The budget filter and the `price_minor` priority both call it, so delivered price is used everywhere without a second code path.
+
+B-2. `services/luna-api/app/contracts/session.py`: `ComparisonSnapshotItem` gains `landed_price_minor`, `shipping_minor`, `shop_voucher_minor`; `app/decision/tools.py` `get_comparison` fills them from the item dict with the same strict integer checks as `_required_price_minor`. `app/routes/catalog.py` `CatalogVariantResponse` gains `shipping_minor` and `shop_voucher_minor`.
+
+B-3. `tests/decision/test_ranking.py`: one test on the regenerated fixture where sticker order and landed order differ and the ranking follows landed. Extend the OpenAPI contract test for the new item fields.
+
+B-4. `app/openai/text_agent.py` instruction, one sentence: "Budget constraints apply to landed_price_minor, which includes the listed shipping and shop voucher."
+
+**Developer C**
+
+C-1. Regenerate `contracts.ts`. The price row shows `landed_price_minor`. The column key stays `price_minor` so `focused_fields` keeps working; the column label reads "Delivered price".
+
+C-2. A breakdown popover per cell lists list price, shop voucher, shipping, delivered total from the three item fields. Fixed label: "Assumes listed shipping and shop voucher."
+
+C-3. No toggle, no editable shipping, no coin or platform voucher rows.
+
+**Done when**
+
+- Contract test rejects a fixture whose arithmetic is wrong.
+- Ranking test shows the order flip on landed price.
+- "Under S$80" excludes the listing whose delivered price exceeds the budget and the answer cites the delivered price.
+
 ---
 
 ## Proposal 4 — Evidence Gap to Seller Question Loop
@@ -220,6 +404,44 @@ Two personas: Tuan is a buyer comparing power banks. Linh is the seller of listi
 - Needs a small write path outside `apply_preferences`, which is currently the only P0 mutation (spec §6.3). Keep it as a plain route, not a fifth agent tool, so the four-tool rule stays intact.
 - Lower priority than 1 and 2 because the demo payoff depends on a simulated reply.
 
+### Exact implementation
+
+Design decision, stated once: no new source type, no new status, no new validator, no write path into evidence. A seller reply is stored by the provider as one more variant attribute. The existing extraction turns it into a supported fact with a real evidence id through the same code that handles every other attribute. The snapshot version changes automatically because it hashes the listing, so an open comparison is never silently altered and a new comparison picks the reply up. The "confirmed by seller" label is derived from the evidence `source_location` prefix.
+
+**Developer A**
+
+A-1. `services/luna-api/app/providers/mock.py`: `async def add_seller_reply(self, listing_id: str, variant_id: str, field_key: str, text: str) -> None` appends `{"field_key": field_key, "text": text}` to `variant["seller_replies"]` (create the list if absent). Unknown ids raise the existing `CatalogError("unknown_listing")` or `CatalogError("unknown_variant")`. Add the method to the `CatalogProvider` protocol in `app/providers/base.py`.
+
+A-2. `services/luna-api/app/evidence/index.py`, `build_evidence_index`: after the variant attributes loop, index `variant.get("seller_replies", [])` with `source_type="attribute"` at location `variants/{variant_id}/seller_replies/{n}` and the variant id. Three lines. Nothing else in extraction or validation changes.
+
+A-3. `tests/evidence/test_pipeline.py`: after `add_seller_reply(..., "weight_g", "Weight: 198 g")`, the snapshot version differs and a new build yields a supported `weight_g` fact whose evidence `source_location` starts with `variants/87w/seller_replies/`.
+
+**Developer B**
+
+B-1. New `services/luna-api/app/routes/seller_replies.py`, both routes behind `require_demo_session_state`:
+
+- `POST /api/listings/{listing_id}/variants/{variant_id}/questions`, body `{"field_key": FieldKey}`, returns `{"question": str}` built from `SCHEMA_FIELDS` label and unit and the variant label, for example "What is the Weight (g) of the 87W synthetic SKU?". Deterministic template, no model call. An unknown field key fails request validation at the boundary because the body type is the `FieldKey` literal.
+- `POST /api/listings/{listing_id}/variants/{variant_id}/seller-replies`, body `{"field_key": FieldKey, "text": str}`, returns 201. Before storing, require `extract_source_values(field_key, text)` from `app/evidence/normalize.py` to be non-empty; otherwise return the existing 422 `INVALID_REQUEST`. A reply the pipeline could not parse is therefore never stored.
+- Register the router in `create_app`.
+
+B-2. `tests/routes/test_seller_replies.py`: question text for `weight_g`; 422 for text with no parsable value; 201 then a new `POST /api/comparisons` with the same selections returns a supported `weight_g` for that item.
+
+**Developer C**
+
+C-1. On any cell with status `missing`, an "Ask seller" button. Click calls the questions route and shows the returned question in a confirm dialog. Confirm navigates to the simulated inbox.
+
+C-2. Simulated inbox page, banner fixed: "Simulated seller. In production this is Seller Centre chat." One form with the field label and a text input. Submit calls the seller-replies route.
+
+C-3. After 201, C calls `POST /api/comparisons` with the same selections and replaces the current comparison. Spec §6.1 forbids re-extraction for preference changes; new evidence is the one case where a new comparison is correct.
+
+C-4. In the evidence drawer, when `source_location` contains `/seller_replies/`, show the label "Confirmed by seller". No other UI change.
+
+**Done when**
+
+- A missing weight becomes a supported weight with a seller-reply evidence id after one simulated reply.
+- The old comparison is unchanged until the buyer rebuilds it.
+- A reply without a parsable value is rejected with 422 and nothing is stored.
+
 ---
 
 ## Proposal 5 — Vietnamese and Mixed-Language Reviews in the Fixture
@@ -257,6 +479,34 @@ Persona: Ngoc shops on Shopee VN. Most reviews on her shortlisted power banks ar
 - Fixture-only for A, plus re-running `eval/run.py` so `results.json` reflects the new reviews. **No contract change.**
 - Must not be a last-minute change to `data/` after A4's `results.json` exists unless A reruns the scorer; a stale scorecard is a false report.
 - If extraction precision drops on these rows, say so on the scorecard rather than removing them.
+
+### Exact implementation
+
+Design decision, stated once: this is a fixture change plus a scorer rerun. The substring rule that validates excerpts is Python `in` on `str`, which is Unicode-correct, so no code path changes. No translation field, no language setting, no detection.
+
+**Developer A**
+
+A-1. `data/generate_fixtures.py`: add two reviews per listing with exact variant ids, so each listing goes from 18 to 20 reviews. Include at least: one Vietnamese negative heat mention ("sạc nhanh nhưng nóng kinh khủng"), one mixed-language review ("gets hot when fast charging la, but charges my laptop ok"), one Vietnamese positive portability mention. If Proposal 2 lands, one of these is the capacity dispute. Write the files with `ensure_ascii=False` so the JSON is readable; the escaped form also round-trips, so this is optional.
+
+A-2. Ground truth: label each new review's aspect and sentiment units with the exact supporting span copied from the text.
+
+A-3. `services/luna-api/app/evidence/prompt.py`, `REVIEW_PROMPT`, one added sentence: "Reviews may be in any language. Copy excerpts exactly in the original language; never translate or normalise them."
+
+A-4. `tests/evidence/test_reviews.py`: a Vietnamese excerpt with diacritics is accepted when exact and rejected when diacritics are stripped.
+
+A-5. Rerun `PYTHONPATH=services/luna-api python -m eval.run` from the repository root. Update the counts in `eval/README.md` (reviews, labelled units) and commit the new `eval/results.json`. If review mention precision drops, the number stays and the scorecard says why.
+
+A-6. Order rule: do this before A4's scorer is declared final. A fixture change after `results.json` exists without a rerun is a false report.
+
+**Developer B: nothing.** The agent already answers in the buyer's language. Do not add a language knob.
+
+**Developer C: nothing to build.** Confirm the evidence drawer font renders Vietnamese diacritics in both hosts. No translation toggle.
+
+**Done when**
+
+- The heat aspect for the chosen listing lists a Vietnamese excerpt with its review id.
+- `eval/results.json` reflects the enlarged corpus and the README counts match it.
+- Review tests exit 0.
 
 ---
 
