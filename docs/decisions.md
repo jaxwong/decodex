@@ -45,6 +45,7 @@ flowchart TD
 | D-12 | Accepted | Keep evidence and agent paid request budgets separate |
 | D-13 | Planned, not implemented | Serve both hosts and API from one Docker image and origin |
 | D-14 | Rejected/superseded | Browser-owned OpenAI keys and independent browser ranking |
+| D-15 | Accepted for demo | Project seller listing gaps from current authorized session state |
 
 ## D-01 — Labelled synthetic marketplace provider
 
@@ -207,3 +208,19 @@ text/voice behavior.
 
 **Consequences:** They remain present only as known incomplete starter code and must be deleted,
 not retained as a fallback, when C completes Host A API integration.
+
+## D-15 — Seller insights are a read-only session projection
+
+**Decision:** The seller gap report is computed on request from current comparisons in the
+authorized demo session. Ranking records structured exclusion and uncertainty reasons once;
+those seller-only fields are excluded from existing comparison and agent serialization.
+
+**Why:** This creates the operations half of the demo from evidence and decisions Luna already
+owns, without another model call, duplicated ranking logic, buyer-data exposure, history table
+or second source of truth.
+
+**Consequences:** One report request performs one catalog existence lookup and reads at most ten
+comparisons with four items each. It does not show a buyer identity, conversation, budget or
+preferences. Counts describe current comparison states in this process, not weekly analytics.
+Restarting clears them. Seller authentication, listing ownership, cross-session aggregation and
+the browser view remain future integration work.

@@ -95,6 +95,13 @@ stateDiagram-v2
 | I-46 | Agent artifacts are rejected when the evidence, scenario suite or text-agent implementation hash changes. A stale artifact is unavailable, never current. | `load_agent_benchmark`, `eval.run` |
 | I-47 | Failed measured scenarios remain in the report; a different prompt/model run is not a fallback repair. | Agent evaluator status and artifact |
 
+## Seller report projection
+
+| ID | Invariant | Enforced by |
+|---|---|---|
+| I-48 | A seller gap report reads only current comparisons in the authorized demo session. It exposes counts and public evidence references, never buyer identity, conversation, budget or preferences. | `routes/listings.py`, `decision/gap_report.py`, bearer-session dependency |
+| I-49 | Structured decision reasons have one owner in `rank_comparison` and are required in memory, but cannot serialize into existing comparison responses, OpenAPI `Recommendation`, text-agent tool/input JSON or Live context. | `Recommendation` fields with `Field(exclude=True)` and boundary tests |
+
 ## Ownership invariants
 
 | State or decision | Sole owner |
@@ -104,6 +111,7 @@ stateDiagram-v2
 | Demo-session lifetime and contents | B session store |
 | Preferences, recommendation and revision | B decision layer |
 | Ranking outcome | Deterministic `rank_comparison` |
+| Seller gap report | Pure `build_gap_report` projection over the authorized session |
 | HTTP error wording/status | `app.errors` |
 | Text/Live model invocation | B OpenAI modules |
 | Browser rendering and media | C frontend |
@@ -117,7 +125,8 @@ These are current repository facts, not accepted exceptions:
    key. This violates I-24 and I-38 and must be deleted when Host A is wired to the API.
 2. Host A computes comparison facts and ranking independently of B's canonical state, violating
    the intended single state/decision owner across the full application.
-3. `LunaWidget` is a local prototype and does not execute the API journey.
+3. The backend-connected Luna panel executes an API journey, but it has not replaced the
+   parallel legacy comparison path or unified the storefront and API catalog identities.
 4. Host B and cross-host portability tests do not exist.
 5. Browser microphone/audio/stop controls do not exist, so the full Live invariant chain has
    only backend proof.

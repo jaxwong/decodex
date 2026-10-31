@@ -11,8 +11,9 @@ The repository contains two different levels of completion:
 
 - **Implemented and tested:** the Python API, synthetic catalog provider, evidence pipeline,
   deterministic ranking, session state, four decision tools, Responses text agent, GPT-Live
-  server sideband, and evaluation runners. The current paid agent artifact is projected by
-  `make eval` and remains honestly partial at 10/12 scenarios.
+  server sideband, evaluation runners, and the session-scoped seller gap-report API. The current
+  paid agent artifact is projected by `make eval` and remains honestly partial at 10/12
+  scenarios.
 - **Host A connected, replacement incomplete:** `shopee-compare-app` now has a Luna panel that
   creates a session, reads the API catalog, creates a comparison, asks the text agent and
   refreshes canonical state. The old compare engine still exists in parallel and
@@ -43,6 +44,7 @@ flowchart LR
         SessionStore[In-memory demo sessions]
         EvidenceBuilder[EvidenceBuilder]
         Decision[Ranking and four tools]
+        GapReport[Seller gap-report projection]
         TextAgent[Responses text agent]
         LiveAgent[GPT-Live sideband]
     end
@@ -68,6 +70,7 @@ flowchart LR
     Routes --> EvidenceBuilder
     Routes --> TextAgent
     Routes --> LiveAgent
+    Routes --> GapReport --> SessionStore
     EvidenceBuilder --> MockProvider --> Fixtures
     EvidenceBuilder --> Responses
     TextAgent --> Responses
@@ -98,7 +101,7 @@ flowchart LR
 3. one evidence builder — real `EvidenceBuilder + OpenAIModelClient` by default;
 4. optional injected text-model transport used only by tests;
 5. one shared HTTP error boundary; and
-6. the health, session, catalog and comparison routers.
+6. the health, session, catalog, listing-report and comparison routers.
 
 Business code does not reach around these public interfaces. Tests inject at the composition
 root or at the model-call boundary; shipped runtime has no fake-provider switch for model
